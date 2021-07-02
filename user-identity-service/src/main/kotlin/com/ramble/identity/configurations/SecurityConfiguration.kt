@@ -1,11 +1,12 @@
 package com.ramble.identity.configurations
 
+import com.ramble.identity.common.SIGN_UP_CONFIRMATION_URL
 import com.ramble.identity.common.SIGN_UP_URL
 import com.ramble.identity.common.USER_INFO_API_BASE_PATH
-import com.ramble.identity.common.USER_INFO_LOGIN_PATH
+import com.ramble.identity.common.USER_LOGIN_PATH
 import com.ramble.identity.models.Roles
-import com.ramble.identity.service.UserService
-import com.ramble.token.handler.TokensHandler
+import com.ramble.identity.service.UserInfoService
+import com.ramble.token.handler.AuthTokensHandler
 import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -16,41 +17,43 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 
 @EnableWebSecurity
 class SecurityConfiguration(
-        private val userService: UserService,
+        private val userInfoService: UserInfoService,
         private val bCryptPasswordEncoder: BCryptPasswordEncoder,
-        private val authenticationEntryPointImpl: AuthenticationEntryPointImpl,
-        private val tokensHandler: TokensHandler
+        private val authenticationEntryPointInterceptor: AuthenticationEntryPointInterceptor,
+        private val authTokensHandler: AuthTokensHandler
 ) : WebSecurityConfigurerAdapter() {
 
     @Throws(Exception::class)
     override fun configure(httpSecurity: HttpSecurity) {
         httpSecurity
                 .csrf().disable()
-                .exceptionHandling().authenticationEntryPoint(authenticationEntryPointImpl)
+                .exceptionHandling().authenticationEntryPoint(authenticationEntryPointInterceptor)
                 .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests().antMatchers(HttpMethod.POST, SIGN_UP_URL).permitAll()
-                .antMatchers("$USER_INFO_API_BASE_PATH/**").hasRole(Roles.Active.toString())
+                .and()
+                .authorizeRequests().antMatchers(HttpMethod.GET, SIGN_UP_CONFIRMATION_URL).permitAll()
+                .antMatchers("$USER_INFO_API_BASE_PATH/**").hasRole(Roles.User.toString())
                 .anyRequest().authenticated()
                 .and()
                 .addFilter(
                         AuthenticationFilter(
                                 manager = authenticationManager(),
-                                tokensHandler = tokensHandler,
-                                userService = userService,
-                                loginPath = "$USER_INFO_API_BASE_PATH/$USER_INFO_LOGIN_PATH"
+                                authTokensHandler = authTokensHandler,
+                                userInfoService = userInfoService,
+                                loginPath = "$USER_INFO_API_BASE_PATH/$USER_LOGIN_PATH"
                         )
                 )
                 .addFilter(
                         AuthorizationFilter(
                                 authManager = authenticationManager(),
-                                tokensHandler = tokensHandler
+                                authTokensHandler = authTokensHandler
                         )
                 )
     }
 
     override fun configure(auth: AuthenticationManagerBuilder) {
-        auth.userDetailsService(userService).passwordEncoder(bCryptPasswordEncoder)
+        auth.userDetailsService(userInfoService).passwordEncoder(bCryptPasswordEncoder)
     }
 }

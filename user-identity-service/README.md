@@ -4,11 +4,10 @@ mvn spring-boot:run
 ```
 
 #### Next steps
-* Refresh tokens.
+* Register account via email.
 * Logout.
 * Swagger docs.
 * SQL support for tokens & user-info.
-* Register account via email.
 * Redis support for storing invalid/exposed tokens.
 * Setup infrastructure with Jenkins, Docker & Kubernetes in the local system.
 * Unit & integration tests.

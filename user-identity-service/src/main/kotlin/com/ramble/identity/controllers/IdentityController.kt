@@ -1,30 +1,34 @@
 package com.ramble.identity.controllers
 
-import com.ramble.identity.common.*
+import com.ramble.identity.common.USER_INFO_API_BASE_PATH
+import com.ramble.identity.common.USER_INFO_ME_PATH
+import com.ramble.identity.common.USER_REGISTER_PATH
+import com.ramble.identity.common.USER_REGISTRATION_CONFIRM_PATH
 import com.ramble.identity.models.RegisterUserRequest
-import com.ramble.identity.service.UserService
+import com.ramble.identity.service.UserInfoService
+import com.ramble.identity.service.UserRegistrationService
 import com.ramble.identity.utils.toResponseEntity
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.security.Principal
 
 @RestController
 @RequestMapping(USER_INFO_API_BASE_PATH)
-class IdentityController(private val userService: UserService) {
+class IdentityController(
+        private val userInfoService: UserInfoService,
+        private val userRegistrationService: UserRegistrationService
+) {
 
-    @GetMapping(USER_INFO_GREETING_PATH)
-    fun greeting(@RequestParam(value = "name", defaultValue = "World") name: String) =
-            "Hello $name"
+    @PostMapping(USER_REGISTER_PATH)
+    fun signUp(@RequestBody user: RegisterUserRequest): ResponseEntity<*> =
+            userRegistrationService.saveUser(user).toResponseEntity()
 
-    @PostMapping(USER_INFO_REGISTER_PATH)
-    fun signUp(@RequestBody user: RegisterUserRequest): ResponseEntity<*> {
-        println("IdentityController signUp() user:$user")
-        return userService.saveUser(email = user.email, password = user.password).toResponseEntity()
-    }
+    @GetMapping(USER_REGISTRATION_CONFIRM_PATH)
+    fun confirmRegistration(@RequestParam(value = "token") token: String): ResponseEntity<*> =
+            userRegistrationService.confirmToken(token).toResponseEntity()
 
     @GetMapping(USER_INFO_ME_PATH)
-    fun getMyInfo(@RequestHeader headers: Map<String, String>): ResponseEntity<*> {
-        println("IdentityController getMyInfo()")
-        return userService.getUserInfoResult(token = headers[AUTHORIZATION_HEADER]).toResponseEntity()
-    }
+    fun getMyInfo(principal: Principal): ResponseEntity<*> =
+            userInfoService.getUserInfoResult(principal).toResponseEntity()
 
 }

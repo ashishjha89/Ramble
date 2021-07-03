@@ -3,8 +3,16 @@
 mvn spring-boot:run
 ```
 
+#### Local email client used for testing
+Maildev: https://www.npmjs.com/package/maildev
+
+To run maindev, use command: 
+```
+$maildev
+```
+Maildev web app runs on port 1080 (web ui). The SMTP server runs on port 1025.
+
 #### Next steps
-* Register account via email.
 * Logout.
 * Swagger docs.
 * SQL support for tokens & user-info.

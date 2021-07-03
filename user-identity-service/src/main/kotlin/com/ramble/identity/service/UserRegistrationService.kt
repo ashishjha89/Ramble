@@ -3,6 +3,8 @@ package com.ramble.identity.service
 import com.ramble.identity.common.*
 import com.ramble.identity.models.*
 import com.ramble.identity.repo.UserRepo
+import com.ramble.identity.service.helper.ConfirmRegistrationEmailBuilder
+import com.ramble.identity.service.helper.ConfirmRegistrationEmailService
 import com.ramble.identity.service.validator.RegistrationRequestValidator
 import com.ramble.token.handler.RegistrationConfirmationHandler
 import org.springframework.http.HttpStatus
@@ -14,6 +16,8 @@ class UserRegistrationService(
         private val registrationRequestValidator: RegistrationRequestValidator,
         private val userRepo: UserRepo,
         private val registrationConfirmationHandler: RegistrationConfirmationHandler,
+        private val confirmRegistrationEmailBuilder: ConfirmRegistrationEmailBuilder,
+        private val confirmRegistrationEmailService: ConfirmRegistrationEmailService,
         private val bCryptPasswordEncoder: BCryptPasswordEncoder
 ) {
 
@@ -33,6 +37,11 @@ class UserRegistrationService(
                     email = confirmRegistrationToken.email
             )
             println("UserRegistrationService saveUser() confirmationToken:${confirmRegistrationToken.token}")
+            sendAccountActivationEmail(
+                    token = confirmRegistrationToken.token,
+                    emailId = newlyRegisteredUser.email,
+                    fullName = newlyRegisteredUser.fullName
+            )
             Result.Success(data = registeredUserResponse)
         } catch (e: Exception) {
             when (e) {
@@ -61,6 +70,12 @@ class UserRegistrationService(
                 else -> Result.Error(HttpStatus.INTERNAL_SERVER_ERROR, internalServerError)
             }
         }
+    }
+
+    private fun sendAccountActivationEmail(token: String, emailId: String, fullName: String) {
+        val emailLink = confirmRegistrationEmailBuilder.getEmailLink(token)
+        val emailBody = confirmRegistrationEmailBuilder.buildEmail(fullName, emailLink)
+        confirmRegistrationEmailService.sendEmail(emailId, emailBody)
     }
 
 }

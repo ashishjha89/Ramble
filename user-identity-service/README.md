@@ -3,6 +3,16 @@
 mvn --settings ramble_maven_settings.xml spring-boot:run
 ```
 
+#### How to build all modules?
+```
+mvn --settings ramble_maven_settings.xml package
+```
+
+#### How to do clean install?
+```
+mvn --settings ramble_maven_settings.xml clean install
+```
+
 #### Local email client used for testing
 Maildev: https://www.npmjs.com/package/maildev
 

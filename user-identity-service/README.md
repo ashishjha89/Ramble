@@ -1,6 +1,6 @@
-#### How to run service?
+#### How to do clean install?
 ```
-mvn --settings ramble_maven_settings.xml spring-boot:run
+mvn --settings ramble_maven_settings.xml clean install
 ```
 
 #### How to build all modules?
@@ -8,9 +8,9 @@ mvn --settings ramble_maven_settings.xml spring-boot:run
 mvn --settings ramble_maven_settings.xml package
 ```
 
-#### How to do clean install?
+#### How to run service?
 ```
-mvn --settings ramble_maven_settings.xml clean install
+mvn --settings ramble_maven_settings.xml spring-boot:run
 ```
 
 #### Local email client used for testing
@@ -23,6 +23,7 @@ $maildev
 Maildev web app runs on port 1080 (web ui). The SMTP server runs on port 1025.
 
 #### Next steps
+* Read email-properties from Vault.
 * Logout.
 * Swagger docs.
 * SQL support for tokens & user-info.

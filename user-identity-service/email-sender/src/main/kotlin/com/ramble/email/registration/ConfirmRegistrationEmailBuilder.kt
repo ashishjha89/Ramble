@@ -1,13 +1,9 @@
-package com.ramble.identity.service.helper
+package com.ramble.email.registration
 
-import com.ramble.identity.common.SIGN_UP_CONFIRMATION_URL
-import org.springframework.stereotype.Service
+internal class ConfirmRegistrationEmailBuilder {
 
-@Service
-class ConfirmRegistrationEmailBuilder {
-
-    fun getEmailLink(token: String): String =
-            "http://localhost:8080$SIGN_UP_CONFIRMATION_URL?token=$token"
+    fun getEmailLink(token: String, signUpUrl: String): String =
+            "http://localhost:8080$signUpUrl?token=$token"
 
     fun buildEmail(name: String, link: String): String =
             "<div style=\"font-family:Helvetica,Arial,sans-serif;font-size:16px;margin:0;color:#0b0c0c\">\n" +

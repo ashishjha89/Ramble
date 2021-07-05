@@ -1,5 +1,6 @@
 package com.ramble.identity
 
+import com.ramble.email.EmailSender
 import com.ramble.token.handler.AuthTokensHandler
 import com.ramble.token.handler.RegistrationConfirmationHandler
 import org.springframework.context.annotation.Bean
@@ -17,5 +18,8 @@ class Components {
 
     @Bean
     fun registrationConfirmationHandler() = RegistrationConfirmationHandler()
+
+    @Bean
+    fun emailSender() = EmailSender()
 
 }

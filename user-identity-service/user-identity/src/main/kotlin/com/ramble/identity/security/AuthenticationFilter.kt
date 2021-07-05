@@ -1,4 +1,4 @@
-package com.ramble.identity.configurations
+package com.ramble.identity.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.gson.Gson

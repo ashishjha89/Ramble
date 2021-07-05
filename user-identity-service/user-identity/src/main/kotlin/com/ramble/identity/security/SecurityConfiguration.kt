@@ -1,4 +1,4 @@
-package com.ramble.identity.configurations
+package com.ramble.identity.security
 
 import com.ramble.identity.common.SIGN_UP_CONFIRMATION_URL
 import com.ramble.identity.common.SIGN_UP_URL

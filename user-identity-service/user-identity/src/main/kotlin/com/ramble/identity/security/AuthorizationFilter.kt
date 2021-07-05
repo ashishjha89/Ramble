@@ -1,4 +1,4 @@
-package com.ramble.identity.configurations
+package com.ramble.identity.security
 
 import com.ramble.identity.common.AUTHORIZATION_HEADER
 import com.ramble.token.handler.AuthTokensHandler

@@ -15,10 +15,6 @@ class EmailSender {
         this.confirmRegistrationEmailService = confirmRegistrationEmailService
     }
 
-    fun sayHello() {
-        println("Hello from EmailSender -> 1")
-    }
-
     fun sendConfirmRegistrationEmail(emailId: String, fullName: String, token: String, signUpUrl: String): Unit {
         confirmRegistrationEmailService.sendEmail(
                 signUpUrl = signUpUrl,

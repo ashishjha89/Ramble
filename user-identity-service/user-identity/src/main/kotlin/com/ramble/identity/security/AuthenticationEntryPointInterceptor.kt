@@ -1,4 +1,4 @@
-package com.ramble.identity.configurations
+package com.ramble.identity.security
 
 import com.google.gson.Gson
 import com.ramble.identity.common.unauthorizedAccess

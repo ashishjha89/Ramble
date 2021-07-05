@@ -1,14 +1,9 @@
-server:
-  error:
-    include-message: always
-    include-binding-errors: always
-
 spring:
   mail:
-    host: localhost
-    port: 1025
-    username: hello
-    password: hello
+    host: smtp.gmail.com
+    port: 587
+    username: ashish.kr.jha89@gmail.com
+    password: incorrect_password
 
     properties:
       mail:

@@ -18,9 +18,9 @@ class ConfirmRegistrationEmailService(private val mailSender: JavaMailSender) {
             helper.setTo(to)
             helper.setSubject("Confirm your email")
             helper.setFrom("ashishjha.mymail@gmail.com")
-            mailSender.send(mimeMessage);
+            mailSender.send(mimeMessage)
         } catch (e: MessagingException) {
-            // TODO: Add logger
+            println("ConfirmRegistrationEmailService sendEmail() MessagingException e:$e")
         }
     }
 }

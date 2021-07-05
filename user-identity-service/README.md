@@ -1,6 +1,6 @@
 #### How to run service?
 ```
-mvn spring-boot:run
+mvn --settings ramble_maven_settings.xml spring-boot:run
 ```
 
 #### Local email client used for testing
@@ -23,3 +23,4 @@ Maildev web app runs on port 1080 (web ui). The SMTP server runs on port 1025.
 * Add Circuit Breaker.
 * Kafka event to delete user-data or request own data.
 * 2FA login support.
+* Improve email-sending logic. Add RabbitMQ and Gmail smtp support.

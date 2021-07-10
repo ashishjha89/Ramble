@@ -8,6 +8,7 @@ private object ErrorCode {
     const val UNAUTHORIZED_ACCESS = "UNAUTHORIZED_ACCESS"
     const val USER_IS_SUSPENDED = "USER_IS_SUSPENDED"
     const val USER_ALREADY_ACTIVATED = "USER_ALREADY_ACTIVATED"
+    const val EMAIL_SENDING_FAILED = "EMAIL_SENDING_FAILED"
 }
 
 private object ErrorMessage {
@@ -18,6 +19,7 @@ private object ErrorMessage {
     const val unauthorizedAccessMsg = "You are not authorized to access this resource."
     const val userSuspendedMsg = "You are currently suspended. Contact us for more info."
     const val userAlreadyActivated = "This account is already activated."
+    const val emailSendingFailed = "Failed to send email."
 }
 
 val unauthorizedAccess: ErrorBody =
@@ -40,3 +42,6 @@ val userAlreadyActivatedError: ErrorBody =
 
 val userNotActivatedError: ErrorBody =
         ErrorBody(errorCode = ErrorCode.USER_NOT_ACTIVATED, errorMessage = ErrorMessage.userNotActivatedMsg)
+
+val emailSendingFailed: ErrorBody =
+        ErrorBody(errorCode = ErrorCode.EMAIL_SENDING_FAILED, errorMessage = ErrorMessage.emailSendingFailed)

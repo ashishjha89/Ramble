@@ -15,9 +15,9 @@
 
 
     <modules>
-        <module>auth-token</module>
+        <module>auth-token-lib</module>
+        <module>email-sender-lib</module>
         <module>user-identity</module>
-        <module>email-sender</module>
     </modules>
 
     <build>

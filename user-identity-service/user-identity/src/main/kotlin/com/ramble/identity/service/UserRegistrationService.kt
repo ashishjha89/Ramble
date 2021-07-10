@@ -1,12 +1,16 @@
 package com.ramble.identity.service
 
+import com.ramble.email.CredentialNotFoundException
 import com.ramble.email.EmailSender
+import com.ramble.email.EmailSendingFailedException
 import com.ramble.identity.common.*
 import com.ramble.identity.models.*
 import com.ramble.identity.repo.UserRepo
 import com.ramble.identity.service.validator.RegistrationRequestValidator
 import com.ramble.token.handler.RegistrationConfirmationHandler
+import com.ramble.token.model.RegistrationConfirmationToken
 import org.springframework.http.HttpStatus
+import org.springframework.scheduling.annotation.Async
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 
@@ -34,22 +38,16 @@ class UserRegistrationService(
                     userId = confirmRegistrationToken.userId,
                     email = confirmRegistrationToken.email
             )
-            println("UserRegistrationService saveUser() confirmationToken:${confirmRegistrationToken.token}")
-            emailSender.sendConfirmRegistrationEmail(
-                    emailId = confirmRegistrationToken.email,
-                    fullName = newlyRegisteredUser.fullName,
-                    token = confirmRegistrationToken.token,
-                    signUpUrl = SIGN_UP_CONFIRMATION_URL
-            )
+            sendConfirmRegistrationEmail(confirmRegistrationToken, newlyRegisteredUser)
 
             Result.Success(data = registeredUserResponse)
         } catch (e: Exception) {
             when (e) {
                 is UserAlreadyActivatedException -> Result.Error(HttpStatus.FORBIDDEN, userAlreadyActivatedError)
                 is UserSuspendedException -> Result.Error(HttpStatus.FORBIDDEN, userSuspendedError)
+                is CredentialNotFoundException, is EmailSendingFailedException -> Result.Error(HttpStatus.INTERNAL_SERVER_ERROR, emailSendingFailed)
                 else -> Result.Error(HttpStatus.INTERNAL_SERVER_ERROR, internalServerError)
             }
-
         }
     }
 
@@ -70,6 +68,17 @@ class UserRegistrationService(
                 else -> Result.Error(HttpStatus.INTERNAL_SERVER_ERROR, internalServerError)
             }
         }
+    }
+
+    @Throws(CredentialNotFoundException::class, EmailSendingFailedException::class)
+    @Async
+    fun sendConfirmRegistrationEmail(confirmRegistrationToken: RegistrationConfirmationToken, newlyRegisteredUser: ApplicationUser) {
+        emailSender.sendConfirmRegistrationEmail(
+                emailId = confirmRegistrationToken.email,
+                fullName = newlyRegisteredUser.fullName,
+                token = confirmRegistrationToken.token,
+                signUpUrl = SIGN_UP_CONFIRMATION_URL
+        )
     }
 
 }

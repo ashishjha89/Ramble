@@ -12,11 +12,11 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
-    <groupId>com.ramble.token</groupId>
-    <artifactId>auth-token</artifactId>
+    <groupId>com.ramble.email</groupId>
+    <artifactId>email-sender-lib</artifactId>
     <version>1.0</version>
-    <name>auth-token</name>
-    <description>Manages (a) access token, (b) refresh token and (c) registration confirmation token.</description>
+    <name>email-sender</name>
+    <description>Send identity related email like registration-confirmation.</description>
 
     <properties>
         <java.version>11</java.version>
@@ -43,32 +43,31 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- SPRING SECURITY -->
+        <!-- SPRING BOOT -->
         <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-config</artifactId>
-            <version>5.5.0</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <version>2.5.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+            <version>2.5.2</version>
         </dependency>
 
-        <!-- JWT -->
+        <!-- EMAIL -->
         <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <version>0.11.2</version>
-            <scope>runtime</scope>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+            <version>2.5.2</version>
         </dependency>
 
+        <!-- VAULT -->
         <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-            <version>0.11.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-gson</artifactId>
-            <version>0.11.2</version>
-            <scope>runtime</scope>
+            <groupId>org.springframework.vault</groupId>
+            <artifactId>spring-vault-core</artifactId>
+            <version>2.3.2</version>
         </dependency>
 
     </dependencies>

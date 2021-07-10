@@ -22,16 +22,21 @@ $maildev
 ```
 Maildev web app runs on port 1080 (web ui). The SMTP server runs on port 1025.
 
+#### Start vault server process
+```
+vault server --dev --dev-root-token-id="00000000-0000-0000-0000-000000000000"
+```
+Other steps which are needed for Vault-setup:
+- Go to vault and 'enable new engine'
+- Choose KV
+- In Method-option, chose 'V1' from drop down
+- Enable engine
+- Add key-value secret: kv/ramble.email-sender (secrets are username and password).
+
 #### Next steps
-* Read email-properties from Vault.
+* OAuth 2
 * Logout.
 * Swagger docs.
 * SQL support for tokens & user-info.
 * Redis support for storing invalid/exposed tokens.
-* Setup infrastructure with Jenkins, Docker & Kubernetes in the local system.
 * Unit & integration tests.
-* Logging with ELK & Monitoring with Grafana/Prometheus.
-* Add Circuit Breaker.
-* Kafka event to delete user-data or request own data.
-* 2FA login support.
-* Improve email-sending logic. Add RabbitMQ and Gmail smtp support.

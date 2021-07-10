@@ -1,18 +1,16 @@
 package com.ramble.email.registration
 
+import com.ramble.email.EmailSendingFailedException
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
-import org.springframework.scheduling.annotation.Async
-import org.springframework.stereotype.Service
-import javax.mail.MessagingException
 
-@Service
 internal class ConfirmRegistrationEmailService(
+        val senderEmail: String,
         private val mailSender: JavaMailSender,
         private val confirmRegistrationEmailBuilder: ConfirmRegistrationEmailBuilder
 ) {
 
-    @Async
+    @Throws(EmailSendingFailedException::class)
     fun sendEmail(signUpUrl: String, to: String, fullName: String, token: String) {
         try {
             val body = confirmRegistrationEmailBuilder.buildEmail(
@@ -24,10 +22,10 @@ internal class ConfirmRegistrationEmailService(
             helper.setText(body, true)
             helper.setTo(to)
             helper.setSubject("Confirm your email")
-            helper.setFrom("ashish.kr.jha89l@gmail.com") // TODO: Read these values from a defined Property
+            helper.setFrom(senderEmail)
             mailSender.send(mimeMessage)
-        } catch (e: MessagingException) {
-            println("ConfirmRegistrationEmailService sendEmail() MessagingException e:$e")
+        } catch (e: Exception) {
+            throw EmailSendingFailedException()
         }
     }
 }

@@ -28,12 +28,12 @@
         <!-- Our auth-token library -->
         <dependency>
             <groupId>com.ramble.token</groupId>
-            <artifactId>auth-token</artifactId>
+            <artifactId>auth-token-lib</artifactId>
             <version>1.0</version>
         </dependency>
         <dependency>
             <groupId>com.ramble.email</groupId>
-            <artifactId>email-sender</artifactId>
+            <artifactId>email-sender-lib</artifactId>
             <version>1.0</version>
         </dependency>
 

@@ -1,5 +1,6 @@
 package com.ramble.token
 
+import com.ramble.token.config.TokenComponentBuilder
 import com.ramble.token.handler.RegistrationConfirmationTokenHandler
 import com.ramble.token.model.RegistrationConfirmationToken
 import com.ramble.token.repository.RegistrationConfirmationRepo
@@ -8,24 +9,14 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 @Service
-class RegistrationConfirmationService {
+class RegistrationConfirmationService(tokenComponentBuilder: TokenComponentBuilder) {
 
-    private val tokenConfirmationRepo: RegistrationConfirmationRepo
+    private val tokenConfirmationRepo: RegistrationConfirmationRepo =
+            tokenComponentBuilder.registrationConfirmationRepo()
 
-    private val registrationConfirmationTokenHandler: RegistrationConfirmationTokenHandler
 
-    internal constructor(
-            registrationTokenConfirmationRepo: RegistrationConfirmationRepo,
-            registrationConfirmationTokenHandler: RegistrationConfirmationTokenHandler
-    ) {
-        this.tokenConfirmationRepo = registrationTokenConfirmationRepo
-        this.registrationConfirmationTokenHandler = registrationConfirmationTokenHandler
-    }
-
-    constructor() {
-        this.tokenConfirmationRepo = RegistrationConfirmationRepo()
-        this.registrationConfirmationTokenHandler = RegistrationConfirmationTokenHandler()
-    }
+    private val registrationConfirmationTokenHandler: RegistrationConfirmationTokenHandler =
+            tokenComponentBuilder.registrationConfirmationTokenHandler()
 
     /**
      * Return newly created RegistrationConfirmationToken.

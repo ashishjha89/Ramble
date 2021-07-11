@@ -7,10 +7,11 @@ import io.jsonwebtoken.SignatureAlgorithm
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
+import javax.crypto.SecretKey
 
 internal class RegistrationConfirmationTokenHandler(
-        private val jwtKeyGenerator: JwtKeyGenerator = JwtKeyGenerator(),
-        private val accessTokenDurationGenerator: AccessTokenDurationGenerator = AccessTokenDurationGenerator()
+        private val jwtKey: SecretKey,
+        private val accessTokenDurationGenerator: AccessTokenDurationGenerator
 ) {
 
     companion object {
@@ -23,7 +24,6 @@ internal class RegistrationConfirmationTokenHandler(
             issuedInstant: Instant,
             expiryDurationAmount: Long,
             expiryDurationUnit: ChronoUnit): String {
-        val key = jwtKeyGenerator.key
         val accessTokenDuration = accessTokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit)
         val claimsMap = mapOf(USER_ID to userId)
         return Jwts.builder()
@@ -31,7 +31,7 @@ internal class RegistrationConfirmationTokenHandler(
                 .setSubject(email)
                 .setIssuedAt(accessTokenDuration.issuedDate)
                 .setExpiration(accessTokenDuration.expiryDate)
-                .signWith(key, SignatureAlgorithm.HS512)
+                .signWith(jwtKey, SignatureAlgorithm.HS512)
                 .compact()
     }
 
@@ -51,6 +51,6 @@ internal class RegistrationConfirmationTokenHandler(
             getExpirationDateFromToken(token, parser)?.before(Date.from(now)) ?: false
 
     private fun JwtParser?.validParser() =
-            this ?: Jwts.parserBuilder().setSigningKey(jwtKeyGenerator.key).build()
+            this ?: Jwts.parserBuilder().setSigningKey(jwtKey).build()
 
 }

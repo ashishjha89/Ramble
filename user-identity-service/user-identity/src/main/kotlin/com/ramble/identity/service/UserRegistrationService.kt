@@ -9,7 +9,6 @@ import com.ramble.identity.repo.UserRepo
 import com.ramble.identity.service.validator.RegistrationRequestValidator
 import com.ramble.token.RegistrationConfirmationService
 import com.ramble.token.model.RegistrationConfirmationToken
-import org.springframework.context.annotation.Lazy
 import org.springframework.http.HttpStatus
 import org.springframework.scheduling.annotation.Async
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -21,7 +20,7 @@ class UserRegistrationService(
         private val registrationRequestValidator: RegistrationRequestValidator,
         private val bCryptPasswordEncoder: BCryptPasswordEncoder,
         private val registrationConfirmationService: RegistrationConfirmationService,
-        @Lazy private val emailSenderService: EmailSenderService
+        private val emailSenderService: EmailSenderService
 ) {
 
     fun saveUser(registerUserRequest: RegisterUserRequest): Result<RegisteredUserResponse> {

@@ -4,13 +4,13 @@ import com.ramble.email.registration.ConfirmRegistrationEmailBuilder
 import com.ramble.email.registration.ConfirmRegistrationEmailService
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.JavaMailSenderImpl
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 import org.springframework.vault.authentication.TokenAuthentication
 import org.springframework.vault.client.VaultEndpoint
 import org.springframework.vault.core.VaultTemplate
 import java.util.*
 
-@Service
+@Component
 class EmailComponentBuilder(emailSenderConfig: EmailSenderConfig) {
 
     private val configProperties = emailSenderConfig.emailConfigProperties

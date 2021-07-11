@@ -1,5 +1,6 @@
 package com.ramble.token
 
+import com.ramble.token.config.TokenComponentBuilder
 import com.ramble.token.handler.AccessTokenHandler
 import com.ramble.token.handler.RefreshTokenHandler
 import com.ramble.token.handler.UsernamePasswordAuthTokenTokenGenerator
@@ -15,30 +16,16 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 @Service
-class AuthTokensService {
+class AuthTokensService(tokenComponentBuilder: TokenComponentBuilder) {
 
-    private val accessTokenHandler: AccessTokenHandler
+    private val accessTokenHandler: AccessTokenHandler =
+            tokenComponentBuilder.accessTokenHandler()
 
-    private val refreshTokenHandler: RefreshTokenHandler
+    private val refreshTokenHandler: RefreshTokenHandler =
+            tokenComponentBuilder.refreshTokenHandler()
 
-    private val usernamePasswordAuthTokenTokenGenerator: UsernamePasswordAuthTokenTokenGenerator
-
-    @Suppress("unused")
-    internal constructor(
-            accessTokenHandler: AccessTokenHandler,
-            refreshTokenHandler: RefreshTokenHandler,
-            usernamePasswordAuthTokenTokenGenerator: UsernamePasswordAuthTokenTokenGenerator
-    ) {
-        this.accessTokenHandler = accessTokenHandler
-        this.refreshTokenHandler = refreshTokenHandler
-        this.usernamePasswordAuthTokenTokenGenerator = usernamePasswordAuthTokenTokenGenerator
-    }
-
-    constructor() {
-        this.accessTokenHandler = AccessTokenHandler()
-        this.refreshTokenHandler = RefreshTokenHandler()
-        this.usernamePasswordAuthTokenTokenGenerator = UsernamePasswordAuthTokenTokenGenerator()
-    }
+    private val usernamePasswordAuthTokenTokenGenerator: UsernamePasswordAuthTokenTokenGenerator =
+            tokenComponentBuilder.usernamePasswordAuthTokenTokenGenerator()
 
     fun generateAuthToken(
             authResult: Authentication,

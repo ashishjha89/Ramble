@@ -9,3 +9,6 @@ email-sender:
   connectionTimeout: 5000
   timeout: 3000
   writeTimeout: 5000
+
+jwt:
+  signingKey: OMQBBbeM64asPB0mvUYI4b+G08t4e6npxRXqzq6ZwmC1Ao4ibnBPT1oGH09rQuwWPHFy0hWCsfjm0MsiA2eJeA==

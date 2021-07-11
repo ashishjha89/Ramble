@@ -23,7 +23,7 @@ $maildev
 Maildev web app runs on port 1080 (web ui). The SMTP server runs on port 1025.
 
 #### Vault for email-sender-lib
-Email-sender credential fetching logic from vault can be enabled by application.yml in email-sender-lib.
+Email-sender credential fetching logic from vault can be enabled by application.yml.
 
 If Vault is enabled, then following steps are needed for local setup:
 
@@ -45,3 +45,4 @@ Other steps which are needed for Vault-setup:
 * SQL support for tokens & user-info.
 * Redis support for storing invalid/exposed tokens.
 * Unit & integration tests.
+* Email validation

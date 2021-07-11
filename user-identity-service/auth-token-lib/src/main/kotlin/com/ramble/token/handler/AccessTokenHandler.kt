@@ -13,10 +13,11 @@ import java.security.Principal
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
+import javax.crypto.SecretKey
 
 internal class AccessTokenHandler(
-        private val jwtKeyGenerator: JwtKeyGenerator = JwtKeyGenerator(),
-        private val accessTokenDurationGenerator: AccessTokenDurationGenerator = AccessTokenDurationGenerator()
+        private val jwtKey: SecretKey,
+        private val accessTokenDurationGenerator: AccessTokenDurationGenerator
 ) {
 
     companion object {
@@ -34,7 +35,6 @@ internal class AccessTokenHandler(
             expiryDurationAmount: Long,
             expiryDurationUnit: ChronoUnit
     ): String {
-        val key = jwtKeyGenerator.key
         val accessTokenDuration = accessTokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit)
         val claimsMap = mapOf(
                 ROLES to authResult.authorities.map { it.authority },
@@ -45,12 +45,12 @@ internal class AccessTokenHandler(
                 .setSubject(email)
                 .setIssuedAt(accessTokenDuration.issuedDate)
                 .setExpiration(accessTokenDuration.expiryDate)
-                .signWith(key, SignatureAlgorithm.HS512)
+                .signWith(jwtKey, SignatureAlgorithm.HS512)
                 .compact()
     }
 
     fun getClaims(token: String?, jwtParser: JwtParser? = null, now: Instant = Instant.now()): AccessClaims? {
-        val parser = jwtParser ?: Jwts.parserBuilder().setSigningKey(jwtKeyGenerator.key).build()
+        val parser = jwtParser ?: Jwts.parserBuilder().setSigningKey(jwtKey).build()
         if (token == null || !isValidAccessToken(token, parser, now)) return null
         return AccessClaims(
                 userId = getUserIdFromAccessToken(token, parser) ?: return null,

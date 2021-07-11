@@ -2,10 +2,8 @@ package com.ramble.email
 
 import com.ramble.email.config.EmailComponentBuilder
 import com.ramble.email.registration.ConfirmRegistrationEmailService
-import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 
-@Lazy
 @Service
 class EmailSenderService(private val emailComponentBuilder: EmailComponentBuilder) {
 

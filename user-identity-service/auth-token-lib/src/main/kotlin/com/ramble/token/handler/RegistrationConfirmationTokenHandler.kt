@@ -1,4 +1,4 @@
-package com.ramble.token.handler.helper
+package com.ramble.token.handler
 
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.JwtParser
@@ -8,9 +8,9 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-internal class RegistrationConfirmationTokenHelper(
+internal class RegistrationConfirmationTokenHandler(
         private val jwtKeyGenerator: JwtKeyGenerator = JwtKeyGenerator(),
-        private val accessTokenDurationHelper: AccessTokenDurationHelper = AccessTokenDurationHelper()
+        private val accessTokenDurationGenerator: AccessTokenDurationGenerator = AccessTokenDurationGenerator()
 ) {
 
     companion object {
@@ -24,7 +24,7 @@ internal class RegistrationConfirmationTokenHelper(
             expiryDurationAmount: Long,
             expiryDurationUnit: ChronoUnit): String {
         val key = jwtKeyGenerator.key
-        val accessTokenDuration = accessTokenDurationHelper.getTokenDurationHelper(issuedInstant, expiryDurationAmount, expiryDurationUnit)
+        val accessTokenDuration = accessTokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit)
         val claimsMap = mapOf(USER_ID to userId)
         return Jwts.builder()
                 .setClaims(claimsMap)

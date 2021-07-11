@@ -1,25 +1,22 @@
 package com.ramble.email
 
-import com.ramble.email.config.Components.confirmRegistrationEmailService
+import com.ramble.email.config.EmailComponentBuilder
 import com.ramble.email.registration.ConfirmRegistrationEmailService
+import org.springframework.context.annotation.Lazy
+import org.springframework.stereotype.Service
 
-class EmailSender {
+@Lazy
+@Service
+class EmailSenderService(private val emailComponentBuilder: EmailComponentBuilder) {
 
-    private var confirmRegistrationEmailService: ConfirmRegistrationEmailService? = null
-
-    constructor() {
-        this.confirmRegistrationEmailService = confirmRegistrationEmailService()
-    }
-
-    @Suppress("unused")
-    internal constructor(confirmRegistrationEmailService: ConfirmRegistrationEmailService) {
-        this.confirmRegistrationEmailService = confirmRegistrationEmailService
-    }
+    private var confirmRegistrationEmailService: ConfirmRegistrationEmailService? =
+            emailComponentBuilder.confirmRegistrationEmailService()
 
     @Throws(CredentialNotFoundException::class, EmailSendingFailedException::class)
     @Synchronized
     fun sendConfirmRegistrationEmail(emailId: String, fullName: String, token: String, signUpUrl: String) {
-        val confirmEmailService = confirmRegistrationEmailService ?: confirmRegistrationEmailService()
+        val confirmEmailService = confirmRegistrationEmailService
+                ?: emailComponentBuilder.confirmRegistrationEmailService()
         if (confirmEmailService != null) {
             this.confirmRegistrationEmailService = confirmEmailService
             confirmEmailService.sendEmail(

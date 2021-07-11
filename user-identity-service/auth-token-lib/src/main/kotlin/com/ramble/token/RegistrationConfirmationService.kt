@@ -1,28 +1,30 @@
-package com.ramble.token.handler
+package com.ramble.token
 
-import com.ramble.token.handler.helper.RegistrationConfirmationTokenHelper
+import com.ramble.token.handler.RegistrationConfirmationTokenHandler
 import com.ramble.token.model.RegistrationConfirmationToken
 import com.ramble.token.repository.RegistrationConfirmationRepo
+import org.springframework.stereotype.Service
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-class RegistrationConfirmationHandler {
+@Service
+class RegistrationConfirmationService {
 
     private val tokenConfirmationRepo: RegistrationConfirmationRepo
 
-    private val registrationConfirmationTokenHelper: RegistrationConfirmationTokenHelper
+    private val registrationConfirmationTokenHandler: RegistrationConfirmationTokenHandler
 
     internal constructor(
             registrationTokenConfirmationRepo: RegistrationConfirmationRepo,
-            registrationConfirmationTokenHelper: RegistrationConfirmationTokenHelper
+            registrationConfirmationTokenHandler: RegistrationConfirmationTokenHandler
     ) {
         this.tokenConfirmationRepo = registrationTokenConfirmationRepo
-        this.registrationConfirmationTokenHelper = registrationConfirmationTokenHelper
+        this.registrationConfirmationTokenHandler = registrationConfirmationTokenHandler
     }
 
     constructor() {
         this.tokenConfirmationRepo = RegistrationConfirmationRepo()
-        this.registrationConfirmationTokenHelper = RegistrationConfirmationTokenHelper()
+        this.registrationConfirmationTokenHandler = RegistrationConfirmationTokenHandler()
     }
 
     /**
@@ -49,9 +51,9 @@ class RegistrationConfirmationHandler {
             registrationConfirmationToken: String,
             now: Instant = Instant.now()
     ): RegistrationConfirmationToken? {
-        val userId = registrationConfirmationTokenHelper.getUserIdFromToken(registrationConfirmationToken)
+        val userId = registrationConfirmationTokenHandler.getUserIdFromToken(registrationConfirmationToken)
                 ?: return null
-        val isValidToken = registrationConfirmationTokenHelper.isValidToken(registrationConfirmationToken, now)
+        val isValidToken = registrationConfirmationTokenHandler.isValidToken(registrationConfirmationToken, now)
         if (!isValidToken) {
             // Delete old tokens for this userId. This could be in cases when user registered but didn't activate.
             tokenConfirmationRepo.deleteRegistrationConfirmationToken(userId)
@@ -75,7 +77,7 @@ class RegistrationConfirmationHandler {
             expirationDurationAmount: Long,
             expiryDurationUnit: ChronoUnit
     ): RegistrationConfirmationToken {
-        val token = registrationConfirmationTokenHelper.generateToken(userId, email, now, expirationDurationAmount, expiryDurationUnit)
+        val token = registrationConfirmationTokenHandler.generateToken(userId, email, now, expirationDurationAmount, expiryDurationUnit)
         return RegistrationConfirmationToken(userId = userId, email = email, token = token)
     }
 

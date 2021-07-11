@@ -3,7 +3,7 @@ package com.ramble.identity.service
 import com.ramble.identity.common.*
 import com.ramble.identity.models.*
 import com.ramble.identity.repo.UserRepo
-import com.ramble.token.handler.AuthTokensHandler
+import com.ramble.token.AuthTokensService
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
@@ -15,12 +15,12 @@ import org.springframework.security.core.userdetails.User as SpringUser
 @Service
 class UserInfoService(
         private val userRepo: UserRepo,
-        private val authTokensHandler: AuthTokensHandler
+        private val authTokensService: AuthTokensService
 ) : UserDetailsService {
 
     fun getUserInfoResult(principal: Principal): Result<UserInfo> {
         val badRequestError = Result.Error<UserInfo>(httpStatus = HttpStatus.BAD_REQUEST, errorBody = userInfoNotFound)
-        val email = authTokensHandler.getClaims(principal)?.email.takeIf { it is String } ?: return badRequestError
+        val email = authTokensService.getClaims(principal)?.email.takeIf { it is String } ?: return badRequestError
         return try {
             Result.Success(data = getUserInfo(email))
         } catch (e: Exception) {

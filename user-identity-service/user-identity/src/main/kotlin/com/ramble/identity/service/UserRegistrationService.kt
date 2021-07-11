@@ -1,14 +1,15 @@
 package com.ramble.identity.service
 
 import com.ramble.email.CredentialNotFoundException
-import com.ramble.email.EmailSender
+import com.ramble.email.EmailSenderService
 import com.ramble.email.EmailSendingFailedException
 import com.ramble.identity.common.*
 import com.ramble.identity.models.*
 import com.ramble.identity.repo.UserRepo
 import com.ramble.identity.service.validator.RegistrationRequestValidator
-import com.ramble.token.handler.RegistrationConfirmationHandler
+import com.ramble.token.RegistrationConfirmationService
 import com.ramble.token.model.RegistrationConfirmationToken
+import org.springframework.context.annotation.Lazy
 import org.springframework.http.HttpStatus
 import org.springframework.scheduling.annotation.Async
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -19,8 +20,8 @@ class UserRegistrationService(
         private val userRepo: UserRepo,
         private val registrationRequestValidator: RegistrationRequestValidator,
         private val bCryptPasswordEncoder: BCryptPasswordEncoder,
-        private val registrationConfirmationHandler: RegistrationConfirmationHandler,
-        private val emailSender: EmailSender
+        private val registrationConfirmationService: RegistrationConfirmationService,
+        @Lazy private val emailSenderService: EmailSenderService
 ) {
 
     fun saveUser(registerUserRequest: RegisterUserRequest): Result<RegisteredUserResponse> {
@@ -30,7 +31,7 @@ class UserRegistrationService(
         return try {
             val userToSave = registerUserRequest.copy(password = bCryptPasswordEncoder.encode(registerUserRequest.password))
             val newlyRegisteredUser = userRepo.saveNewUser(userToSave)
-            val confirmRegistrationToken = registrationConfirmationHandler.addRegistrationConfirmationToken(
+            val confirmRegistrationToken = registrationConfirmationService.addRegistrationConfirmationToken(
                     userId = newlyRegisteredUser.id,
                     email = newlyRegisteredUser.email
             )
@@ -54,7 +55,7 @@ class UserRegistrationService(
     fun confirmToken(token: String?): Result<RegisteredUserResponse> {
         val badRequestError = Result.Error<RegisteredUserResponse>(HttpStatus.BAD_REQUEST, unauthorizedAccess)
         token ?: return badRequestError
-        val confirmationToken = registrationConfirmationHandler.processRegistrationConfirmationToken(token)
+        val confirmationToken = registrationConfirmationService.processRegistrationConfirmationToken(token)
                 ?: return badRequestError
         return try {
             val activated = userRepo.activateRegisteredUser(email = confirmationToken.email)
@@ -73,7 +74,7 @@ class UserRegistrationService(
     @Throws(CredentialNotFoundException::class, EmailSendingFailedException::class)
     @Async
     fun sendConfirmRegistrationEmail(confirmRegistrationToken: RegistrationConfirmationToken, newlyRegisteredUser: ApplicationUser) {
-        emailSender.sendConfirmRegistrationEmail(
+        emailSenderService.sendConfirmRegistrationEmail(
                 emailId = confirmRegistrationToken.email,
                 fullName = newlyRegisteredUser.fullName,
                 token = confirmRegistrationToken.token,

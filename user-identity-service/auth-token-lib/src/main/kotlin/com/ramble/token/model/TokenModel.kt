@@ -14,4 +14,6 @@ data class AccessClaims(
         val authorities: List<GrantedAuthority>
 )
 
+data class RegistrationConfirmationToken(val userId: String, val email: String, val token: String)
+
 internal data class TokenDuration(val issuedDate: Date, val expiryDate: Date)

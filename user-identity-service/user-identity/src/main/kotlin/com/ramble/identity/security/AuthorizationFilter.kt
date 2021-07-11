@@ -1,7 +1,7 @@
 package com.ramble.identity.security
 
 import com.ramble.identity.common.AUTHORIZATION_HEADER
-import com.ramble.token.handler.AuthTokensHandler
+import com.ramble.token.AuthTokensService
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletResponse
 
 class AuthorizationFilter(
         authManager: AuthenticationManager,
-        private val authTokensHandler: AuthTokensHandler
+        private val authTokensService: AuthTokensService
 ) : BasicAuthenticationFilter(authManager) {
 
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, chain: FilterChain) {
@@ -23,8 +23,8 @@ class AuthorizationFilter(
 
     private fun authenticate(token: String): Authentication? {
         try {
-            val tokenClaims = authTokensHandler.getClaims(token) ?: return null
-            return authTokensHandler.getAuthentication(tokenClaims.claims, tokenClaims.authorities)
+            val tokenClaims = authTokensService.getClaims(token) ?: return null
+            return authTokensService.getAuthentication(tokenClaims.claims, tokenClaims.authorities)
         } catch (e: Exception) {
             return null
         }

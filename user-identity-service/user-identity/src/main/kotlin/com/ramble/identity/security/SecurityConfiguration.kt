@@ -6,7 +6,7 @@ import com.ramble.identity.common.USER_INFO_API_BASE_PATH
 import com.ramble.identity.common.USER_LOGIN_PATH
 import com.ramble.identity.models.Roles
 import com.ramble.identity.service.UserInfoService
-import com.ramble.token.handler.AuthTokensHandler
+import com.ramble.token.AuthTokensService
 import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -20,7 +20,7 @@ class SecurityConfiguration(
         private val userInfoService: UserInfoService,
         private val bCryptPasswordEncoder: BCryptPasswordEncoder,
         private val authenticationEntryPointInterceptor: AuthenticationEntryPointInterceptor,
-        private val authTokensHandler: AuthTokensHandler
+        private val authTokensService: AuthTokensService
 ) : WebSecurityConfigurerAdapter() {
 
     @Throws(Exception::class)
@@ -40,7 +40,7 @@ class SecurityConfiguration(
                 .addFilter(
                         AuthenticationFilter(
                                 manager = authenticationManager(),
-                                authTokensHandler = authTokensHandler,
+                                authTokensService = authTokensService,
                                 userInfoService = userInfoService,
                                 loginPath = "$USER_INFO_API_BASE_PATH/$USER_LOGIN_PATH"
                         )
@@ -48,7 +48,7 @@ class SecurityConfiguration(
                 .addFilter(
                         AuthorizationFilter(
                                 authManager = authenticationManager(),
-                                authTokensHandler = authTokensHandler
+                                authTokensService = authTokensService
                         )
                 )
     }

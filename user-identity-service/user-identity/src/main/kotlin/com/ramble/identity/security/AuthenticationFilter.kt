@@ -8,7 +8,7 @@ import com.ramble.identity.common.userNotActivatedError
 import com.ramble.identity.common.userSuspendedError
 import com.ramble.identity.models.*
 import com.ramble.identity.service.UserInfoService
-import com.ramble.token.handler.AuthTokensHandler
+import com.ramble.token.AuthTokensService
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
@@ -19,7 +19,7 @@ import javax.servlet.http.HttpServletResponse
 
 class AuthenticationFilter(
         private val manager: AuthenticationManager,
-        private val authTokensHandler: AuthTokensHandler,
+        private val authTokensService: AuthTokensService,
         private val userInfoService: UserInfoService,
         loginPath: String
 ) : UsernamePasswordAuthenticationFilter() {
@@ -47,7 +47,7 @@ class AuthenticationFilter(
         try {
             val email = authResult.name
             val userId = userInfoService.getUserInfo(email).id
-            val authToken = authTokensHandler.generateAuthToken(authResult, userId, email)
+            val authToken = authTokensService.generateAuthToken(authResult, userId, email)
             val loginResponse = LoginResponse(userId, email, authToken.accessToken, authToken.refreshToken)
             response.apply {
                 status = HttpServletResponse.SC_OK

@@ -1,2 +1,11 @@
 email-sender:
   enableVault: false
+  host: localhost
+  port: 1025
+  transportProtocol: smtp
+  smtpAuth: true
+  startTlsEnabled: true
+  startTlsRequired: true
+  connectionTimeout: 5000
+  timeout: 3000
+  writeTimeout: 5000

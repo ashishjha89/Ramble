@@ -1,6 +1,6 @@
-package com.ramble.token.handler.helper
+package com.ramble.token.handler
 
-internal class RefreshTokenHelper(
+internal class RefreshTokenHandler(
         private val uUIDGenerator: UUIDGenerator = UUIDGenerator()
 ) {
 

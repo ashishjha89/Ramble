@@ -1,4 +1,4 @@
-package com.ramble.token.handler.helper
+package com.ramble.token.handler
 
 import com.ramble.token.model.AccessClaims
 import io.jsonwebtoken.Claims
@@ -14,9 +14,9 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-internal class AccessTokenHelper(
+internal class AccessTokenHandler(
         private val jwtKeyGenerator: JwtKeyGenerator = JwtKeyGenerator(),
-        private val accessTokenDurationHelper: AccessTokenDurationHelper = AccessTokenDurationHelper()
+        private val accessTokenDurationGenerator: AccessTokenDurationGenerator = AccessTokenDurationGenerator()
 ) {
 
     companion object {
@@ -35,7 +35,7 @@ internal class AccessTokenHelper(
             expiryDurationUnit: ChronoUnit
     ): String {
         val key = jwtKeyGenerator.key
-        val accessTokenDuration = accessTokenDurationHelper.getTokenDurationHelper(issuedInstant, expiryDurationAmount, expiryDurationUnit)
+        val accessTokenDuration = accessTokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit)
         val claimsMap = mapOf(
                 ROLES to authResult.authorities.map { it.authority },
                 USER_ID to userId

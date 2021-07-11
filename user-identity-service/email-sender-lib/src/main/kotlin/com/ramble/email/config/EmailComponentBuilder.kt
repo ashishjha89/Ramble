@@ -18,7 +18,7 @@ class EmailComponentBuilder(emailSenderConfig: EmailSenderConfig) {
     internal fun confirmRegistrationEmailService(): ConfirmRegistrationEmailService? {
         val emailCredential = emailCredential() ?: return null
         return ConfirmRegistrationEmailService(
-                senderEmail = emailCredential.username,
+                senderEmailId = emailCredential.username,
                 mailSender = mailSender(emailCredential),
                 confirmRegistrationEmailBuilder = ConfirmRegistrationEmailBuilder()
         )

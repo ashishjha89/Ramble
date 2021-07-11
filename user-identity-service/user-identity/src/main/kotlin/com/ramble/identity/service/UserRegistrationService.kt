@@ -77,7 +77,8 @@ class UserRegistrationService(
                 emailId = confirmRegistrationToken.email,
                 fullName = newlyRegisteredUser.fullName,
                 token = confirmRegistrationToken.token,
-                signUpUrl = SIGN_UP_CONFIRMATION_URL
+                signUpUrl = SIGN_UP_CONFIRMATION_URL,
+                subject = REGISTER_EMAIL_SUBJECT
         )
     }
 

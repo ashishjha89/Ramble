@@ -1,9 +1,14 @@
 package com.ramble.email.registration
 
+import org.springframework.mail.javamail.MimeMessageHelper
+import javax.mail.internet.MimeMessage
+
 internal class ConfirmRegistrationEmailBuilder {
 
-    fun getEmailLink(token: String, signUpUrl: String): String =
-            "http://localhost:8080$signUpUrl?token=$token"
+    fun mimeMessageHelper(mimeMessage: MimeMessage) = MimeMessageHelper(mimeMessage, "utf-8")
+
+    fun getEmailLink(token: String, signUpUrlPath: String): String =
+            "http://localhost:8080$signUpUrlPath?token=$token"
 
     fun buildEmail(name: String, link: String): String =
             "<div style=\"font-family:Helvetica,Arial,sans-serif;font-size:16px;margin:0;color:#0b0c0c\">\n" +

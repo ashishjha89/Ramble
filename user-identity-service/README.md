@@ -13,6 +13,11 @@ mvn --settings ramble_maven_settings.xml package
 mvn --settings ramble_maven_settings.xml spring-boot:run
 ```
 
+#### How to run tests?
+```
+mvn --settings ramble_maven_settings.xml test
+```
+
 #### Local email client used for testing
 Maildev: https://www.npmjs.com/package/maildev
 

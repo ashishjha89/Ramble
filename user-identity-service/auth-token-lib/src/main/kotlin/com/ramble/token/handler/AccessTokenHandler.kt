@@ -1,9 +1,11 @@
 package com.ramble.token.handler
 
+import com.ramble.token.handler.helper.AccessTokenClaimsMapGenerator
+import com.ramble.token.handler.helper.TokenDurationGenerator
 import com.ramble.token.model.AccessClaims
 import io.jsonwebtoken.Claims
+import io.jsonwebtoken.JwtBuilder
 import io.jsonwebtoken.JwtParser
-import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
@@ -17,7 +19,8 @@ import javax.crypto.SecretKey
 
 internal class AccessTokenHandler(
         private val jwtKey: SecretKey,
-        private val accessTokenDurationGenerator: AccessTokenDurationGenerator
+        private val tokenDurationGenerator: TokenDurationGenerator,
+        private val accessTokenClaimsMapGenerator: AccessTokenClaimsMapGenerator
 ) {
 
     companion object {
@@ -33,24 +36,21 @@ internal class AccessTokenHandler(
             email: String,
             issuedInstant: Instant,
             expiryDurationAmount: Long,
-            expiryDurationUnit: ChronoUnit
+            expiryDurationUnit: ChronoUnit,
+            jwtBuilder: JwtBuilder
     ): String {
-        val accessTokenDuration = accessTokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit)
-        val claimsMap = mapOf(
-                ROLES to authResult.authorities.map { it.authority },
-                USER_ID to userId
-        )
-        return Jwts.builder()
+        val tokenDuration = tokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit)
+        val claimsMap = accessTokenClaimsMapGenerator.getAccessTokenClaimsMap(userId, authResult.authorities)
+        return jwtBuilder
                 .setClaims(claimsMap)
                 .setSubject(email)
-                .setIssuedAt(accessTokenDuration.issuedDate)
-                .setExpiration(accessTokenDuration.expiryDate)
+                .setIssuedAt(tokenDuration.issuedDate)
+                .setExpiration(tokenDuration.expiryDate)
                 .signWith(jwtKey, SignatureAlgorithm.HS512)
                 .compact()
     }
 
-    fun getClaims(token: String?, jwtParser: JwtParser? = null, now: Instant = Instant.now()): AccessClaims? {
-        val parser = jwtParser ?: Jwts.parserBuilder().setSigningKey(jwtKey).build()
+    fun getTokenClaims(token: String?, parser: JwtParser, now: Instant): AccessClaims? {
         if (token == null || !isValidAccessToken(token, parser, now)) return null
         return AccessClaims(
                 userId = getUserIdFromAccessToken(token, parser) ?: return null,
@@ -60,8 +60,8 @@ internal class AccessTokenHandler(
         )
     }
 
-    fun getClaims(principal: Principal): AccessClaims? {
-        val claims = getPrincipalClaims(principal) ?: return null
+    fun getPrincipalClaims(principal: Principal): AccessClaims? {
+        val claims = principalClaims(principal) ?: return null
         val authorities = getAuthorities(principal) ?: return null
         val userId = getUserId(claims) ?: return null
         val email = claims.subject ?: return null
@@ -81,10 +81,10 @@ internal class AccessTokenHandler(
 
     @Suppress("UNCHECKED_CAST")
     private fun getRolesFromAccessToken(token: String, parser: JwtParser): List<GrantedAuthority>? =
-            (getClaimsFromAccessToken(token, parser)?.get(ROLES) as List<String>).map { SimpleGrantedAuthority(it) }
+            (getClaimsFromAccessToken(token, parser)?.get(ROLES) as? List<String>)?.map { SimpleGrantedAuthority(it) }
 
     private fun getUserIdFromAccessToken(token: String, parser: JwtParser): String? =
-            getClaimsFromAccessToken(token, parser)?.get(USER_ID) as String
+            getClaimsFromAccessToken(token, parser)?.get(USER_ID) as? String
 
     private fun getEmailFromAccessToken(token: String, parser: JwtParser): String? =
             getClaimsFromAccessToken(token, parser)?.subject
@@ -95,7 +95,7 @@ internal class AccessTokenHandler(
     private fun isTokenExpired(token: String, parser: JwtParser, now: Instant) =
             getExpirationDateFromToken(token, parser)?.before(Date.from(now)) ?: false
 
-    private fun getPrincipalClaims(principal: Principal): Claims? {
+    private fun principalClaims(principal: Principal): Claims? {
         if (principal is UsernamePasswordAuthenticationToken) {
             val claims = principal.principal
             if (claims is Claims) {
@@ -115,6 +115,5 @@ internal class AccessTokenHandler(
     private fun getUserId(claims: Claims): String? {
         return claims[USER_ID].takeIf { it is String }?.toString()
     }
-
 
 }

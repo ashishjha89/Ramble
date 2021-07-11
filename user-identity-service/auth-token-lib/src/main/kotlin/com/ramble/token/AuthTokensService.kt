@@ -3,11 +3,10 @@ package com.ramble.token
 import com.ramble.token.config.TokenComponentBuilder
 import com.ramble.token.handler.AccessTokenHandler
 import com.ramble.token.handler.RefreshTokenHandler
-import com.ramble.token.handler.UsernamePasswordAuthTokenTokenGenerator
+import com.ramble.token.handler.helper.UsernamePasswordAuthTokenTokenGenerator
 import com.ramble.token.model.AccessClaims
 import com.ramble.token.model.AuthInfo
 import io.jsonwebtoken.Claims
-import io.jsonwebtoken.JwtParser
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.stereotype.Service
@@ -17,6 +16,10 @@ import java.time.temporal.ChronoUnit
 
 @Service
 class AuthTokensService(tokenComponentBuilder: TokenComponentBuilder) {
+
+    private val jwtParser = tokenComponentBuilder.jwtParser()
+
+    private val jwtBuilder = tokenComponentBuilder.jwtBuilder()
 
     private val accessTokenHandler: AccessTokenHandler =
             tokenComponentBuilder.accessTokenHandler()
@@ -44,16 +47,17 @@ class AuthTokensService(tokenComponentBuilder: TokenComponentBuilder) {
                             email = email,
                             issuedInstant = issuedInstant,
                             expiryDurationAmount = expiryDurationAmount,
-                            expiryDurationUnit = expiryDurationUnit
+                            expiryDurationUnit = expiryDurationUnit,
+                            jwtBuilder = jwtBuilder
                     ),
                     refreshToken = refreshTokenHandler.generateRefreshToken()
             )
 
-    fun getClaims(token: String?, jwtParser: JwtParser? = null): AccessClaims? =
-            accessTokenHandler.getClaims(token, jwtParser)
+    fun getClaims(token: String?, now: Instant = Instant.now()): AccessClaims? =
+            accessTokenHandler.getTokenClaims(token, jwtParser, now)
 
     fun getClaims(principal: Principal): AccessClaims? =
-            accessTokenHandler.getClaims(principal)
+            accessTokenHandler.getPrincipalClaims(principal)
 
     fun getAuthentication(claims: Claims, authorities: List<GrantedAuthority>): Authentication =
             usernamePasswordAuthTokenTokenGenerator.getUsernamePasswordAuthenticationToken(claims, authorities)

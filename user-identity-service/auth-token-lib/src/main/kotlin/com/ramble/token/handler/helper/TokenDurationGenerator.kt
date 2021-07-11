@@ -1,11 +1,11 @@
-package com.ramble.token.handler
+package com.ramble.token.handler.helper
 
 import com.ramble.token.model.TokenDuration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-internal class AccessTokenDurationGenerator {
+internal class TokenDurationGenerator {
 
     fun getTokenDuration(
             issuedInstant: Instant,

@@ -1,4 +1,4 @@
-package com.ramble.token.handler
+package com.ramble.token.handler.helper
 
 import io.jsonwebtoken.Claims
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken

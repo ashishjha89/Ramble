@@ -1,8 +1,9 @@
 package com.ramble.token.handler
 
+import com.ramble.token.handler.helper.TokenDurationGenerator
 import io.jsonwebtoken.Claims
+import io.jsonwebtoken.JwtBuilder
 import io.jsonwebtoken.JwtParser
-import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -11,7 +12,7 @@ import javax.crypto.SecretKey
 
 internal class RegistrationConfirmationTokenHandler(
         private val jwtKey: SecretKey,
-        private val accessTokenDurationGenerator: AccessTokenDurationGenerator
+        private val tokenDurationGenerator: TokenDurationGenerator
 ) {
 
     companion object {
@@ -23,23 +24,24 @@ internal class RegistrationConfirmationTokenHandler(
             email: String,
             issuedInstant: Instant,
             expiryDurationAmount: Long,
-            expiryDurationUnit: ChronoUnit): String {
-        val accessTokenDuration = accessTokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit)
+            expiryDurationUnit: ChronoUnit,
+            jwtBuilder: JwtBuilder): String {
+        val tokenDuration = tokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit)
         val claimsMap = mapOf(USER_ID to userId)
-        return Jwts.builder()
+        return jwtBuilder
                 .setClaims(claimsMap)
                 .setSubject(email)
-                .setIssuedAt(accessTokenDuration.issuedDate)
-                .setExpiration(accessTokenDuration.expiryDate)
+                .setIssuedAt(tokenDuration.issuedDate)
+                .setExpiration(tokenDuration.expiryDate)
                 .signWith(jwtKey, SignatureAlgorithm.HS512)
                 .compact()
     }
 
-    fun isValidToken(token: String, now: Instant, parser: JwtParser? = null): Boolean =
-            !isTokenExpired(token, parser.validParser(), now) && !getUserIdFromToken(token, parser).isNullOrBlank()
+    fun isValidToken(token: String, now: Instant, parser: JwtParser): Boolean =
+            !isTokenExpired(token, parser, now) && !getUserIdFromToken(token, parser).isNullOrBlank()
 
-    fun getUserIdFromToken(token: String, parser: JwtParser? = null): String? =
-            getClaimsFromAccessToken(token, parser.validParser())?.get(USER_ID) as? String
+    fun getUserIdFromToken(token: String, parser: JwtParser): String? =
+            getClaimsFromAccessToken(token, parser)?.get(USER_ID) as? String
 
     private fun getClaimsFromAccessToken(token: String, parser: JwtParser): Claims? =
             parser.parseClaimsJws(token)?.body
@@ -49,8 +51,5 @@ internal class RegistrationConfirmationTokenHandler(
 
     private fun isTokenExpired(token: String, parser: JwtParser, now: Instant) =
             getExpirationDateFromToken(token, parser)?.before(Date.from(now)) ?: false
-
-    private fun JwtParser?.validParser() =
-            this ?: Jwts.parserBuilder().setSigningKey(jwtKey).build()
 
 }

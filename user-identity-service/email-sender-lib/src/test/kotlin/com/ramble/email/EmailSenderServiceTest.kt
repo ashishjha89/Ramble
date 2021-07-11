@@ -26,6 +26,7 @@ class EmailSenderServiceTest {
     fun `sendConfirmRegistrationEmail should throw CredentialNotFoundException if ConfirmRegistrationEmailService creation failed`() {
         // Stub
         given(emailComponentBuilder.confirmRegistrationEmailService()).willReturn(null)
+
         // Call method
         EmailSenderService(emailComponentBuilder).sendConfirmRegistrationEmail(emailId, fullName, token, signUpUrlPath, subject)
     }
@@ -34,8 +35,10 @@ class EmailSenderServiceTest {
     fun `sendConfirmRegistrationEmail should call confirmRegistrationEmailService to send email`() {
         // Stub
         given(emailComponentBuilder.confirmRegistrationEmailService()).willReturn(confirmRegistrationEmailService)
+
         // Call method
         EmailSenderService(emailComponentBuilder).sendConfirmRegistrationEmail(emailId, fullName, token, signUpUrlPath, subject)
+
         // Verify
         verify(confirmRegistrationEmailService).sendEmail(emailId, fullName, token, signUpUrlPath, subject)
     }
@@ -45,6 +48,7 @@ class EmailSenderServiceTest {
         // Stub
         given(emailComponentBuilder.confirmRegistrationEmailService()).willReturn(confirmRegistrationEmailService)
         given(confirmRegistrationEmailService.sendEmail(emailId, fullName, token, signUpUrlPath, subject)).willThrow(EmailSendingFailedException())
+
         // Call method
         EmailSenderService(emailComponentBuilder).sendConfirmRegistrationEmail(emailId, fullName, token, signUpUrlPath, subject)
     }

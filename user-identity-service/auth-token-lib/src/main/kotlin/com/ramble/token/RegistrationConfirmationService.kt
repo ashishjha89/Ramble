@@ -11,9 +11,12 @@ import java.time.temporal.ChronoUnit
 @Service
 class RegistrationConfirmationService(tokenComponentBuilder: TokenComponentBuilder) {
 
-    private val tokenConfirmationRepo: RegistrationConfirmationRepo =
-            tokenComponentBuilder.registrationConfirmationRepo()
+    private val jwtParser = tokenComponentBuilder.jwtParser()
 
+    private val jwtBuilder = tokenComponentBuilder.jwtBuilder()
+
+    private val registrationConfirmationRepo: RegistrationConfirmationRepo =
+            tokenComponentBuilder.registrationConfirmationRepo()
 
     private val registrationConfirmationTokenHandler: RegistrationConfirmationTokenHandler =
             tokenComponentBuilder.registrationConfirmationTokenHandler()
@@ -28,10 +31,10 @@ class RegistrationConfirmationService(tokenComponentBuilder: TokenComponentBuild
                                          expiryDurationUnit: ChronoUnit = ChronoUnit.MINUTES
     ): RegistrationConfirmationToken {
         // Delete old tokens for this userId. This could be in cases when user registered but didn't activate.
-        tokenConfirmationRepo.deleteRegistrationConfirmationToken(userId)
+        registrationConfirmationRepo.deleteRegistrationConfirmationToken(userId)
         val token = generateRegistrationConfirmationToken(userId, email, now, expirationDurationAmount, expiryDurationUnit)
         // Add new registrationConfirmationToken.
-        tokenConfirmationRepo.addRegistrationConfirmationToken(registrationConfirmationToken = token)
+        registrationConfirmationRepo.addRegistrationConfirmationToken(registrationConfirmationToken = token)
         return token
     }
 
@@ -42,23 +45,16 @@ class RegistrationConfirmationService(tokenComponentBuilder: TokenComponentBuild
             registrationConfirmationToken: String,
             now: Instant = Instant.now()
     ): RegistrationConfirmationToken? {
-        val userId = registrationConfirmationTokenHandler.getUserIdFromToken(registrationConfirmationToken)
+        val userId = registrationConfirmationTokenHandler.getUserIdFromToken(registrationConfirmationToken, jwtParser)
                 ?: return null
-        val isValidToken = registrationConfirmationTokenHandler.isValidToken(registrationConfirmationToken, now)
+        val isValidToken = registrationConfirmationTokenHandler.isValidToken(registrationConfirmationToken, now, jwtParser)
         if (!isValidToken) {
             // Delete old tokens for this userId. This could be in cases when user registered but didn't activate.
-            tokenConfirmationRepo.deleteRegistrationConfirmationToken(userId)
+            registrationConfirmationRepo.deleteRegistrationConfirmationToken(userId)
             return null
         }
         // Get RegisteredUser for the passed registrationConfirmationToken.
-        return tokenConfirmationRepo.getRegistrationConfirmationToken(userId) ?: return null
-    }
-
-    /**
-     * Delete all tokens for the user.
-     */
-    fun deleteRegistrationConfirmationToken(userId: String) {
-        tokenConfirmationRepo.deleteRegistrationConfirmationToken(userId)
+        return registrationConfirmationRepo.getRegistrationConfirmationToken(userId)
     }
 
     private fun generateRegistrationConfirmationToken(
@@ -68,7 +64,8 @@ class RegistrationConfirmationService(tokenComponentBuilder: TokenComponentBuild
             expirationDurationAmount: Long,
             expiryDurationUnit: ChronoUnit
     ): RegistrationConfirmationToken {
-        val token = registrationConfirmationTokenHandler.generateToken(userId, email, now, expirationDurationAmount, expiryDurationUnit)
+        val token = registrationConfirmationTokenHandler
+                .generateToken(userId, email, now, expirationDurationAmount, expiryDurationUnit, jwtBuilder)
         return RegistrationConfirmationToken(userId = userId, email = email, token = token)
     }
 

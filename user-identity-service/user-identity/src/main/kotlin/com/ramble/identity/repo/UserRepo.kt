@@ -1,20 +1,20 @@
 package com.ramble.identity.repo
 
 import com.ramble.identity.models.*
+import com.ramble.identity.utils.TimeAndIdGenerator
 import org.springframework.stereotype.Repository
-import java.time.Instant
 
 typealias Email = String
 
 @Repository
-class UserRepo {
+class UserRepo(private val timeAndIdGenerator: TimeAndIdGenerator) {
 
     private val userMap = mutableMapOf<Email, ApplicationUser>()
 
     @Throws(UserAlreadyActivatedException::class, UserSuspendedException::class)
-    fun saveNewUser(
-            registerUserRequest: RegisterUserRequest, currentTimeInSeconds: Long, idGenerator: () -> Long
-    ): ApplicationUser {
+    fun saveNewUser(registerUserRequest: RegisterUserRequest): ApplicationUser {
+        val currentTimeInSeconds = timeAndIdGenerator.getCurrentTimeInSeconds()
+        val id = timeAndIdGenerator.getTimeBasedId()
         when (getApplicationUser(email = registerUserRequest.email)?.accountStatus) {
             AccountStatus.Activated -> throw UserAlreadyActivatedException()
             AccountStatus.Suspended -> throw UserSuspendedException()
@@ -24,7 +24,7 @@ class UserRepo {
                 roles = listOf(Roles.User),
                 accountStatus = AccountStatus.Registered,
                 registrationDateInSeconds = currentTimeInSeconds,
-                idGenerator = idGenerator
+                id = id
         )
         userMap[registerUserRequest.email] = user
         return user
@@ -34,7 +34,8 @@ class UserRepo {
      * Return true if newly-registered user accountStatus is changed to activated.
      */
     @Throws(UserNotFoundException::class, UserAlreadyActivatedException::class, UserSuspendedException::class)
-    fun activateRegisteredUser(email: Email, currentTimeInSeconds: Long = Instant.now().toEpochMilli() / 1000): Boolean {
+    fun activateRegisteredUser(email: Email): Boolean {
+        val currentTimeInSeconds = timeAndIdGenerator.getCurrentTimeInSeconds()
         val user = getApplicationUser(email) ?: throw UserNotFoundException()
         when (user.accountStatus) {
             AccountStatus.Activated -> throw UserAlreadyActivatedException()

@@ -53,10 +53,10 @@ fun RegisterUserRequest.toApplicationUser(
         roles: List<Roles>,
         accountStatus: AccountStatus,
         registrationDateInSeconds: Long,
-        idGenerator: () -> Long
+        id: Long
 ): ApplicationUser =
         ApplicationUser(
-                id = idGenerator().toString(),
+                id = id.toString(),
                 email = email,
                 password = password,
                 roles = roles,

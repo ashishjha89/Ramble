@@ -26,23 +26,34 @@ data class ApplicationUser(
             roles.flatMap { it.grantedAuthorities }.toSet()
 
     val fullName: String =
-            firstName?.let { "$it " } ?: "" + lastName ?: ""
+            when {
+                firstName.isNullOrBlank() -> lastName ?: ""
+                lastName.isNullOrBlank() -> firstName
+                else -> "$firstName $lastName"
+            }
 
     val fullAddress: String = calculateAddress()
 
     private fun calculateAddress(): String {
-        val streetNameStr = streetName?.let { "$it " } ?: ""
-        val postCodeStr = postCode?.let { "$it " } ?: ""
-
-        val firstLine = streetNameStr + houseNumber
-        val secondLine = postCodeStr + city
-        val thirdLine = country?.let { ", $it" } ?: ""
+        val firstLine = when {
+            houseNumber.isNullOrBlank() -> streetName ?: ""
+            streetName.isNullOrBlank() -> houseNumber
+            else -> "$streetName $houseNumber"
+        }
+        val secondLine = when {
+            postCode.isNullOrBlank() -> city ?: ""
+            city.isNullOrBlank() -> postCode
+            else -> "$postCode $city"
+        }
+        val thirdLine = country ?: ""
 
         val useFirstLineSeparator = firstLine.isNotBlank() && secondLine.isNotBlank()
+        val useSecondLineSeparator = thirdLine.isNotBlank() && (secondLine.isNotBlank() || firstLine.isNotBlank())
 
         return firstLine +
                 (if (useFirstLineSeparator) ", " else "") +
                 secondLine +
+                (if (useSecondLineSeparator) ", " else "") +
                 thirdLine
     }
 

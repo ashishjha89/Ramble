@@ -43,7 +43,7 @@ class RegistrationConfirmationService(tokenComponentBuilder: TokenComponentBuild
      */
     fun processRegistrationConfirmationToken(
             registrationConfirmationToken: String,
-            now: Instant = Instant.now()
+            now: Instant
     ): RegistrationConfirmationToken? {
         val userId = registrationConfirmationTokenHandler.getUserIdFromToken(registrationConfirmationToken, jwtParser)
                 ?: return null

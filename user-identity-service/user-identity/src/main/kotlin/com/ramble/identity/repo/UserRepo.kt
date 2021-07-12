@@ -13,11 +13,9 @@ class UserRepo {
 
     @Throws(UserAlreadyActivatedException::class, UserSuspendedException::class)
     fun saveNewUser(
-            registerUserRequest: RegisterUserRequest,
-            currentTimeInSeconds: Long = Instant.now().toEpochMilli() / 1000,
-            idGenerator: () -> Long = { Instant.now().toEpochMilli() }
+            registerUserRequest: RegisterUserRequest, currentTimeInSeconds: Long, idGenerator: () -> Long
     ): ApplicationUser {
-        when (findByEmail(email = registerUserRequest.email)?.accountStatus) {
+        when (getApplicationUser(email = registerUserRequest.email)?.accountStatus) {
             AccountStatus.Activated -> throw UserAlreadyActivatedException()
             AccountStatus.Suspended -> throw UserSuspendedException()
             AccountStatus.Registered -> userMap.remove(registerUserRequest.email) // delete old entry
@@ -37,7 +35,7 @@ class UserRepo {
      */
     @Throws(UserNotFoundException::class, UserAlreadyActivatedException::class, UserSuspendedException::class)
     fun activateRegisteredUser(email: Email, currentTimeInSeconds: Long = Instant.now().toEpochMilli() / 1000): Boolean {
-        val user = findByEmail(email) ?: throw UserNotFoundException()
+        val user = getApplicationUser(email) ?: throw UserNotFoundException()
         when (user.accountStatus) {
             AccountStatus.Activated -> throw UserAlreadyActivatedException()
             AccountStatus.Suspended -> throw UserSuspendedException()
@@ -54,7 +52,7 @@ class UserRepo {
 
     @Throws(UserNotFoundException::class, UserSuspendedException::class, UserNotActivatedException::class)
     fun getUserInfo(email: Email): UserInfo {
-        val applicationUser = findByEmail(email) ?: throw UserNotFoundException()
+        val applicationUser = getApplicationUser(email) ?: throw UserNotFoundException()
         return when (applicationUser.accountStatus) {
             AccountStatus.Suspended -> throw UserSuspendedException()
             AccountStatus.Registered -> throw UserNotActivatedException()
@@ -62,7 +60,7 @@ class UserRepo {
         }
     }
 
-    fun findByEmail(email: Email): ApplicationUser? =
+    fun getApplicationUser(email: Email): ApplicationUser? =
             userMap[email]
 
 }

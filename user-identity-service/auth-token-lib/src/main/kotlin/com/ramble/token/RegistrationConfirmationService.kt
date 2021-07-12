@@ -26,9 +26,9 @@ class RegistrationConfirmationService(tokenComponentBuilder: TokenComponentBuild
      */
     fun addRegistrationConfirmationToken(userId: String,
                                          email: String,
-                                         now: Instant = Instant.now(),
-                                         expirationDurationAmount: Long = 15,
-                                         expiryDurationUnit: ChronoUnit = ChronoUnit.MINUTES
+                                         now: Instant,
+                                         expirationDurationAmount: Long,
+                                         expiryDurationUnit: ChronoUnit
     ): RegistrationConfirmationToken {
         // Delete old tokens for this userId. This could be in cases when user registered but didn't activate.
         registrationConfirmationRepo.deleteRegistrationConfirmationToken(userId)

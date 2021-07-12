@@ -20,9 +20,9 @@ class UserInfoService(
 
     fun getUserInfoResult(principal: Principal): Result<UserInfo> {
         val badRequestError = Result.Error<UserInfo>(httpStatus = HttpStatus.BAD_REQUEST, errorBody = userInfoNotFound)
-        val email = authTokensService.getClaims(principal)?.email.takeIf { it is String } ?: return badRequestError
+        val emailId = authTokensService.getClaims(principal)?.email ?: return badRequestError
         return try {
-            Result.Success(data = getUserInfo(email))
+            Result.Success(data = getUserInfo(emailId))
         } catch (e: Exception) {
             when (e) {
                 is UserNotFoundException -> badRequestError
@@ -41,13 +41,13 @@ class UserInfoService(
         if (username.isNullOrBlank()) throw UsernameNotFoundException(invalidUserId.errorMessage)
         when (val userRes = findByEmail(email = username)) {
             is Result.Success -> return SpringUser(userRes.data.email, userRes.data.password, userRes.data.grantedAuthorities)
-            is Result.Error -> throw UsernameNotFoundException(invalidUserId.errorMessage)
+            is Result.Error -> throw UsernameNotFoundException(userRes.errorBody.errorMessage)
         }
     }
 
     private fun findByEmail(email: String): Result<ApplicationUser> =
             try {
-                when (val user = userRepo.findByEmail(email)) {
+                when (val user = userRepo.getApplicationUser(email)) {
                     null -> Result.Error(httpStatus = HttpStatus.BAD_REQUEST, errorBody = invalidUserId)
                     else -> Result.Success(data = user)
                 }

@@ -1,4 +1,4 @@
-package com.ramble.identity.controllers
+package com.ramble.identity.controller
 
 import com.ramble.identity.common.USER_INFO_API_BASE_PATH
 import com.ramble.identity.common.USER_INFO_ME_PATH

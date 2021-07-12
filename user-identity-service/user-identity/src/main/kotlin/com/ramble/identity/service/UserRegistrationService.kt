@@ -13,6 +13,8 @@ import org.springframework.http.HttpStatus
 import org.springframework.scheduling.annotation.Async
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 @Service
 class UserRegistrationService(
@@ -23,16 +25,26 @@ class UserRegistrationService(
         private val emailSenderService: EmailSenderService
 ) {
 
-    fun saveUser(registerUserRequest: RegisterUserRequest): Result<RegisteredUserResponse> {
+    fun saveUser(
+            registerUserRequest: RegisterUserRequest,
+            now: Instant = Instant.now(),
+            expirationDurationAmount: Long = 15,
+            expiryDurationUnit: ChronoUnit = ChronoUnit.MINUTES,
+            currentTimeInSeconds: Long = Instant.now().toEpochMilli() / 1000,
+            idGenerator: () -> Long = { Instant.now().toEpochMilli() }
+    ): Result<RegisteredUserResponse> {
         registrationRequestValidator.getRegistrationRequestError()?.let {
             return Result.Error(httpStatus = HttpStatus.BAD_REQUEST, errorBody = it)
         }
         return try {
             val userToSave = registerUserRequest.copy(password = bCryptPasswordEncoder.encode(registerUserRequest.password))
-            val newlyRegisteredUser = userRepo.saveNewUser(userToSave)
+            val newlyRegisteredUser = userRepo.saveNewUser(userToSave, currentTimeInSeconds, idGenerator)
             val confirmRegistrationToken = registrationConfirmationService.addRegistrationConfirmationToken(
                     userId = newlyRegisteredUser.id,
-                    email = newlyRegisteredUser.email
+                    email = newlyRegisteredUser.email,
+                    now = now,
+                    expirationDurationAmount = expirationDurationAmount,
+                    expiryDurationUnit = expiryDurationUnit
             )
             val registeredUserResponse = RegisteredUserResponse(
                     userId = confirmRegistrationToken.userId,
@@ -51,15 +63,20 @@ class UserRegistrationService(
         }
     }
 
-    fun confirmToken(token: String?): Result<RegisteredUserResponse> {
+    fun confirmToken(token: String?,
+                     now: Instant = Instant.now(),
+                     currentTimeInSeconds: Long = Instant.now().toEpochMilli() / 1000
+    ): Result<RegisteredUserResponse> {
         val badRequestError = Result.Error<RegisteredUserResponse>(HttpStatus.BAD_REQUEST, unauthorizedAccess)
         token ?: return badRequestError
-        val confirmationToken = registrationConfirmationService.processRegistrationConfirmationToken(token)
+        val confirmationToken = registrationConfirmationService.processRegistrationConfirmationToken(token, now)
                 ?: return badRequestError
         return try {
-            val activated = userRepo.activateRegisteredUser(email = confirmationToken.email)
-            if (activated) Result.Success(data = RegisteredUserResponse(userId = confirmationToken.userId, email = confirmationToken.email))
-            else Result.Error(HttpStatus.FORBIDDEN, unauthorizedAccess)
+            if (userRepo.activateRegisteredUser(email = confirmationToken.email)) {
+                Result.Success(data = RegisteredUserResponse(userId = confirmationToken.userId, email = confirmationToken.email))
+            } else {
+                Result.Error(HttpStatus.FORBIDDEN, unauthorizedAccess)
+            }
         } catch (e: Exception) {
             when (e) {
                 is UserNotFoundException -> badRequestError

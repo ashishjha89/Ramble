@@ -5,7 +5,8 @@ import com.ramble.token.handler.AccessTokenHandler
 import com.ramble.token.handler.RefreshTokenHandler
 import com.ramble.token.handler.helper.UsernamePasswordAuthTokenTokenGenerator
 import com.ramble.token.model.AccessClaims
-import com.ramble.token.model.AuthInfo
+import com.ramble.token.model.UserAuthInfo
+import com.ramble.token.repository.AuthTokenRepo
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.JwtBuilder
 import io.jsonwebtoken.JwtParser
@@ -14,14 +15,16 @@ import org.junit.Test
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito.mock
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import java.security.Principal
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import kotlin.test.assertEquals
 
 class AuthTokensServiceTest {
+
+    private val authTokenRepo = mock(AuthTokenRepo::class.java)
 
     private val tokenComponentBuilder = mock(TokenComponentBuilder::class.java)
 
@@ -35,7 +38,7 @@ class AuthTokensServiceTest {
 
     private val jwtParser = mock(JwtParser::class.java)
 
-    private val authTokensService by lazy { AuthTokensService(tokenComponentBuilder) }
+    private val authTokensService by lazy { AuthTokensService(authTokenRepo, tokenComponentBuilder) }
 
     @Before
     fun setup() {
@@ -44,34 +47,58 @@ class AuthTokensServiceTest {
         given(tokenComponentBuilder.usernamePasswordAuthTokenTokenGenerator())
                 .willReturn(usernamePasswordAuthTokenTokenGenerator)
         given(tokenComponentBuilder.jwtBuilder()).willReturn(jwtBuilder)
-        given(tokenComponentBuilder.jwtParser()).willReturn(jwtParser)
+        given(tokenComponentBuilder.jwtParserAccessToken()).willReturn(jwtParser)
     }
 
     @Test
     fun generateAuthTokenTest() {
-        val authResult = mock(Authentication::class.java)
-        val userId = "someUserIdd"
+        val authority = mock(SimpleGrantedAuthority::class.java)
+        val authorities = listOf(authority)
+        val userId = "someUserId"
+        val clientId = "someClientId"
         val email = "someEmailId@ramble.com"
         val issuedInstant = Instant.now()
-        val expiryDurationAmount = 30L
-        val expiryDurationUnit = ChronoUnit.MINUTES
+
+        val accessTokenExpiryDurationAmount = 30L
+        val accessTokenExpiryDurationUnit = ChronoUnit.MINUTES
+
+        val refreshTokenExpiryDurationAmount = 365L
+        val refreshTokenExpiryDurationUnit = ChronoUnit.DAYS
 
         val accessToken = "some_long_random_access_token"
         val refreshToken = "some_refresh_token"
 
-        val expectedAuthInfo = AuthInfo(userId, email, accessToken, refreshToken)
+        val expectedAuthInfo = UserAuthInfo(userId, email, accessToken, refreshToken)
 
         // Stub
         given(accessTokenHandler
-                .generateAccessToken(authResult, userId, email, issuedInstant, expiryDurationAmount, expiryDurationUnit, jwtBuilder))
-                .willReturn(accessToken)
+                .generateAccessToken(
+                        authorities,
+                        clientId,
+                        userId,
+                        email,
+                        issuedInstant,
+                        accessTokenExpiryDurationAmount,
+                        accessTokenExpiryDurationUnit,
+                        jwtBuilder
+                )
+        ).willReturn(accessToken)
         given(refreshTokenHandler.generateRefreshToken()).willReturn(refreshToken)
 
         // Call method and assert
         assertEquals(
                 expectedAuthInfo,
-                authTokensService.generateAuthToken(
-                        authResult, userId, email, issuedInstant, expiryDurationAmount, expiryDurationUnit)
+                authTokensService.generateUserAuthToken(
+                        authorities,
+                        clientId,
+                        userId,
+                        email,
+                        issuedInstant,
+                        accessTokenExpiryDurationAmount,
+                        accessTokenExpiryDurationUnit,
+                        refreshTokenExpiryDurationAmount,
+                        refreshTokenExpiryDurationUnit
+                )
         )
     }
 
@@ -79,13 +106,13 @@ class AuthTokensServiceTest {
     fun `getClaims from token`() {
         val token = "some_token"
         val now = Instant.now()
-        val accessClaims = mock(AccessClaims::class.java)
+        val accessClaims = AccessClaims("clientId", "userId", "someEmail", mock(Claims::class.java), listOf(mock(SimpleGrantedAuthority::class.java)))
 
         // Stub
         given(accessTokenHandler.getTokenClaims(token, jwtParser, now)).willReturn(accessClaims)
 
         // Call method and assert
-        assertEquals(accessClaims, authTokensService.getClaims(token, now))
+        assertEquals(accessClaims, authTokensService.getAccessTokenClaims(token, now))
     }
 
     @Test
@@ -97,7 +124,7 @@ class AuthTokensServiceTest {
         given(accessTokenHandler.getPrincipalClaims(principal)).willReturn(accessClaims)
 
         // Call method and assert
-        assertEquals(accessClaims, authTokensService.getClaims(principal))
+        assertEquals(accessClaims, authTokensService.getAccessTokenClaims(principal))
     }
 
     @Test
@@ -112,6 +139,6 @@ class AuthTokensServiceTest {
                 .willReturn(authentication)
 
         // Call method and assert
-        assertEquals(authentication, authTokensService.getAuthentication(claims, authorities))
+        assertEquals(authentication, authTokensService.springAuthentication(claims, authorities))
     }
 }

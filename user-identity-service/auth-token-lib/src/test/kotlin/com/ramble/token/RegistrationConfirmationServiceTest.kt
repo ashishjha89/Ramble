@@ -34,7 +34,7 @@ class RegistrationConfirmationServiceTest {
         given(tokenComponentBuilder.registrationConfirmationRepo()).willReturn(registrationConfirmationRepo)
         given(tokenComponentBuilder.registrationConfirmationTokenHandler()).willReturn(registrationTokenHandler)
         given(tokenComponentBuilder.jwtBuilder()).willReturn(jwtBuilder)
-        given(tokenComponentBuilder.jwtParser()).willReturn(jwtParser)
+        given(tokenComponentBuilder.jwtParserRegistrationToken()).willReturn(jwtParser)
     }
 
     @Test

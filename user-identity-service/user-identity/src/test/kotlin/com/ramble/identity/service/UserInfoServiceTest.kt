@@ -3,6 +3,7 @@ package com.ramble.identity.service
 import com.ramble.identity.common.*
 import com.ramble.identity.models.*
 import com.ramble.identity.repo.UserRepo
+import com.ramble.identity.utils.TimeAndIdGenerator
 import com.ramble.token.AuthTokensService
 import com.ramble.token.model.AccessClaims
 import org.junit.Test
@@ -28,15 +29,16 @@ class UserInfoServiceTest {
     private val password = "somePassword"
     private val emailId = "someEmailId"
     private val grantedAuthorities = setOf(SimpleGrantedAuthority("user"))
+    private val timeAndIdGenerator = mock(TimeAndIdGenerator::class.java)
 
-    private val userInfoService = UserInfoService(userRepo, authTokensService)
+    private val userInfoService = UserInfoService(userRepo, authTokensService, timeAndIdGenerator)
 
     @Test
     fun `getUserInfoResult should return user if valid principal`() {
         val principal = mock(Principal::class.java)
 
         // Stub
-        given(authTokensService.getClaims(principal)).willReturn(accessClaims)
+        given(authTokensService.getAccessTokenClaims(principal)).willReturn(accessClaims)
         given(accessClaims.email).willReturn(emailId)
         given(userRepo.getUserInfo(emailId)).willReturn(userInfo)
 
@@ -51,7 +53,7 @@ class UserInfoServiceTest {
         val principal = mock(Principal::class.java)
 
         // Stub
-        given(authTokensService.getClaims(principal)).willReturn(null)
+        given(authTokensService.getAccessTokenClaims(principal)).willReturn(null)
 
         // Call method and assert
         val result = userInfoService.getUserInfoResult(principal)
@@ -65,7 +67,7 @@ class UserInfoServiceTest {
         val principal = mock(Principal::class.java)
 
         // Stub
-        given(authTokensService.getClaims(principal)).willReturn(accessClaims)
+        given(authTokensService.getAccessTokenClaims(principal)).willReturn(accessClaims)
         given(accessClaims.email).willReturn(null)
 
         // Call method and assert
@@ -80,7 +82,7 @@ class UserInfoServiceTest {
         val principal = mock(Principal::class.java)
 
         // Stub
-        given(authTokensService.getClaims(principal)).willReturn(accessClaims)
+        given(authTokensService.getAccessTokenClaims(principal)).willReturn(accessClaims)
         given(accessClaims.email).willReturn(emailId)
         given(userRepo.getUserInfo(emailId)).willThrow(UserNotFoundException())
 
@@ -96,7 +98,7 @@ class UserInfoServiceTest {
         val principal = mock(Principal::class.java)
 
         // Stub
-        given(authTokensService.getClaims(principal)).willReturn(accessClaims)
+        given(authTokensService.getAccessTokenClaims(principal)).willReturn(accessClaims)
         given(accessClaims.email).willReturn(emailId)
         given(userRepo.getUserInfo(emailId)).willThrow(UserSuspendedException())
 
@@ -112,7 +114,7 @@ class UserInfoServiceTest {
         val principal = mock(Principal::class.java)
 
         // Stub
-        given(authTokensService.getClaims(principal)).willReturn(accessClaims)
+        given(authTokensService.getAccessTokenClaims(principal)).willReturn(accessClaims)
         given(accessClaims.email).willReturn(emailId)
         given(userRepo.getUserInfo(emailId)).willThrow(UserNotActivatedException())
 
@@ -128,7 +130,7 @@ class UserInfoServiceTest {
         val principal = mock(Principal::class.java)
 
         // Stub
-        given(authTokensService.getClaims(principal)).willReturn(accessClaims)
+        given(authTokensService.getAccessTokenClaims(principal)).willReturn(accessClaims)
         given(accessClaims.email).willReturn(emailId)
         given(userRepo.getUserInfo(emailId)).willThrow(IllegalStateException("random exception"))
 

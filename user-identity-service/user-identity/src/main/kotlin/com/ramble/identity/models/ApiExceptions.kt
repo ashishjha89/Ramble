@@ -7,3 +7,5 @@ class UserAlreadyActivatedException : Exception()
 class UserSuspendedException : Exception()
 
 class UserNotActivatedException : Exception()
+
+class ClientIdHeaderAbsentException: Exception()

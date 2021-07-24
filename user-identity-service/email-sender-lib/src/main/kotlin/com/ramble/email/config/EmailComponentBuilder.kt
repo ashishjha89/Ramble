@@ -51,13 +51,11 @@ class EmailComponentBuilder(emailSenderConfig: EmailSenderConfig) {
         if (!configProperties.enableVault) {
             return EmailSenderCredential("dummy_user@ramble.com", "dummy_pwd")
         }
-        val vaultTemplate =
-                VaultTemplate(
-                        VaultEndpoint().apply { scheme = "http" },
-                        TokenAuthentication("00000000-0000-0000-0000-000000000000")
-                )
         return try {
-            val response = vaultTemplate.read("kv/ramble.email-sender", EmailSenderCredential::class.java)
+            val response = VaultTemplate(
+                    VaultEndpoint().apply { scheme = "http" },
+                    TokenAuthentication("00000000-0000-0000-0000-000000000000")
+            ).read(configProperties.vaultPath, EmailSenderCredential::class.java)
             response?.data
         } catch (e: Exception) {
             null

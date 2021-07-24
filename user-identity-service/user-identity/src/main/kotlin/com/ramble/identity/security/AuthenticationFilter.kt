@@ -2,10 +2,7 @@ package com.ramble.identity.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.gson.Gson
-import com.ramble.identity.common.internalServerError
-import com.ramble.identity.common.userInfoNotFound
-import com.ramble.identity.common.userNotActivatedError
-import com.ramble.identity.common.userSuspendedError
+import com.ramble.identity.common.*
 import com.ramble.identity.models.*
 import com.ramble.identity.service.UserInfoService
 import com.ramble.token.AuthTokensService
@@ -45,10 +42,11 @@ class AuthenticationFilter(
             characterEncoding = "UTF-8"
         }
         try {
+            val deviceId = request?.getHeader(CLIENT_ID_HEADER) ?: throw ClientIdHeaderAbsentException()
             val email = authResult.name
             val userId = userInfoService.getUserInfo(email).id
-            val authToken = authTokensService.generateAuthToken(authResult, userId, email)
-            val loginResponse = LoginResponse(userId, email, authToken.accessToken, authToken.refreshToken)
+            val authToken = authTokensService.generateUserAuthToken(authResult.authorities, deviceId, userId, email)
+            val loginResponse = LoginResponse(userId, authToken.accessToken, authToken.refreshToken)
             response.apply {
                 status = HttpServletResponse.SC_OK
                 writer.apply {
@@ -61,6 +59,7 @@ class AuthenticationFilter(
                 is UserNotFoundException -> Pair(userInfoNotFound, HttpServletResponse.SC_BAD_REQUEST)
                 is UserSuspendedException -> Pair(userSuspendedError, HttpServletResponse.SC_FORBIDDEN)
                 is UserNotActivatedException -> Pair(userNotActivatedError, HttpServletResponse.SC_FORBIDDEN)
+                is ClientIdHeaderAbsentException -> Pair(clientIdHeaderMissing, HttpServletResponse.SC_BAD_REQUEST)
                 else -> Pair(internalServerError, HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
             }
             response.apply {

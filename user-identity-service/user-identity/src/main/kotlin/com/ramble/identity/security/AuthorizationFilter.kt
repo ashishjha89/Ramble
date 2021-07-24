@@ -3,12 +3,12 @@ package com.ramble.identity.security
 import com.ramble.identity.common.AUTHORIZATION_HEADER
 import com.ramble.token.AuthTokensService
 import org.springframework.security.authentication.AuthenticationManager
-import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter
 import javax.servlet.FilterChain
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
+import org.springframework.security.core.Authentication as SpringAuthentication
 
 class AuthorizationFilter(
         authManager: AuthenticationManager,
@@ -16,15 +16,16 @@ class AuthorizationFilter(
 ) : BasicAuthenticationFilter(authManager) {
 
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, chain: FilterChain) {
-        val token = request.getHeader(AUTHORIZATION_HEADER)
-        if (token != null) SecurityContextHolder.getContext().authentication = authenticate(token)
+        val accessToken = request.getHeader(AUTHORIZATION_HEADER)
+        if (accessToken != null) SecurityContextHolder.getContext().authentication = authenticate(accessToken)
         chain.doFilter(request, response)
     }
 
-    private fun authenticate(token: String): Authentication? {
+    // Return SpringAuthentication instance which is used by SpringSecurity to validate authorization.
+    private fun authenticate(accessToken: String): SpringAuthentication? {
         try {
-            val tokenClaims = authTokensService.getClaims(token) ?: return null
-            return authTokensService.getAuthentication(tokenClaims.claims, tokenClaims.authorities)
+            val tokenClaims = authTokensService.getAccessTokenClaims(accessToken) ?: return null
+            return authTokensService.springAuthentication(tokenClaims.claims, tokenClaims.authorities)
         } catch (e: Exception) {
             return null
         }

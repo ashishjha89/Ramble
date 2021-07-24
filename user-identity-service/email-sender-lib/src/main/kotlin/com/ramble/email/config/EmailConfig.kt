@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration
 @ConfigurationProperties(prefix = "email-sender")
 data class EmailConfigProperties(
         val enableVault: Boolean,
+        val vaultPath: String,
         val host: String,
         val port: Int,
         val transportProtocol: String,

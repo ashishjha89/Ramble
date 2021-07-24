@@ -6,14 +6,17 @@ internal class AccessTokenClaimsMapGenerator {
 
     companion object {
 
-        private const val ROLES = "ROLES"
+        const val ROLES = "ROLES"
 
-        private const val USER_ID = "USER_ID"
+        const val USER_ID = "USER_ID"
+
+        const val CLIENT_ID = "CLIENT_ID"
     }
 
-    fun getAccessTokenClaimsMap(userId: String, authorities: Collection<GrantedAuthority>) =
+    fun getAccessTokenClaimsMap(clientId: String, userId: String, authorities: Collection<GrantedAuthority>) =
             mapOf(
                     ROLES to authorities.map { it.authority },
+                    CLIENT_ID to clientId,
                     USER_ID to userId
             )
 }

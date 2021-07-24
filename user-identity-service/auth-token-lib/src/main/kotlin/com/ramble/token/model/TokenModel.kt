@@ -2,12 +2,17 @@ package com.ramble.token.model
 
 import io.jsonwebtoken.Claims
 import org.springframework.security.core.GrantedAuthority
-import java.time.Instant
 import java.util.*
 
-data class AuthInfo(val userId: String, val email: String, val accessToken: String, val refreshToken: String)
+data class UserAuthInfo(
+        val userId: String,
+        val email: String,
+        val accessToken: String,
+        val refreshToken: String
+)
 
 data class AccessClaims(
+        val clientId: String,
         val userId: String,
         val email: String,
         val claims: Claims,
@@ -16,4 +21,8 @@ data class AccessClaims(
 
 data class RegistrationConfirmationToken(val userId: String, val email: String, val token: String)
 
+class RefreshTokenIsInvalidException: Exception()
+
 internal data class TokenDuration(val issuedDate: Date, val expiryDate: Date)
+
+internal data class ClientAuthInfo(val clientId: String, val userId: String, val accessToken: String)

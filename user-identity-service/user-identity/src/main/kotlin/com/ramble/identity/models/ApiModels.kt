@@ -19,7 +19,9 @@ data class RegisteredUserResponse(val userId: String, val email: String)
 
 data class LoginUserRequest(val email: String? = null, val password: String? = null)
 
-data class LoginResponse(val id: String, val email: String, val accessToken: String, val refreshToken: String)
+data class LoginResponse(val userId: String, val accessToken: String, val refreshToken: String)
+
+data class RefreshTokenRequest(val refreshToken: String? = null)
 
 data class UserInfo(
         val id: String,

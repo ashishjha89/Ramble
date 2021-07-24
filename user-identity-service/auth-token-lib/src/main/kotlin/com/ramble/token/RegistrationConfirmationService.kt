@@ -11,7 +11,7 @@ import java.time.temporal.ChronoUnit
 @Service
 class RegistrationConfirmationService(tokenComponentBuilder: TokenComponentBuilder) {
 
-    private val jwtParser = tokenComponentBuilder.jwtParser()
+    private val jwtParser = tokenComponentBuilder.jwtParserRegistrationToken()
 
     private val jwtBuilder = tokenComponentBuilder.jwtBuilder()
 

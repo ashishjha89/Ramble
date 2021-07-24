@@ -9,6 +9,8 @@ private object ErrorCode {
     const val USER_IS_SUSPENDED = "USER_IS_SUSPENDED"
     const val USER_ALREADY_ACTIVATED = "USER_ALREADY_ACTIVATED"
     const val EMAIL_SENDING_FAILED = "EMAIL_SENDING_FAILED"
+    const val CLIENT_ID_HEADER_MISSING = "CLIENT_ID_HEADER_MISSING"
+    const val REFRESH_TOKEN_IS_INVALID = "REFRESH_TOKEN_IS_INVALID"
 }
 
 private object ErrorMessage {
@@ -18,8 +20,10 @@ private object ErrorMessage {
     const val userNotActivatedMsg = "Your account is not activated."
     const val unauthorizedAccessMsg = "You are not authorized to access this resource."
     const val userSuspendedMsg = "You are currently suspended. Contact us for more info."
-    const val userAlreadyActivated = "This account is already activated."
-    const val emailSendingFailed = "Failed to send email."
+    const val userAlreadyActivatedMsg = "This account is already activated."
+    const val emailSendingFailedMsg = "Failed to send email."
+    const val clientIdHeaderMissingMsg = "ClientId header is missing."
+    const val refreshTokenIsInvalidMsg = "Refresh token is invalid."
 }
 
 val unauthorizedAccess: ErrorBody =
@@ -38,10 +42,16 @@ val userSuspendedError: ErrorBody =
         ErrorBody(errorCode = ErrorCode.USER_IS_SUSPENDED, errorMessage = ErrorMessage.userSuspendedMsg)
 
 val userAlreadyActivatedError: ErrorBody =
-        ErrorBody(errorCode = ErrorCode.USER_ALREADY_ACTIVATED, errorMessage = ErrorMessage.userAlreadyActivated)
+        ErrorBody(errorCode = ErrorCode.USER_ALREADY_ACTIVATED, errorMessage = ErrorMessage.userAlreadyActivatedMsg)
 
 val userNotActivatedError: ErrorBody =
         ErrorBody(errorCode = ErrorCode.USER_NOT_ACTIVATED, errorMessage = ErrorMessage.userNotActivatedMsg)
 
 val emailSendingFailed: ErrorBody =
-        ErrorBody(errorCode = ErrorCode.EMAIL_SENDING_FAILED, errorMessage = ErrorMessage.emailSendingFailed)
+        ErrorBody(errorCode = ErrorCode.EMAIL_SENDING_FAILED, errorMessage = ErrorMessage.emailSendingFailedMsg)
+
+val clientIdHeaderMissing: ErrorBody =
+        ErrorBody(errorCode = ErrorCode.CLIENT_ID_HEADER_MISSING, errorMessage = ErrorMessage.clientIdHeaderMissingMsg)
+
+val regreshTokenInvalid: ErrorBody =
+        ErrorBody(errorCode = ErrorCode.REFRESH_TOKEN_IS_INVALID, errorMessage = ErrorMessage.refreshTokenIsInvalidMsg)

@@ -1,5 +1,6 @@
 email-sender:
   enableVault: false
+  vaultPath: kv/email-sender
   host: localhost
   port: 1025
   transportProtocol: smtp
@@ -11,4 +12,5 @@ email-sender:
   writeTimeout: 5000
 
 jwt:
-  signingKey: OMQBBbeM64asPB0mvUYI4b+G08t4e6npxRXqzq6ZwmC1Ao4ibnBPT1oGH09rQuwWPHFy0hWCsfjm0MsiA2eJeA==
+  signingKeyAccessToken: OMQBBbeM64asPB0mvUYI4b+G08t4e6npxRXqzq6ZwmC1Ao4ibnBPT1oGH09rQuwWPHFy0hWCsfjm0MsiA2eJeA==
+  signingKeyRegistrationToken: 838ff02eaa64283e369d61324661707338c1da60edbb48aa188bfcd993ffeead5b006bd4

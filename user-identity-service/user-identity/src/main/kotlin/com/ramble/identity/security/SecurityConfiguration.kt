@@ -1,9 +1,6 @@
 package com.ramble.identity.security
 
-import com.ramble.identity.common.SIGN_UP_CONFIRMATION_URL
-import com.ramble.identity.common.SIGN_UP_URL
-import com.ramble.identity.common.USER_INFO_API_BASE_PATH
-import com.ramble.identity.common.USER_LOGIN_PATH
+import com.ramble.identity.common.*
 import com.ramble.identity.models.Roles
 import com.ramble.identity.service.UserInfoService
 import com.ramble.token.AuthTokensService
@@ -34,7 +31,9 @@ class SecurityConfiguration(
                 .authorizeRequests().antMatchers(HttpMethod.POST, SIGN_UP_URL).permitAll()
                 .and()
                 .authorizeRequests().antMatchers(HttpMethod.GET, SIGN_UP_CONFIRMATION_URL).permitAll()
-                .antMatchers("$USER_INFO_API_BASE_PATH/**").hasRole(Roles.User.toString())
+                .and()
+                .authorizeRequests().antMatchers(HttpMethod.POST, REFRESH_TOKEN_URL).permitAll()
+                .antMatchers("$AUTH_API_BASE_PATH/**").hasRole(Roles.User.toString())
                 .anyRequest().authenticated()
                 .and()
                 .addFilter(
@@ -42,7 +41,7 @@ class SecurityConfiguration(
                                 manager = authenticationManager(),
                                 authTokensService = authTokensService,
                                 userInfoService = userInfoService,
-                                loginPath = "$USER_INFO_API_BASE_PATH/$USER_LOGIN_PATH"
+                                loginPath = "$AUTH_API_BASE_PATH/$USER_LOGIN_PATH"
                         )
                 )
                 .addFilter(

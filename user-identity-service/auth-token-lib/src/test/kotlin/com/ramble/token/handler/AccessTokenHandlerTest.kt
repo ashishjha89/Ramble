@@ -33,6 +33,7 @@ class AccessTokenHandlerTest {
     private val claims = mock(Claims::class.java)
     private val emailId = "someEmailId@random.com"
     private val userId = "someUserId"
+    private val clientId = "someClientId"
 
     private val usernamePasswordAuthenticationToken = mock(UsernamePasswordAuthenticationToken::class.java)
 
@@ -66,7 +67,7 @@ class AccessTokenHandlerTest {
 
         // Stub
         given(authResult.authorities).willReturn(authorities)
-        given(accessTokenClaimsMapGenerator.getAccessTokenClaimsMap(userId, authorities)).willReturn(claimsMap)
+        given(accessTokenClaimsMapGenerator.getAccessTokenClaimsMap(clientId, userId, authorities)).willReturn(claimsMap)
         given(tokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit))
                 .willReturn(tokenDuration)
 
@@ -83,7 +84,8 @@ class AccessTokenHandlerTest {
                 accessTokenSigned,
                 accessTokenHandler
                         .generateAccessToken(
-                                authResult,
+                                authorities,
+                                clientId,
                                 userId,
                                 emailId,
                                 issuedInstant,
@@ -116,6 +118,21 @@ class AccessTokenHandlerTest {
         given(claims.expiration).willReturn(Date.from(expiredInstant))
         given(claims.subject).willReturn(emailId)
         given(claims["USER_ID"]).willReturn(null)
+        given(claims["CLIENT_ID"]).willReturn(clientId)
+
+        // Call method and assert
+        assertNull(accessTokenHandler.getTokenClaims(accessTokenStr, parser, now))
+    }
+
+    @Test
+    fun `getTokenClaims should return null if passed token does not have clientId`() {
+        val expiredInstant = now.plus(10, ChronoUnit.MINUTES)
+
+        // Stub
+        given(claims.expiration).willReturn(Date.from(expiredInstant))
+        given(claims.subject).willReturn(emailId)
+        given(claims["USER_ID"]).willReturn(userId)
+        given(claims["CLIENT_ID"]).willReturn(null)
 
         // Call method and assert
         assertNull(accessTokenHandler.getTokenClaims(accessTokenStr, parser, now))
@@ -129,6 +146,7 @@ class AccessTokenHandlerTest {
         given(claims.expiration).willReturn(Date.from(expiredInstant))
         given(claims.subject).willReturn(emailId)
         given(claims["USER_ID"]).willReturn(userId)
+        given(claims["CLIENT_ID"]).willReturn(clientId)
         given(claims["ROLES"]).willReturn(null)
 
         // Call method and assert
@@ -145,10 +163,11 @@ class AccessTokenHandlerTest {
         given(claims.expiration).willReturn(Date.from(expiredInstant))
         given(claims.subject).willReturn(emailId)
         given(claims["USER_ID"]).willReturn(userId)
+        given(claims["CLIENT_ID"]).willReturn(clientId)
         given(claims["ROLES"]).willReturn(roles)
 
         // Call method and assert
-        val claimsResult = AccessClaims(userId, emailId, claims, authorities)
+        val claimsResult = AccessClaims(clientId, userId, emailId, claims, authorities)
         assertEquals(claimsResult, accessTokenHandler.getTokenClaims(accessTokenStr, parser, now))
     }
 
@@ -177,9 +196,10 @@ class AccessTokenHandlerTest {
         given(usernamePasswordAuthenticationToken.authorities).willReturn(authorities)
         given(claims.subject).willReturn(emailId)
         given(claims["USER_ID"]).willReturn(userId)
+        given(claims["CLIENT_ID"]).willReturn(clientId)
 
         // Call method and assert
-        val claimsResult = AccessClaims(userId, emailId, claims, authorities)
+        val claimsResult = AccessClaims(clientId, userId, emailId, claims, authorities)
         assertEquals(claimsResult, accessTokenHandler.getPrincipalClaims(usernamePasswordAuthenticationToken))
     }
 }

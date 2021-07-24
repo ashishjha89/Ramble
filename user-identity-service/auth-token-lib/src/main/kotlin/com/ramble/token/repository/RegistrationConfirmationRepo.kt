@@ -3,8 +3,6 @@ package com.ramble.token.repository
 import com.ramble.token.model.RegistrationConfirmationToken
 import org.springframework.stereotype.Repository
 
-typealias UserId = String
-
 @Repository
 internal class RegistrationConfirmationRepo {
 

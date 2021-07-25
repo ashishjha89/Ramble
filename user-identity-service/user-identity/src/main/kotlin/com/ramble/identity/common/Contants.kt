@@ -10,7 +10,9 @@ const val USER_REGISTER_PATH = "/register"
 
 const val REFRESH_TOKEN_PATH = "/refresh-token"
 
-const val USER_LOGIN_PATH = "/login"
+const val LOGIN_PATH = "/login"
+
+const val LOGOUT_PATH = "/logout"
 
 const val USER_INFO_ME_PATH = "/me"
 

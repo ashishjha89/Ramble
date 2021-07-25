@@ -6,12 +6,14 @@ import com.ramble.identity.repo.UserRepo
 import com.ramble.identity.utils.TimeAndIdGenerator
 import com.ramble.token.AuthTokensService
 import com.ramble.token.model.AccessClaims
+import com.ramble.token.model.AccessTokenIsInvalidException
 import com.ramble.token.model.RefreshTokenIsInvalidException
 import com.ramble.token.model.UserAuthInfo
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.verify
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UsernameNotFoundException
@@ -189,7 +191,7 @@ class UserInfoServiceTest {
     }
 
     @Test
-    fun `refreshToken should return LoginResponse result if successful`() {
+    fun `refreshToken should return LoginResponse result if auth-token-lib refreshes token successfully`() {
         val refreshTokenStr = "someRefreshToken"
         val refreshTokenRequest = RefreshTokenRequest(refreshToken = refreshTokenStr)
         val now = Instant.now()
@@ -213,7 +215,7 @@ class UserInfoServiceTest {
     }
 
     @Test
-    fun `refreshToken should return refreshTokenInvalid error if refreshToken is invalid`() {
+    fun `refreshToken should return refreshTokenInvalid error if auth-token-lib throws RefreshTokenIsInvalidException`() {
         val refreshTokenStr = "someRefreshToken"
         val refreshTokenRequest = RefreshTokenRequest(refreshToken = refreshTokenStr)
         val now = Instant.now()
@@ -230,7 +232,7 @@ class UserInfoServiceTest {
     }
 
     @Test
-    fun `refreshToken should return internalServerError error if refreshToken is invalid`() {
+    fun `refreshToken should return internalServerError error if auth-token-lib throws IllegalStateException`() {
         val refreshTokenStr = "someRefreshToken"
         val refreshTokenRequest = RefreshTokenRequest(refreshToken = refreshTokenStr)
         val now = Instant.now()
@@ -244,5 +246,39 @@ class UserInfoServiceTest {
         assertTrue(result is Result.Error)
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.httpStatus)
         assertEquals(internalServerError, result.errorBody)
+    }
+
+    @Test
+    fun `logout should return success if logged-out successfully by auth-token-lib`() {
+        val now = Instant.now()
+        val accessToken = "someAccessToken"
+
+        // Stub
+        given(timeAndIdGenerator.getCurrentTime()).willReturn(now)
+
+        // Call method
+        val result = userInfoService.logout(accessToken)
+
+        // Verify
+        assertTrue(result is Result.Success)
+        verify(authTokensService).logout(accessToken, now)
+    }
+
+    @Test
+    fun `logout should return error if logout failed by auth-token-lib`() {
+        val now = Instant.now()
+        val accessToken = "someAccessToken"
+
+        // Stub
+        given(timeAndIdGenerator.getCurrentTime()).willReturn(now)
+        given(authTokensService.logout(accessToken, now)).willThrow(AccessTokenIsInvalidException())
+
+        // Call method
+        val result = userInfoService.logout(accessToken)
+
+        // Verify
+        assertTrue(result is Result.Error)
+        assertEquals(HttpStatus.FORBIDDEN, result.httpStatus)
+        assertEquals(unauthorizedAccess, result.errorBody)
     }
 }

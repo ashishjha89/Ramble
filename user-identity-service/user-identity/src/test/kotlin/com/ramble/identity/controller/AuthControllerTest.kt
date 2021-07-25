@@ -2,6 +2,7 @@ package com.ramble.identity.controller
 
 import com.ramble.identity.common.Result
 import com.ramble.identity.common.refreshTokenInvalid
+import com.ramble.identity.common.unauthorizedAccess
 import com.ramble.identity.common.userAlreadyActivatedError
 import com.ramble.identity.models.LoginResponse
 import com.ramble.identity.models.RefreshTokenRequest
@@ -103,4 +104,31 @@ class AuthControllerTest {
         // Call method and assert
         assertEquals(expectedResponse, authController.refreshToken(refreshTokenRequest))
     }
+
+    @Test
+    fun `logout should send success if successfully logged out`() {
+        val accessToken = "some-access-token"
+        val logoutResult = Result.Success(data = Unit)
+        val expectedResponse = ResponseEntity(Unit, HttpStatus.OK)
+
+        // Stub
+        given(userInfoService.logout(accessToken)).willReturn(logoutResult)
+
+        // Call method and assert
+        assertEquals(expectedResponse, authController.logout(accessToken))
+    }
+
+    @Test
+    fun `logout should send error if successfully logged out`() {
+        val accessToken = "some-access-token"
+        val logoutErrorResult = Result.Error<Unit>(HttpStatus.FORBIDDEN, unauthorizedAccess)
+        val expectedResponse = ResponseEntity(logoutErrorResult.errorBody, logoutErrorResult.httpStatus)
+
+        // Stub
+        given(userInfoService.logout(accessToken)).willReturn(logoutErrorResult)
+
+        // Call method and assert
+        assertEquals(expectedResponse, authController.logout(accessToken))
+    }
+
 }

@@ -5,6 +5,7 @@ import com.ramble.token.handler.AccessTokenHandler
 import com.ramble.token.handler.RefreshTokenHandler
 import com.ramble.token.handler.helper.UsernamePasswordAuthTokenTokenGenerator
 import com.ramble.token.model.AccessClaims
+import com.ramble.token.model.AccessTokenIsInvalidException
 import com.ramble.token.model.ClientAuthInfo
 import com.ramble.token.model.UserAuthInfo
 import com.ramble.token.repository.AuthTokenRepo
@@ -415,5 +416,109 @@ class AuthTokensServiceTest {
         assertEquals(expectedUserAuthInfo, userAuthInfo)
         verify(authTokenRepo).updateDisabledAccessTokensForClient(clientAuthInfo, allExpectedDisabledTokens)
         verify(authTokenRepo).insertUserAuthInfo(clientId, UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken))
+    }
+
+    @Test
+    fun `logout when valid token and there were no disabled tokens for client`() {
+        val now = Instant.now()
+        val accessToken = "someAccessToken"
+
+        val clientId = "someClientId"
+        val userId = "someUserId"
+
+        val clientAuthInfo = ClientAuthInfo(clientId, userId, accessToken)
+
+        // Stub
+        given(accessTokenHandler.getClientIdFromAccessToken(accessToken, jwtParser)).willReturn(clientId)
+        given(accessTokenHandler.getUserIdFromAccessToken(accessToken, jwtParser)).willReturn(userId)
+        given(accessTokenHandler.isValidAccessToken(accessToken, jwtParser, now)).willReturn(true)
+        given(authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)).willReturn(setOf())
+
+        // Call method
+        authTokensService.logout(accessToken, now)
+
+        // Verify
+        verify(authTokenRepo).updateDisabledAccessTokensForClient(clientAuthInfo, setOf(accessToken))
+    }
+
+    @Test
+    fun `logout when valid token and there were some disabled tokens for client`() {
+        val now = Instant.now()
+        val accessToken = "someAccessToken"
+
+        val clientId = "someClientId"
+        val userId = "someUserId"
+
+        val disabledAccessToken1 = "someOldDisabledAccessToken1" // it will be stubbed as invalid
+        val disabledAccessToken2 = "someOldDisabledAccessToken2"
+        val oldDisabledTokens = setOf(disabledAccessToken1, disabledAccessToken2)
+
+        val clientAuthInfo = ClientAuthInfo(clientId, userId, accessToken)
+
+        // Stub
+        given(accessTokenHandler.getClientIdFromAccessToken(accessToken, jwtParser)).willReturn(clientId)
+        given(accessTokenHandler.getUserIdFromAccessToken(accessToken, jwtParser)).willReturn(userId)
+        given(accessTokenHandler.isValidAccessToken(accessToken, jwtParser, now)).willReturn(true)
+        given(accessTokenHandler.isValidAccessToken(disabledAccessToken1, jwtParser, now)).willReturn(false)
+        given(accessTokenHandler.isValidAccessToken(disabledAccessToken2, jwtParser, now)).willReturn(true)
+        given(authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)).willReturn(oldDisabledTokens)
+
+        // Call method
+        authTokensService.logout(accessToken, now)
+
+        // Verify
+        verify(authTokenRepo).updateDisabledAccessTokensForClient(clientAuthInfo, setOf(accessToken, disabledAccessToken2))
+    }
+
+    @Test(expected = AccessTokenIsInvalidException::class)
+    fun `logout when passed token is in disabled tokens list for client`() {
+        val now = Instant.now()
+        val accessToken = "someAccessToken"
+
+        val clientId = "someClientId"
+        val userId = "someUserId"
+
+        val disabledAccessToken = "someOldDisabledAccessToken"
+        val oldDisabledTokens = setOf(accessToken, disabledAccessToken) // accessToken is part of disabled list
+
+        val clientAuthInfo = ClientAuthInfo(clientId, userId, accessToken)
+
+        // Stub
+        given(accessTokenHandler.getClientIdFromAccessToken(accessToken, jwtParser)).willReturn(clientId)
+        given(accessTokenHandler.getUserIdFromAccessToken(accessToken, jwtParser)).willReturn(userId)
+        given(accessTokenHandler.isValidAccessToken(accessToken, jwtParser, now)).willReturn(true)
+        given(accessTokenHandler.isValidAccessToken(disabledAccessToken, jwtParser, now)).willReturn(true)
+        given(authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)).willReturn(oldDisabledTokens)
+
+        // Call method
+        authTokensService.logout(accessToken, now)
+    }
+
+    @Test(expected = AccessTokenIsInvalidException::class)
+    fun `logout should throw AccessTokenIsInvalidException if clientId cannot be obtained from token`() {
+        val now = Instant.now()
+        val accessToken = "someAccessToken"
+        val userId = "someUserId"
+
+        // Stub
+        given(accessTokenHandler.getClientIdFromAccessToken(accessToken, jwtParser)).willReturn(null)
+        given(accessTokenHandler.getUserIdFromAccessToken(accessToken, jwtParser)).willReturn(userId)
+
+        // Call method
+        authTokensService.logout(accessToken, now)
+    }
+
+    @Test(expected = AccessTokenIsInvalidException::class)
+    fun `logout should throw AccessTokenIsInvalidException if userId cannot be obtained from token`() {
+        val now = Instant.now()
+        val accessToken = "someAccessToken"
+        val clientId = "someClientId"
+
+        // Stub
+        given(accessTokenHandler.getUserIdFromAccessToken(accessToken, jwtParser)).willReturn(null)
+        given(accessTokenHandler.getClientIdFromAccessToken(accessToken, jwtParser)).willReturn(clientId)
+
+        // Call method
+        authTokensService.logout(accessToken, now)
     }
 }

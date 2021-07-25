@@ -68,6 +68,15 @@ class UserInfoService(
         }
     }
 
+    fun logout(accessToken: String): Result<Unit> {
+        val now = timeAndIdGenerator.getCurrentTime()
+        return try {
+            Result.Success(data = authTokensService.logout(accessToken, now))
+        } catch (e: Exception) {
+            Result.Error(httpStatus = HttpStatus.FORBIDDEN, errorBody = unauthorizedAccess)
+        }
+    }
+
     private fun findByEmail(email: String): Result<ApplicationUser> =
             try {
                 when (val user = userRepo.getApplicationUser(email)) {

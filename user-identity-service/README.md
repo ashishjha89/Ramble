@@ -31,7 +31,6 @@ Other steps which are needed for Vault-setup:
 - Add key-value secret: kv/ramble.email-sender (secrets are username and password).
 
 #### Next steps
-* Logout
 * Swagger docs
 * SQL support for tokens & user-info
 * Redis support for storing invalid/exposed tokens

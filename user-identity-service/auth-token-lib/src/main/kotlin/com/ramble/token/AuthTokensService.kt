@@ -4,10 +4,7 @@ import com.ramble.token.config.TokenComponentBuilder
 import com.ramble.token.handler.AccessTokenHandler
 import com.ramble.token.handler.RefreshTokenHandler
 import com.ramble.token.handler.helper.UsernamePasswordAuthTokenTokenGenerator
-import com.ramble.token.model.AccessClaims
-import com.ramble.token.model.ClientAuthInfo
-import com.ramble.token.model.RefreshTokenIsInvalidException
-import com.ramble.token.model.UserAuthInfo
+import com.ramble.token.model.*
 import com.ramble.token.repository.AuthTokenRepo
 import io.jsonwebtoken.Claims
 import org.springframework.security.core.GrantedAuthority
@@ -31,7 +28,6 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
     private val usernamePasswordAuthTokenTokenGenerator: UsernamePasswordAuthTokenTokenGenerator =
             tokenComponentBuilder.usernamePasswordAuthTokenTokenGenerator()
 
-    @Throws(IllegalStateException::class)
     fun generateUserAuthToken(
             authorities: Collection<GrantedAuthority>,
             clientId: String,
@@ -98,16 +94,16 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
         )
     }
 
-    fun getAccessTokenClaims(token: String?, now: Instant = Instant.now()): AccessClaims? {
-        token ?: return null
+    fun getAccessTokenClaims(accessToken: String?, now: Instant = Instant.now()): AccessClaims? {
+        accessToken ?: return null
         // 1. Check if token is of correct format
-        val accessClaims = accessTokenHandler.getTokenClaims(token, jwtParser, now) ?: return null
+        val accessClaims = accessTokenHandler.getTokenClaims(accessToken, jwtParser, now) ?: return null
 
         // 2. Check if token is not in disabled-token-list
         val clientAuthInfo = ClientAuthInfo(
                 clientId = accessClaims.clientId,
                 userId = accessClaims.userId,
-                accessToken = token
+                accessToken = accessToken
         )
         val disabledTokens = authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)
         val disabledTokensNonExpired = disabledTokens.filter {
@@ -117,7 +113,26 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
             // If some of the disabled-token is not invalid, update the list.
             authTokenRepo.updateDisabledAccessTokensForClient(clientAuthInfo, disabledTokensNonExpired)
         }
-        return if (!disabledTokensNonExpired.contains(token)) accessClaims else null
+        return if (!disabledTokensNonExpired.contains(accessToken)) accessClaims else null
+    }
+
+    @Throws(AccessTokenIsInvalidException::class)
+    fun logout(accessToken: String, now: Instant) {
+        val clientId = accessTokenHandler.getClientIdFromAccessToken(accessToken, jwtParser)
+        val userId = accessTokenHandler.getUserIdFromAccessToken(accessToken, jwtParser)
+        if (clientId == null || userId == null) throw AccessTokenIsInvalidException()
+        val clientAuthInfo = ClientAuthInfo(clientId, userId, accessToken)
+
+        // Get existing disabled tokens for the client.
+        val disabledTokens = authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)
+        if (disabledTokens.contains(accessToken)) throw AccessTokenIsInvalidException()
+
+        val disabledTokensNonExpired = disabledTokens.plus(accessToken).filter {
+            accessTokenHandler.isValidAccessToken(token = it, parser = jwtParser, now = now)
+        }.toSet()
+
+        // Add accessToken to disabledToken list
+        authTokenRepo.updateDisabledAccessTokensForClient(clientAuthInfo, disabledTokensNonExpired)
     }
 
     fun getAccessTokenClaims(principal: Principal): AccessClaims? =

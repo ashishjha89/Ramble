@@ -41,7 +41,7 @@ class SecurityConfiguration(
                                 manager = authenticationManager(),
                                 authTokensService = authTokensService,
                                 userInfoService = userInfoService,
-                                loginPath = "$AUTH_API_BASE_PATH/$USER_LOGIN_PATH"
+                                loginPath = "$AUTH_API_BASE_PATH/$LOGIN_PATH"
                         )
                 )
                 .addFilter(

@@ -2,9 +2,9 @@ package com.ramble.identity.common
 
 // API PATHS
 
-const val USER_INFO_API_BASE_PATH = "/user-info/v1"
+const val USER_INFO_API_BASE_PATH = "/user-identity/user-info/v1"
 
-const val AUTH_API_BASE_PATH = "/auth/v1"
+const val AUTH_API_BASE_PATH = "/user-identity/auth/v1"
 
 const val USER_REGISTER_PATH = "/register"
 

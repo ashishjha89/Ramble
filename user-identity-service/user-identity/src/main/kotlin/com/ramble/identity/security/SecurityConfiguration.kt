@@ -20,6 +20,17 @@ class SecurityConfiguration(
         private val authTokensService: AuthTokensService
 ) : WebSecurityConfigurerAdapter() {
 
+    private val swaggerWhiteList = arrayOf(
+            "/swagger-resources",
+            "/swagger-resources/**",
+            "/configuration/ui",
+            "/configuration/security",
+            "/swagger-ui.html",
+            "/webjars/**",
+            "/v3/api-docs/**",
+            "/swagger-ui/**"
+    )
+
     @Throws(Exception::class)
     override fun configure(httpSecurity: HttpSecurity) {
         httpSecurity
@@ -27,6 +38,8 @@ class SecurityConfiguration(
                 .exceptionHandling().authenticationEntryPoint(authenticationEntryPointInterceptor)
                 .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+                .authorizeRequests().antMatchers(*swaggerWhiteList).permitAll()
                 .and()
                 .authorizeRequests().antMatchers(HttpMethod.POST, SIGN_UP_URL).permitAll()
                 .and()

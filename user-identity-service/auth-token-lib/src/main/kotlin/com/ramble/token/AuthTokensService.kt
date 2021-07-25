@@ -75,8 +75,7 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
 
         // 2a) Insert access-token for above refresh-token in disabled list.
         // 2b) Clean stale access-tokens for this client.
-        val disabledAccessTokens = authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)?.plus(accessToken)
-                ?: setOf(accessToken)
+        val disabledAccessTokens = authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo).plus(accessToken)
         val updatedDisabledAccessTokens = disabledAccessTokens.filter {
             accessTokenHandler.isValidAccessToken(token = it, parser = jwtParser, now = now)
         }.toSet()
@@ -110,7 +109,7 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
                 userId = accessClaims.userId,
                 accessToken = token
         )
-        val disabledTokens = authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo) ?: setOf()
+        val disabledTokens = authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)
         val disabledTokensNonExpired = disabledTokens.filter {
             accessTokenHandler.isValidAccessToken(token = it, parser = jwtParser, now = now)
         }.toSet()
@@ -121,9 +120,8 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
         return if (!disabledTokensNonExpired.contains(token)) accessClaims else null
     }
 
-    fun getAccessTokenClaims(principal: Principal): AccessClaims? {
-        return accessTokenHandler.getPrincipalClaims(principal)
-    }
+    fun getAccessTokenClaims(principal: Principal): AccessClaims? =
+            accessTokenHandler.getPrincipalClaims(principal)
 
     fun springAuthentication(claims: Claims, authorities: List<GrantedAuthority>): SpringAuthentication =
             usernamePasswordAuthTokenTokenGenerator.getUsernamePasswordAuthenticationToken(claims, authorities)

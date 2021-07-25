@@ -2,7 +2,7 @@
 * Registration & Login
     - Username + password
 * Authentication & Authorization
-    - Access-token, refresh-token and registration-token (using jwt)
+    - Access-token (jwt), refresh-token (uuid) and registration-token (jwt)
 * Get User-Info (/me api)
 
 #### Local email client used for testing
@@ -31,8 +31,6 @@ Other steps which are needed for Vault-setup:
 - Add key-value secret: kv/ramble.email-sender (secrets are username and password).
 
 #### Next steps
-* Refresh token
-    - Unit test for AuthTokenService, AuthTokenRepo
 * Logout
 * Swagger docs
 * SQL support for tokens & user-info

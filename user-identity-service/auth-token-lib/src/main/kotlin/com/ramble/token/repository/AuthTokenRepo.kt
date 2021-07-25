@@ -26,8 +26,8 @@ class AuthTokenRepo {
     internal fun deleteOldAuthTokens(refreshToken: String): ClientAuthInfo =
             refreshTokenMap.remove(refreshToken) ?: throw RefreshTokenIsInvalidException()
 
-    internal fun getDisabledAccessTokensForClient(clientAuthInfo: ClientAuthInfo): Set<AccessToken>? =
-            disabledClientAccessTokenMap[clientAuthInfo]
+    internal fun getDisabledAccessTokensForClient(clientAuthInfo: ClientAuthInfo): Set<AccessToken> =
+            disabledClientAccessTokenMap[clientAuthInfo] ?: setOf()
 
     internal fun updateDisabledAccessTokensForClient(clientAuthInfo: ClientAuthInfo, accessTokens: Set<AccessToken>?) {
         if (accessTokens == null || accessTokens.isEmpty()) disabledClientAccessTokenMap.remove(clientAuthInfo)

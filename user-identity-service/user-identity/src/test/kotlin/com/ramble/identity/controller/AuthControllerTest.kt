@@ -1,7 +1,10 @@
 package com.ramble.identity.controller
 
 import com.ramble.identity.common.Result
+import com.ramble.identity.common.refreshTokenInvalid
 import com.ramble.identity.common.userAlreadyActivatedError
+import com.ramble.identity.models.LoginResponse
+import com.ramble.identity.models.RefreshTokenRequest
 import com.ramble.identity.models.RegisterUserRequest
 import com.ramble.identity.models.RegisteredUserResponse
 import com.ramble.identity.service.UserInfoService
@@ -72,5 +75,32 @@ class AuthControllerTest {
 
         // Call method and assert
         assertEquals(expectedResponse, authController.confirmRegistration(confirmRegistrationToken))
+    }
+
+    @Test
+    fun `refreshToken should send new LoginResponse if successful`() {
+        val refreshTokenRequest = RefreshTokenRequest(refreshToken = "someRefreshToken")
+        val loginResponse = mock(LoginResponse::class.java)
+        val refreshTokenResult = Result.Success(data = loginResponse)
+        val expectedResponse = ResponseEntity(loginResponse, HttpStatus.OK)
+
+        // Stub
+        given(userInfoService.refreshToken(refreshTokenRequest)).willReturn(refreshTokenResult)
+
+        // Call method and assert
+        assertEquals(expectedResponse, authController.refreshToken(refreshTokenRequest))
+    }
+
+    @Test
+    fun `refreshToken send error if failed`() {
+        val refreshTokenRequest = RefreshTokenRequest(refreshToken = "someRefreshToken")
+        val refreshTokenError = Result.Error<LoginResponse>(HttpStatus.FORBIDDEN, refreshTokenInvalid)
+        val expectedResponse = ResponseEntity(refreshTokenError.errorBody, refreshTokenError.httpStatus)
+
+        // Stub
+        given(userInfoService.refreshToken(refreshTokenRequest)).willReturn(refreshTokenError)
+
+        // Call method and assert
+        assertEquals(expectedResponse, authController.refreshToken(refreshTokenRequest))
     }
 }

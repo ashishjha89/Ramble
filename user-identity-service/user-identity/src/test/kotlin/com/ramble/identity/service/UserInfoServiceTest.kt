@@ -6,6 +6,8 @@ import com.ramble.identity.repo.UserRepo
 import com.ramble.identity.utils.TimeAndIdGenerator
 import com.ramble.token.AuthTokensService
 import com.ramble.token.model.AccessClaims
+import com.ramble.token.model.RefreshTokenIsInvalidException
+import com.ramble.token.model.UserAuthInfo
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.BDDMockito.given
@@ -14,6 +16,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import java.security.Principal
+import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -183,5 +186,63 @@ class UserInfoServiceTest {
             userInfoService.loadUserByUsername(emailId)
         }
         assertEquals(internalServerError.errorMessage, exception.message)
+    }
+
+    @Test
+    fun `refreshToken should return LoginResponse result if successful`() {
+        val refreshTokenStr = "someRefreshToken"
+        val refreshTokenRequest = RefreshTokenRequest(refreshToken = refreshTokenStr)
+        val now = Instant.now()
+
+        val userId = "someUserId"
+        val emailId = "someEmailId@ramble.com"
+        val newAccessToken = "this_is_new_access_token"
+        val newRefreshToken = "this_is_new_refresh_token"
+
+        val userAuthInfo = UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken)
+        val expectedLoginResponse = LoginResponse(userId, newAccessToken, newRefreshToken)
+
+        // Stub
+        given(timeAndIdGenerator.getCurrentTime()).willReturn(now)
+        given(authTokensService.refreshAuthToken(refreshTokenStr, now)).willReturn(userAuthInfo)
+
+        // Call method
+        val result = userInfoService.refreshToken(refreshTokenRequest)
+        assertTrue(result is Result.Success)
+        assertEquals(expectedLoginResponse, result.data)
+    }
+
+    @Test
+    fun `refreshToken should return refreshTokenInvalid error if refreshToken is invalid`() {
+        val refreshTokenStr = "someRefreshToken"
+        val refreshTokenRequest = RefreshTokenRequest(refreshToken = refreshTokenStr)
+        val now = Instant.now()
+
+        // Stub
+        given(timeAndIdGenerator.getCurrentTime()).willReturn(now)
+        given(authTokensService.refreshAuthToken(refreshTokenStr, now)).willThrow(RefreshTokenIsInvalidException())
+
+        // Call method
+        val result = userInfoService.refreshToken(refreshTokenRequest)
+        assertTrue(result is Result.Error)
+        assertEquals(HttpStatus.FORBIDDEN, result.httpStatus)
+        assertEquals(refreshTokenInvalid, result.errorBody)
+    }
+
+    @Test
+    fun `refreshToken should return internalServerError error if refreshToken is invalid`() {
+        val refreshTokenStr = "someRefreshToken"
+        val refreshTokenRequest = RefreshTokenRequest(refreshToken = refreshTokenStr)
+        val now = Instant.now()
+
+        // Stub
+        given(timeAndIdGenerator.getCurrentTime()).willReturn(now)
+        given(authTokensService.refreshAuthToken(refreshTokenStr, now)).willThrow(IllegalStateException())
+
+        // Call method
+        val result = userInfoService.refreshToken(refreshTokenRequest)
+        assertTrue(result is Result.Error)
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.httpStatus)
+        assertEquals(internalServerError, result.errorBody)
     }
 }

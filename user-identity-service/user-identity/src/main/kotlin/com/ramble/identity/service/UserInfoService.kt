@@ -62,7 +62,7 @@ class UserInfoService(
             ))
         } catch (e: Exception) {
             when (e) {
-                is RefreshTokenIsInvalidException -> Result.Error(HttpStatus.FORBIDDEN, regreshTokenInvalid)
+                is RefreshTokenIsInvalidException -> Result.Error(HttpStatus.FORBIDDEN, refreshTokenInvalid)
                 else -> Result.Error(HttpStatus.INTERNAL_SERVER_ERROR, internalServerError)
             }
         }

@@ -53,5 +53,5 @@ val emailSendingFailed: ErrorBody =
 val clientIdHeaderMissing: ErrorBody =
         ErrorBody(errorCode = ErrorCode.CLIENT_ID_HEADER_MISSING, errorMessage = ErrorMessage.clientIdHeaderMissingMsg)
 
-val regreshTokenInvalid: ErrorBody =
+val refreshTokenInvalid: ErrorBody =
         ErrorBody(errorCode = ErrorCode.REFRESH_TOKEN_IS_INVALID, errorMessage = ErrorMessage.refreshTokenIsInvalidMsg)

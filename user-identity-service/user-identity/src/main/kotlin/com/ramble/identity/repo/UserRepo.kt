@@ -30,11 +30,8 @@ class UserRepo(private val timeAndIdGenerator: TimeAndIdGenerator) {
         return user
     }
 
-    /**
-     * Return true if newly-registered user accountStatus is changed to activated.
-     */
     @Throws(UserNotFoundException::class, UserAlreadyActivatedException::class, UserSuspendedException::class)
-    fun activateRegisteredUser(email: Email): Boolean {
+    fun activateRegisteredUser(email: Email) {
         val currentTimeInSeconds = timeAndIdGenerator.getCurrentTimeInSeconds()
         val user = getApplicationUser(email) ?: throw UserNotFoundException()
         when (user.accountStatus) {
@@ -46,7 +43,6 @@ class UserRepo(private val timeAndIdGenerator: TimeAndIdGenerator) {
                         activationDateInSeconds = currentTimeInSeconds
                 )
                 userMap[email] = activatedUser
-                return true
             }
         }
     }

@@ -30,8 +30,13 @@ Other steps which are needed for Vault-setup:
 - Go to vault and 'enable new engine' -> Chose KV -> In Method-option, chose 'Version 1' from drop down -> Enable engine
 - Add key-value secret: kv/ramble.email-sender (secrets are username and password).
 
+
+#### Api Documentation
+Swagger: http://localhost:8080/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config
+
+Json format: http://localhost:8080/v3/api-docs
+
 #### Next steps
-* Swagger docs
 * SQL support for tokens & user-info
 * Redis support for storing invalid/exposed tokens
 * Integration tests

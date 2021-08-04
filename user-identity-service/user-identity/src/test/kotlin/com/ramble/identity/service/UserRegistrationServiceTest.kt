@@ -3,7 +3,8 @@ package com.ramble.identity.service
 import com.ramble.email.CredentialNotFoundException
 import com.ramble.email.EmailSenderService
 import com.ramble.email.EmailSendingFailedException
-import com.ramble.identity.common.*
+import com.ramble.identity.common.REGISTER_EMAIL_SUBJECT
+import com.ramble.identity.common.SIGN_UP_CONFIRMATION_URL
 import com.ramble.identity.models.*
 import com.ramble.identity.repo.UserRepo
 import com.ramble.identity.service.validator.RegistrationRequestValidator
@@ -13,14 +14,13 @@ import com.ramble.token.model.RegistrationConfirmationToken
 import org.junit.Before
 import org.junit.Test
 import org.mockito.BDDMockito.given
+import org.mockito.BDDMockito.willDoNothing
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
-import org.springframework.http.HttpStatus
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class UserRegistrationServiceTest {
 
@@ -72,37 +72,29 @@ class UserRegistrationServiceTest {
         // Call method and assert
         val result =
                 userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
-        assertTrue(result is Result.Success)
-        assertEquals(RegisteredUserResponse(userId, emailId), result.data)
+        assertEquals(RegisteredUserResponse(userId, emailId), result)
     }
 
-    @Test
-    fun `saveUser should return userAlreadyActivatedError if repo throws UserAlreadyActivatedException when savingNewUser`() {
+    @Test(expected = UserAlreadyActivatedException::class)
+    fun `saveUser should throw UserAlreadyActivatedException if repo throws UserAlreadyActivatedException when savingNewUser`() {
         // Stub
         given(userRepo.saveNewUser(userToSave)).willThrow(UserAlreadyActivatedException())
 
         // Call method and assert
-        val result =
-                userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.FORBIDDEN, result.httpStatus)
-        assertEquals(userAlreadyActivatedError, result.errorBody)
+        userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
     }
 
-    @Test
-    fun `saveUser should return userSuspendedError if repo throws UserSuspendedException when savingNewUser`() {
+    @Test(expected = UserSuspendedException::class)
+    fun `saveUser should throw UserSuspendedException if repo throws UserSuspendedException when savingNewUser`() {
         // Stub
         given(userRepo.saveNewUser(userToSave)).willThrow(UserSuspendedException())
 
         // Call method and assert
-        val result = userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.FORBIDDEN, result.httpStatus)
-        assertEquals(userSuspendedError, result.errorBody)
+        userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
     }
 
-    @Test
-    fun `saveUser should return emailSendingFailed if CredentialNotFoundException when sending email`() {
+    @Test(expected = CredentialNotFoundException::class)
+    fun `saveUser should throw CredentialNotFoundException if emailSenderService throws CredentialNotFoundException when sending email`() {
         // Stub
         given(userRepo.saveNewUser(userToSave)).willReturn(applicationUser)
         given(emailSenderService
@@ -111,15 +103,11 @@ class UserRegistrationServiceTest {
         ).willThrow(CredentialNotFoundException())
 
         // Call method and assert
-        val result =
-                userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.httpStatus)
-        assertEquals(emailSendingFailed, result.errorBody)
+        userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
     }
 
-    @Test
-    fun `saveUser should return emailSendingFailed if EmailSendingFailedException when sending email`() {
+    @Test(expected = EmailSendingFailedException::class)
+    fun `saveUser should throw EmailSendingFailedException if emailSenderService throws EmailSendingFailedException when sending email`() {
         // Stub
         given(userRepo.saveNewUser(userToSave)).willReturn(applicationUser)
         given(emailSenderService
@@ -128,11 +116,7 @@ class UserRegistrationServiceTest {
         ).willThrow(EmailSendingFailedException())
 
         // Call method and assert
-        val result =
-                userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.httpStatus)
-        assertEquals(emailSendingFailed, result.errorBody)
+        userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
     }
 
     @Test
@@ -140,90 +124,60 @@ class UserRegistrationServiceTest {
         // Stub
         given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
                 .willReturn(registrationConfirmationToken)
-        given(userRepo.activateRegisteredUser(emailId)).willReturn(true)
+        willDoNothing().given(userRepo).activateRegisteredUser(emailId)
 
         // Call method and assert
         val result = userRegistrationService.confirmToken(registrationTokenStr)
-        assertTrue(result is Result.Success)
-        assertEquals(RegisteredUserResponse(userId, emailId), result.data)
+        assertEquals(RegisteredUserResponse(userId, emailId), result)
     }
 
-    @Test
-    fun `confirmToken should return unauthorizedAccess when token is null`() {
+    @Test(expected = InvalidRegistrationConfirmationToken::class)
+    fun `confirmToken should throw InvalidRegistrationConfirmationToken when token is null`() {
         // Call method and assert
-        val result = userRegistrationService.confirmToken(null)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.BAD_REQUEST, result.httpStatus)
-        assertEquals(unauthorizedAccess, result.errorBody)
+        userRegistrationService.confirmToken(null)
     }
 
-    @Test
-    fun `confirmToken should return unauthorizedAccess when token is invalid`() {
+    @Test(expected = InvalidRegistrationConfirmationToken::class)
+    fun `confirmToken should throw InvalidRegistrationConfirmationToken when token is invalid`() {
         // Stub
         given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
                 .willReturn(null)
 
         // Call method and assert
         val result = userRegistrationService.confirmToken(registrationTokenStr)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.BAD_REQUEST, result.httpStatus)
-        assertEquals(unauthorizedAccess, result.errorBody)
     }
 
-    @Test
-    fun `confirmToken should return unauthorizedAccess if unable to change status to active`() {
-        // Stub
-        given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
-                .willReturn(registrationConfirmationToken)
-        given(userRepo.activateRegisteredUser(emailId)).willReturn(false)
-
-        // Call method and assert
-        val result = userRegistrationService.confirmToken(registrationTokenStr)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.FORBIDDEN, result.httpStatus)
-        assertEquals(unauthorizedAccess, result.errorBody)
-    }
-
-    @Test
-    fun `confirmToken should return badRequestError when UserNotFoundException is thrown by repo when trying to activate`() {
+    @Test(expected = UserNotFoundException::class)
+    fun `confirmToken should throw UserNotFoundException if userRepo throws UserNotFoundException`() {
         // Stub
         given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
                 .willReturn(registrationConfirmationToken)
         given(userRepo.activateRegisteredUser(emailId)).willThrow(UserNotFoundException())
 
         // Call method and assert
-        val result = userRegistrationService.confirmToken(registrationTokenStr)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.BAD_REQUEST, result.httpStatus)
-        assertEquals(unauthorizedAccess, result.errorBody)
+        userRegistrationService.confirmToken(registrationTokenStr)
     }
 
-    @Test
-    fun `confirmToken should return badRequestError when UserAlreadyActivatedException is thrown by repo when trying to activate`() {
+    @Test(expected = UserAlreadyActivatedException::class)
+    fun `confirmToken should throw UserAlreadyActivatedException when UserAlreadyActivatedException is thrown by repo when trying to activate`() {
         // Stub
         given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
                 .willReturn(registrationConfirmationToken)
         given(userRepo.activateRegisteredUser(emailId)).willThrow(UserAlreadyActivatedException())
 
         // Call method and assert
-        val result = userRegistrationService.confirmToken(registrationTokenStr)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.FORBIDDEN, result.httpStatus)
-        assertEquals(userAlreadyActivatedError, result.errorBody)
+        userRegistrationService.confirmToken(registrationTokenStr)
     }
 
-    @Test
-    fun `confirmToken should return badRequestError when UserSuspendedException is thrown by repo when trying to activate`() {
+    @Test(expected = UserSuspendedException::class)
+    fun `confirmToken should throw UserSuspendedException when UserSuspendedException is thrown by repo when trying to activate`() {
         // Stub
         given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
                 .willReturn(registrationConfirmationToken)
         given(userRepo.activateRegisteredUser(emailId)).willThrow(UserSuspendedException())
 
         // Call method and assert
-        val result = userRegistrationService.confirmToken(registrationTokenStr)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.FORBIDDEN, result.httpStatus)
-        assertEquals(userSuspendedError, result.errorBody)
+        userRegistrationService.confirmToken(registrationTokenStr)
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.ramble.identity.service
 
-import com.ramble.identity.common.*
+import com.ramble.identity.common.internalServerError
+import com.ramble.identity.common.invalidUserId
 import com.ramble.identity.models.*
 import com.ramble.identity.repo.UserRepo
 import com.ramble.identity.utils.TimeAndIdGenerator
@@ -14,13 +15,11 @@ import org.junit.jupiter.api.assertThrows
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
-import org.springframework.http.HttpStatus
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import java.security.Principal
 import java.time.Instant
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class UserInfoServiceTest {
 
@@ -49,101 +48,18 @@ class UserInfoServiceTest {
 
         // Call method and assert
         val result = userInfoService.getUserInfoResult(principal)
-        assertTrue(result is Result.Success)
-        assertEquals(userInfo, result.data)
+        assertEquals(userInfo, result)
     }
 
-    @Test
-    fun `getUserInfoResult should return badRequest if claims is missing principal`() {
+    @Test(expected = UserNotFoundException::class)
+    fun `getUserInfoResult should throw UserNotFoundException if claims is missing principal`() {
         val principal = mock(Principal::class.java)
 
         // Stub
         given(authTokensService.getAccessTokenClaims(principal)).willReturn(null)
 
-        // Call method and assert
-        val result = userInfoService.getUserInfoResult(principal)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.BAD_REQUEST, result.httpStatus)
-        assertEquals(userInfoNotFound, result.errorBody)
-    }
-
-    @Test
-    fun `getUserInfoResult should return badRequest if claims did not contain email`() {
-        val principal = mock(Principal::class.java)
-
-        // Stub
-        given(authTokensService.getAccessTokenClaims(principal)).willReturn(accessClaims)
-        given(accessClaims.email).willReturn(null)
-
-        // Call method and assert
-        val result = userInfoService.getUserInfoResult(principal)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.BAD_REQUEST, result.httpStatus)
-        assertEquals(userInfoNotFound, result.errorBody)
-    }
-
-    @Test
-    fun `getUserInfoResult should return badRequestError if userRepo throw UserNotFoundException`() {
-        val principal = mock(Principal::class.java)
-
-        // Stub
-        given(authTokensService.getAccessTokenClaims(principal)).willReturn(accessClaims)
-        given(accessClaims.email).willReturn(emailId)
-        given(userRepo.getUserInfo(emailId)).willThrow(UserNotFoundException())
-
-        // Call method and assert
-        val result = userInfoService.getUserInfoResult(principal)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.BAD_REQUEST, result.httpStatus)
-        assertEquals(userInfoNotFound, result.errorBody)
-    }
-
-    @Test
-    fun `getUserInfoResult should return userSuspendedError if userRepo throw UserSuspendedException`() {
-        val principal = mock(Principal::class.java)
-
-        // Stub
-        given(authTokensService.getAccessTokenClaims(principal)).willReturn(accessClaims)
-        given(accessClaims.email).willReturn(emailId)
-        given(userRepo.getUserInfo(emailId)).willThrow(UserSuspendedException())
-
-        // Call method and assert
-        val result = userInfoService.getUserInfoResult(principal)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.FORBIDDEN, result.httpStatus)
-        assertEquals(userSuspendedError, result.errorBody)
-    }
-
-    @Test
-    fun `getUserInfoResult should return userNotActivatedError if userRepo throw UserNotActivatedException`() {
-        val principal = mock(Principal::class.java)
-
-        // Stub
-        given(authTokensService.getAccessTokenClaims(principal)).willReturn(accessClaims)
-        given(accessClaims.email).willReturn(emailId)
-        given(userRepo.getUserInfo(emailId)).willThrow(UserNotActivatedException())
-
-        // Call method and assert
-        val result = userInfoService.getUserInfoResult(principal)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.FORBIDDEN, result.httpStatus)
-        assertEquals(userNotActivatedError, result.errorBody)
-    }
-
-    @Test
-    fun `getUserInfoResult should return internalServerError if userRepo throw unknown exception`() {
-        val principal = mock(Principal::class.java)
-
-        // Stub
-        given(authTokensService.getAccessTokenClaims(principal)).willReturn(accessClaims)
-        given(accessClaims.email).willReturn(emailId)
-        given(userRepo.getUserInfo(emailId)).willThrow(IllegalStateException("random exception"))
-
-        // Call method and assert
-        val result = userInfoService.getUserInfoResult(principal)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.httpStatus)
-        assertEquals(internalServerError, result.errorBody)
+        // Call method and assert that exception is thrown
+        userInfoService.getUserInfoResult(principal)
     }
 
     @Test
@@ -210,12 +126,11 @@ class UserInfoServiceTest {
 
         // Call method
         val result = userInfoService.refreshToken(refreshTokenRequest)
-        assertTrue(result is Result.Success)
-        assertEquals(expectedLoginResponse, result.data)
+        assertEquals(expectedLoginResponse, result)
     }
 
-    @Test
-    fun `refreshToken should return refreshTokenInvalid error if auth-token-lib throws RefreshTokenIsInvalidException`() {
+    @Test(expected = RefreshTokenIsInvalidException::class)
+    fun `refreshToken should throw RefreshTokenIsInvalidException if auth-token-lib throws RefreshTokenIsInvalidException`() {
         val refreshTokenStr = "someRefreshToken"
         val refreshTokenRequest = RefreshTokenRequest(refreshToken = refreshTokenStr)
         val now = Instant.now()
@@ -225,27 +140,7 @@ class UserInfoServiceTest {
         given(authTokensService.refreshAuthToken(refreshTokenStr, now)).willThrow(RefreshTokenIsInvalidException())
 
         // Call method
-        val result = userInfoService.refreshToken(refreshTokenRequest)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.FORBIDDEN, result.httpStatus)
-        assertEquals(refreshTokenInvalid, result.errorBody)
-    }
-
-    @Test
-    fun `refreshToken should return internalServerError error if auth-token-lib throws IllegalStateException`() {
-        val refreshTokenStr = "someRefreshToken"
-        val refreshTokenRequest = RefreshTokenRequest(refreshToken = refreshTokenStr)
-        val now = Instant.now()
-
-        // Stub
-        given(timeAndIdGenerator.getCurrentTime()).willReturn(now)
-        given(authTokensService.refreshAuthToken(refreshTokenStr, now)).willThrow(IllegalStateException())
-
-        // Call method
-        val result = userInfoService.refreshToken(refreshTokenRequest)
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.httpStatus)
-        assertEquals(internalServerError, result.errorBody)
+        userInfoService.refreshToken(refreshTokenRequest)
     }
 
     @Test
@@ -257,15 +152,14 @@ class UserInfoServiceTest {
         given(timeAndIdGenerator.getCurrentTime()).willReturn(now)
 
         // Call method
-        val result = userInfoService.logout(accessToken)
+        userInfoService.logout(accessToken)
 
         // Verify
-        assertTrue(result is Result.Success)
         verify(authTokensService).logout(accessToken, now)
     }
 
-    @Test
-    fun `logout should return error if logout failed by auth-token-lib`() {
+    @Test(expected = AccessTokenIsInvalidException::class)
+    fun `logout should throw AccessTokenIsInvalidException if logout failed by auth-token-lib`() {
         val now = Instant.now()
         val accessToken = "someAccessToken"
 
@@ -274,11 +168,6 @@ class UserInfoServiceTest {
         given(authTokensService.logout(accessToken, now)).willThrow(AccessTokenIsInvalidException())
 
         // Call method
-        val result = userInfoService.logout(accessToken)
-
-        // Verify
-        assertTrue(result is Result.Error)
-        assertEquals(HttpStatus.FORBIDDEN, result.httpStatus)
-        assertEquals(unauthorizedAccess, result.errorBody)
+        userInfoService.logout(accessToken)
     }
 }

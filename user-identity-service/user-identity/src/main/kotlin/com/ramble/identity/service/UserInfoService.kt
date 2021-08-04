@@ -5,6 +5,7 @@ import com.ramble.identity.models.*
 import com.ramble.identity.repo.UserRepo
 import com.ramble.identity.utils.TimeAndIdGenerator
 import com.ramble.token.AuthTokensService
+import com.ramble.token.model.AccessTokenIsInvalidException
 import com.ramble.token.model.RefreshTokenIsInvalidException
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.userdetails.UserDetails
@@ -21,20 +22,9 @@ class UserInfoService(
         private val timeAndIdGenerator: TimeAndIdGenerator
 ) : UserDetailsService {
 
-    fun getUserInfoResult(principal: Principal): Result<UserInfo> {
-        val badRequestError = Result.Error<UserInfo>(httpStatus = HttpStatus.BAD_REQUEST, errorBody = userInfoNotFound)
-        val emailId = authTokensService.getAccessTokenClaims(principal)?.email ?: return badRequestError
-        return try {
-            Result.Success(data = getUserInfo(emailId))
-        } catch (e: Exception) {
-            when (e) {
-                is UserNotFoundException -> badRequestError
-                is UserSuspendedException -> Result.Error(HttpStatus.FORBIDDEN, userSuspendedError)
-                is UserNotActivatedException -> Result.Error(HttpStatus.FORBIDDEN, userNotActivatedError)
-                else -> Result.Error(HttpStatus.INTERNAL_SERVER_ERROR, internalServerError)
-            }
-        }
-    }
+    @Throws(UserNotFoundException::class)
+    fun getUserInfoResult(principal: Principal): UserInfo =
+            getUserInfo(authTokensService.getAccessTokenClaims(principal)?.email ?: throw UserNotFoundException())
 
     @Throws(UserNotFoundException::class, UserSuspendedException::class, UserNotActivatedException::class)
     fun getUserInfo(email: String): UserInfo = userRepo.getUserInfo(email)
@@ -48,33 +38,31 @@ class UserInfoService(
         }
     }
 
-    fun refreshToken(refreshTokenRequest: RefreshTokenRequest): Result<LoginResponse> {
+    @Throws(RefreshTokenIsInvalidException::class)
+    fun refreshToken(refreshTokenRequest: RefreshTokenRequest): LoginResponse {
         val now = timeAndIdGenerator.getCurrentTime()
-        return try {
-            val userAuthInfo = authTokensService.refreshAuthToken(
-                    refreshToken = refreshTokenRequest.refreshToken ?: throw IllegalStateException(),
-                    now = now
-            ) ?: throw IllegalStateException()
-            Result.Success(data = LoginResponse(
-                    userId = userAuthInfo.userId,
-                    accessToken = userAuthInfo.accessToken,
-                    refreshToken = userAuthInfo.refreshToken
-            ))
+        val userAuthInfo = authTokensService.refreshAuthToken(
+                refreshToken = refreshTokenRequest.refreshToken ?: throw RefreshTokenIsInvalidException(),
+                now = now
+        ) ?: throw RefreshTokenIsInvalidException()
+        return LoginResponse(
+                userId = userAuthInfo.userId,
+                accessToken = userAuthInfo.accessToken,
+                refreshToken = userAuthInfo.refreshToken
+        )
+        /*return try {
+
         } catch (e: Exception) {
             when (e) {
                 is RefreshTokenIsInvalidException -> Result.Error(HttpStatus.FORBIDDEN, refreshTokenInvalid)
                 else -> Result.Error(HttpStatus.INTERNAL_SERVER_ERROR, internalServerError)
             }
-        }
+        }*/
     }
 
-    fun logout(accessToken: String): Result<Unit> {
-        val now = timeAndIdGenerator.getCurrentTime()
-        return try {
-            Result.Success(data = authTokensService.logout(accessToken, now))
-        } catch (e: Exception) {
-            Result.Error(httpStatus = HttpStatus.FORBIDDEN, errorBody = unauthorizedAccess)
-        }
+    @Throws(AccessTokenIsInvalidException::class)
+    fun logout(accessToken: String) {
+        authTokensService.logout(accessToken, now = timeAndIdGenerator.getCurrentTime())
     }
 
     private fun findByEmail(email: String): Result<ApplicationUser> =

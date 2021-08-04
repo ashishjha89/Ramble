@@ -3,14 +3,14 @@ package com.ramble.identity.service
 import com.ramble.email.CredentialNotFoundException
 import com.ramble.email.EmailSenderService
 import com.ramble.email.EmailSendingFailedException
-import com.ramble.identity.common.*
+import com.ramble.identity.common.REGISTER_EMAIL_SUBJECT
+import com.ramble.identity.common.SIGN_UP_CONFIRMATION_URL
 import com.ramble.identity.models.*
 import com.ramble.identity.repo.UserRepo
 import com.ramble.identity.service.validator.RegistrationRequestValidator
 import com.ramble.identity.utils.TimeAndIdGenerator
 import com.ramble.token.RegistrationConfirmationService
 import com.ramble.token.model.RegistrationConfirmationToken
-import org.springframework.http.HttpStatus
 import org.springframework.scheduling.annotation.Async
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
@@ -26,62 +26,46 @@ class UserRegistrationService(
         private val timeAndIdGenerator: TimeAndIdGenerator
 ) {
 
+    @Throws(UserAlreadyActivatedException::class,
+            UserSuspendedException::class,
+            CredentialNotFoundException::class,
+            EmailSendingFailedException::class,
+            InvalidEmailException::class)
     fun saveUser(
             registerUserRequest: RegisterUserRequest,
             expirationDurationAmount: Long = 15,
             expiryDurationUnit: ChronoUnit = ChronoUnit.MINUTES
-    ): Result<RegisteredUserResponse> {
+    ): RegisteredUserResponse {
         val now = timeAndIdGenerator.getCurrentTime()
-        registrationRequestValidator.getRegistrationRequestError()?.let {
-            return Result.Error(httpStatus = HttpStatus.BAD_REQUEST, errorBody = it)
-        }
-        return try {
-            val userToSave = registerUserRequest.copy(password = bCryptPasswordEncoder.encode(registerUserRequest.password))
-            val newlyRegisteredUser = userRepo.saveNewUser(userToSave)
-            val confirmRegistrationToken = registrationConfirmationService.addRegistrationConfirmationToken(
-                    userId = newlyRegisteredUser.id,
-                    email = newlyRegisteredUser.email,
-                    now = now,
-                    expirationDurationAmount = expirationDurationAmount,
-                    expiryDurationUnit = expiryDurationUnit
-            )
-            val registeredUserResponse = RegisteredUserResponse(
-                    userId = confirmRegistrationToken.userId,
-                    email = confirmRegistrationToken.email
-            )
-            sendConfirmRegistrationEmail(confirmRegistrationToken, newlyRegisteredUser)
-
-            Result.Success(data = registeredUserResponse)
-        } catch (e: Exception) {
-            when (e) {
-                is UserAlreadyActivatedException -> Result.Error(HttpStatus.FORBIDDEN, userAlreadyActivatedError)
-                is UserSuspendedException -> Result.Error(HttpStatus.FORBIDDEN, userSuspendedError)
-                is CredentialNotFoundException, is EmailSendingFailedException -> Result.Error(HttpStatus.INTERNAL_SERVER_ERROR, emailSendingFailed)
-                else -> Result.Error(HttpStatus.INTERNAL_SERVER_ERROR, internalServerError)
-            }
-        }
+        registrationRequestValidator.getRegistrationRequestError()?.let { throw InvalidEmailException() }
+        val userToSave = registerUserRequest.copy(password = bCryptPasswordEncoder.encode(registerUserRequest.password))
+        val newlyRegisteredUser = userRepo.saveNewUser(userToSave)
+        val confirmRegistrationToken = registrationConfirmationService.addRegistrationConfirmationToken(
+                userId = newlyRegisteredUser.id,
+                email = newlyRegisteredUser.email,
+                now = now,
+                expirationDurationAmount = expirationDurationAmount,
+                expiryDurationUnit = expiryDurationUnit
+        )
+        val registeredUserResponse = RegisteredUserResponse(
+                userId = confirmRegistrationToken.userId,
+                email = confirmRegistrationToken.email
+        )
+        sendConfirmRegistrationEmail(confirmRegistrationToken, newlyRegisteredUser)
+        return registeredUserResponse
     }
 
-    fun confirmToken(token: String?): Result<RegisteredUserResponse> {
+    @Throws(UserNotFoundException::class,
+            UserAlreadyActivatedException::class,
+            UserSuspendedException::class,
+            InvalidRegistrationConfirmationToken::class)
+    fun confirmToken(token: String?): RegisteredUserResponse {
         val now = timeAndIdGenerator.getCurrentTime()
-        val badRequestError = Result.Error<RegisteredUserResponse>(HttpStatus.BAD_REQUEST, unauthorizedAccess)
-        token ?: return badRequestError
+        token ?: throw InvalidRegistrationConfirmationToken()
         val confirmationToken = registrationConfirmationService.processRegistrationConfirmationToken(token, now)
-                ?: return badRequestError
-        return try {
-            if (userRepo.activateRegisteredUser(email = confirmationToken.email)) {
-                Result.Success(data = RegisteredUserResponse(userId = confirmationToken.userId, email = confirmationToken.email))
-            } else {
-                Result.Error(HttpStatus.FORBIDDEN, unauthorizedAccess)
-            }
-        } catch (e: Exception) {
-            when (e) {
-                is UserNotFoundException -> badRequestError
-                is UserAlreadyActivatedException -> Result.Error(HttpStatus.FORBIDDEN, userAlreadyActivatedError)
-                is UserSuspendedException -> Result.Error(HttpStatus.FORBIDDEN, userSuspendedError)
-                else -> Result.Error(HttpStatus.INTERNAL_SERVER_ERROR, internalServerError)
-            }
-        }
+                ?: throw InvalidRegistrationConfirmationToken()
+        userRepo.activateRegisteredUser(email = confirmationToken.email)
+        return RegisteredUserResponse(userId = confirmationToken.userId, email = confirmationToken.email)
     }
 
     @Throws(CredentialNotFoundException::class, EmailSendingFailedException::class)

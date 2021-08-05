@@ -1,6 +1,5 @@
 package com.ramble.identity.service
 
-import com.ramble.identity.common.internalServerError
 import com.ramble.identity.common.invalidUserId
 import com.ramble.identity.models.*
 import com.ramble.identity.repo.UserRepo
@@ -92,18 +91,6 @@ class UserInfoServiceTest {
             userInfoService.loadUserByUsername(emailId)
         }
         assertEquals(invalidUserId.errorMessage, exception.message)
-    }
-
-    @Test
-    fun `loadUserByUsername should throw UsernameNotFoundException(internalServerError) if repo cannot find user`() {
-        // Stub
-        given(userRepo.getApplicationUser(emailId)).willThrow(IllegalStateException("some exception"))
-
-        // Call method and assert
-        val exception: UsernameNotFoundException = assertThrows {
-            userInfoService.loadUserByUsername(emailId)
-        }
-        assertEquals(internalServerError.errorMessage, exception.message)
     }
 
     @Test

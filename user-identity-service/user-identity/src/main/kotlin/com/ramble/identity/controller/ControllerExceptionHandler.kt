@@ -25,7 +25,6 @@ class ControllerExceptionHandler {
     fun userNotFoundException(): ResponseEntity<ErrorBody> =
             ResponseEntity(userInfoNotFound, HttpStatus.BAD_REQUEST)
 
-
     @ExceptionHandler(UserNotActivatedException::class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     fun userNotActivatedException(): ResponseEntity<ErrorBody> =
@@ -57,12 +56,12 @@ class ControllerExceptionHandler {
             ResponseEntity(unauthorizedAccess, HttpStatus.BAD_REQUEST)
 
     @ExceptionHandler(CredentialNotFoundException::class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     fun credentialNotFoundException(): ResponseEntity<ErrorBody> =
             ResponseEntity(emailSendingFailed, HttpStatus.INTERNAL_SERVER_ERROR)
 
     @ExceptionHandler(EmailSendingFailedException::class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     fun emailSendingFailedException(): ResponseEntity<ErrorBody> =
             ResponseEntity(emailSendingFailed, HttpStatus.INTERNAL_SERVER_ERROR)
 

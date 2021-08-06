@@ -22,7 +22,7 @@ class EmailSenderServiceTest {
     @Mock
     private val confirmRegistrationEmailService = mock(ConfirmRegistrationEmailService::class.java)
 
-    @Test(expected = CredentialNotFoundException::class)
+    @Test(expected = EmailCredentialNotFoundException::class)
     fun `sendConfirmRegistrationEmail should throw CredentialNotFoundException if ConfirmRegistrationEmailService creation failed`() {
         // Stub
         given(emailComponentBuilder.confirmRegistrationEmailService()).willReturn(null)

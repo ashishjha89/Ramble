@@ -1,6 +1,6 @@
 package com.ramble.identity.service
 
-import com.ramble.email.CredentialNotFoundException
+import com.ramble.email.EmailCredentialNotFoundException
 import com.ramble.email.EmailSenderService
 import com.ramble.email.EmailSendingFailedException
 import com.ramble.identity.common.REGISTER_EMAIL_SUBJECT
@@ -93,14 +93,14 @@ class UserRegistrationServiceTest {
         userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
     }
 
-    @Test(expected = CredentialNotFoundException::class)
+    @Test(expected = EmailCredentialNotFoundException::class)
     fun `saveUser should throw CredentialNotFoundException if emailSenderService throws CredentialNotFoundException when sending email`() {
         // Stub
         given(userRepo.saveNewUser(userToSave)).willReturn(applicationUser)
         given(emailSenderService
                 .sendConfirmRegistrationEmail(
                         emailId, fullName, registrationTokenStr, SIGN_UP_CONFIRMATION_URL, REGISTER_EMAIL_SUBJECT)
-        ).willThrow(CredentialNotFoundException())
+        ).willThrow(EmailCredentialNotFoundException())
 
         // Call method and assert
         userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)

@@ -89,4 +89,12 @@ class ControllerExceptionHandlerTest {
                 exceptionHandler.emailSendingFailedException()
         )
     }
+
+    @Test
+    fun invalidEmailExceptionTest() {
+        assertEquals(
+                ResponseEntity(invalidEmailSyntaxError, HttpStatus.BAD_REQUEST),
+                exceptionHandler.invalidEmailException()
+        )
+    }
 }

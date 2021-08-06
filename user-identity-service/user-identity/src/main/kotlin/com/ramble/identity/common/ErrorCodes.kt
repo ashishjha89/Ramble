@@ -1,6 +1,6 @@
 package com.ramble.identity.common
 
-private object ErrorCode {
+object ErrorCode {
     const val SOMETHING_WENT_WRONG = "SOMETHING_WENT_WRONG"
     const val INVALID_USER_ID = "INVALID_USER_ID"
     const val USER_INFO_NOT_FOUND = "USER_INFO_NOT_FOUND"
@@ -11,6 +11,7 @@ private object ErrorCode {
     const val EMAIL_SENDING_FAILED = "EMAIL_SENDING_FAILED"
     const val CLIENT_ID_HEADER_MISSING = "CLIENT_ID_HEADER_MISSING"
     const val REFRESH_TOKEN_IS_INVALID = "REFRESH_TOKEN_IS_INVALID"
+    const val EMAIL_IS_INVALID = "EMAIL_IS_INVALID"
 }
 
 private object ErrorMessage {
@@ -24,6 +25,7 @@ private object ErrorMessage {
     const val emailSendingFailedMsg = "Failed to send email."
     const val clientIdHeaderMissingMsg = "ClientId header is missing."
     const val refreshTokenIsInvalidMsg = "Refresh token is invalid."
+    const val invalidEmailMsg = "This is not a valid email."
 }
 
 val unauthorizedAccess: ErrorBody =
@@ -55,3 +57,6 @@ val clientIdHeaderMissing: ErrorBody =
 
 val refreshTokenInvalid: ErrorBody =
         ErrorBody(errorCode = ErrorCode.REFRESH_TOKEN_IS_INVALID, errorMessage = ErrorMessage.refreshTokenIsInvalidMsg)
+
+val invalidEmailSyntaxError: ErrorBody =
+        ErrorBody(errorCode = ErrorCode.EMAIL_IS_INVALID, errorMessage = ErrorMessage.invalidEmailMsg)

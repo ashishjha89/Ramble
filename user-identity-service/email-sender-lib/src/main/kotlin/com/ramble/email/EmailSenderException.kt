@@ -1,5 +1,5 @@
 package com.ramble.email
 
-class CredentialNotFoundException : Exception()
+class EmailCredentialNotFoundException : Exception()
 
 class EmailSendingFailedException: Exception()

@@ -1,10 +1,3 @@
-#### Features available
-* Registration & Login
-    - Username + password
-* Authentication & Authorization
-    - Access-token (jwt), refresh-token (uuid) and registration-token (jwt)
-* Get User-Info (/me api)
-
 #### Local email client used for testing
 Maildev: https://www.npmjs.com/package/maildev
 
@@ -32,9 +25,7 @@ Other steps which are needed for Vault-setup:
 
 
 #### Api Documentation
-Swagger: http://localhost:8080/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config
-
-Json format: http://localhost:8080/v3/api-docs
+http://localhost:8080/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config
 
 #### Next steps
 * SQL support for tokens & user-info

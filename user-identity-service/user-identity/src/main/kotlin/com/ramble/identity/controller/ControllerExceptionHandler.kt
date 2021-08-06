@@ -1,11 +1,12 @@
 package com.ramble.identity.controller
 
-import com.ramble.email.CredentialNotFoundException
+import com.ramble.email.EmailCredentialNotFoundException
 import com.ramble.email.EmailSendingFailedException
 import com.ramble.identity.common.*
 import com.ramble.identity.models.*
 import com.ramble.token.model.AccessTokenIsInvalidException
 import com.ramble.token.model.RefreshTokenIsInvalidException
+import io.swagger.v3.oas.annotations.Hidden
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
 
 @RestControllerAdvice
+@Hidden // To hide it from Swagger! Controllers are specifying their exact errors.
 class ControllerExceptionHandler {
 
     @ExceptionHandler(InternalServerException::class)
@@ -51,11 +53,11 @@ class ControllerExceptionHandler {
             ResponseEntity(refreshTokenInvalid, HttpStatus.FORBIDDEN)
 
     @ExceptionHandler(InvalidRegistrationConfirmationToken::class)
-    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    @ResponseStatus(value = HttpStatus.FORBIDDEN)
     fun registrationConfirmationTokenIsInvalidException(): ResponseEntity<ErrorBody> =
             ResponseEntity(unauthorizedAccess, HttpStatus.BAD_REQUEST)
 
-    @ExceptionHandler(CredentialNotFoundException::class)
+    @ExceptionHandler(EmailCredentialNotFoundException::class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     fun credentialNotFoundException(): ResponseEntity<ErrorBody> =
             ResponseEntity(emailSendingFailed, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -64,5 +66,10 @@ class ControllerExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     fun emailSendingFailedException(): ResponseEntity<ErrorBody> =
             ResponseEntity(emailSendingFailed, HttpStatus.INTERNAL_SERVER_ERROR)
+
+    @ExceptionHandler(InvalidEmailException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun invalidEmailException(): ResponseEntity<ErrorBody> =
+            ResponseEntity(invalidEmailSyntaxError, HttpStatus.BAD_REQUEST)
 
 }

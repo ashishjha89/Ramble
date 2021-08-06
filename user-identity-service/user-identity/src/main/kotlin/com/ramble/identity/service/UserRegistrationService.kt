@@ -1,6 +1,6 @@
 package com.ramble.identity.service
 
-import com.ramble.email.CredentialNotFoundException
+import com.ramble.email.EmailCredentialNotFoundException
 import com.ramble.email.EmailSenderService
 import com.ramble.email.EmailSendingFailedException
 import com.ramble.identity.common.REGISTER_EMAIL_SUBJECT
@@ -28,7 +28,7 @@ class UserRegistrationService(
 
     @Throws(UserAlreadyActivatedException::class,
             UserSuspendedException::class,
-            CredentialNotFoundException::class,
+            EmailCredentialNotFoundException::class,
             EmailSendingFailedException::class,
             InvalidEmailException::class)
     fun saveUser(
@@ -68,7 +68,7 @@ class UserRegistrationService(
         return RegisteredUserResponse(userId = confirmationToken.userId, email = confirmationToken.email)
     }
 
-    @Throws(CredentialNotFoundException::class, EmailSendingFailedException::class)
+    @Throws(EmailCredentialNotFoundException::class, EmailSendingFailedException::class)
     @Async
     fun sendConfirmRegistrationEmail(confirmRegistrationToken: RegistrationConfirmationToken, newlyRegisteredUser: ApplicationUser) {
         emailSenderService.sendConfirmRegistrationEmail(

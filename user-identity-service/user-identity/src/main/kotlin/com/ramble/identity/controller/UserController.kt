@@ -1,9 +1,15 @@
 package com.ramble.identity.controller
 
+import com.ramble.identity.common.ErrorBody
+import com.ramble.identity.common.ErrorCode.USER_INFO_NOT_FOUND
 import com.ramble.identity.common.USER_INFO_API_BASE_PATH
 import com.ramble.identity.common.USER_INFO_ME_PATH
 import com.ramble.identity.models.UserInfo
 import com.ramble.identity.service.UserInfoService
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -13,6 +19,16 @@ import java.security.Principal
 @RequestMapping(USER_INFO_API_BASE_PATH)
 class UserController(private val userInfoService: UserInfoService) {
 
+    @ApiResponses(value = [
+        ApiResponse(
+                responseCode = OK,
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = UserInfo::class))
+                ]),
+        ApiResponse(
+                responseCode = BAD_REQUEST,
+                description = "errorCode: $USER_INFO_NOT_FOUND",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
+        )])
     @GetMapping(USER_INFO_ME_PATH)
     fun getMyInfo(principal: Principal): UserInfo =
             userInfoService.getUserInfoResult(principal)

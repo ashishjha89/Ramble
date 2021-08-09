@@ -6,6 +6,7 @@ import com.ramble.identity.common.*
 import com.ramble.identity.models.*
 import com.ramble.identity.service.UserInfoService
 import com.ramble.token.AuthTokensService
+import kotlinx.coroutines.runBlocking
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
@@ -15,10 +16,10 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 class AuthenticationFilter(
-        private val manager: AuthenticationManager,
-        private val authTokensService: AuthTokensService,
-        private val userInfoService: UserInfoService,
-        loginPath: String
+    private val manager: AuthenticationManager,
+    private val authTokensService: AuthTokensService,
+    private val userInfoService: UserInfoService,
+    loginPath: String
 ) : UsernamePasswordAuthenticationFilter() {
 
     init {
@@ -32,45 +33,45 @@ class AuthenticationFilter(
     }
 
     override fun successfulAuthentication(
-            request: HttpServletRequest?,
-            response: HttpServletResponse,
-            chain: FilterChain?,
-            authResult: Authentication
+        request: HttpServletRequest?,
+        response: HttpServletResponse,
+        chain: FilterChain?,
+        authResult: Authentication
     ) {
         response.apply {
             contentType = "application/json"
             characterEncoding = "UTF-8"
         }
-        try {
-            val deviceId = request?.getHeader(CLIENT_ID_HEADER) ?: throw ClientIdHeaderAbsentException()
-            val email = authResult.name
-            val userId = userInfoService.getUserInfo(email).id
-            val authToken = authTokensService.generateUserAuthToken(authResult.authorities, deviceId, userId, email)
-            val loginResponse = LoginResponse(userId, authToken.accessToken, authToken.refreshToken)
-            response.apply {
-                status = HttpServletResponse.SC_OK
-                writer.apply {
-                    print(Gson().toJson(loginResponse))
-                    flush()
+        runBlocking {
+            try {
+                val deviceId = request?.getHeader(CLIENT_ID_HEADER) ?: throw ClientIdHeaderAbsentException()
+                val email = authResult.name
+                val userId = userInfoService.getUserInfo(email).id
+                val authToken = authTokensService.generateUserAuthToken(authResult.authorities, deviceId, userId, email)
+                val loginResponse = LoginResponse(userId, authToken.accessToken, authToken.refreshToken)
+                response.apply {
+                    status = HttpServletResponse.SC_OK
+                    writer.apply {
+                        print(Gson().toJson(loginResponse))
+                        flush()
+                    }
+                }
+            } catch (e: Exception) {
+                val (errorResult, statusCode) = when (e) {
+                    is UserNotFoundException -> Pair(userInfoNotFound, HttpServletResponse.SC_BAD_REQUEST)
+                    is UserSuspendedException -> Pair(userSuspendedError, HttpServletResponse.SC_FORBIDDEN)
+                    is UserNotActivatedException -> Pair(userNotActivatedError, HttpServletResponse.SC_FORBIDDEN)
+                    is ClientIdHeaderAbsentException -> Pair(clientIdHeaderMissing, HttpServletResponse.SC_BAD_REQUEST)
+                    else -> Pair(internalServerError, HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+                }
+                response.apply {
+                    status = statusCode
+                    writer.apply {
+                        print(Gson().toJson(errorResult))
+                        flush()
+                    }
                 }
             }
-        } catch (e: Exception) {
-            val (errorResult, statusCode) = when (e) {
-                is UserNotFoundException -> Pair(userInfoNotFound, HttpServletResponse.SC_BAD_REQUEST)
-                is UserSuspendedException -> Pair(userSuspendedError, HttpServletResponse.SC_FORBIDDEN)
-                is UserNotActivatedException -> Pair(userNotActivatedError, HttpServletResponse.SC_FORBIDDEN)
-                is ClientIdHeaderAbsentException -> Pair(clientIdHeaderMissing, HttpServletResponse.SC_BAD_REQUEST)
-                else -> Pair(internalServerError, HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
-            }
-            response.apply {
-                status = statusCode
-                writer.apply {
-                    print(Gson().toJson(errorResult))
-                    flush()
-                }
-            }
-
         }
     }
-
 }

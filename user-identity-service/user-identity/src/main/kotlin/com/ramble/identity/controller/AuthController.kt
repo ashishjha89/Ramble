@@ -19,7 +19,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.springframework.web.bind.annotation.*
 
-
 @RestController
 @RequestMapping(AUTH_API_BASE_PATH)
 class AuthController(
@@ -71,7 +70,7 @@ class AuthController(
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
         )])
     @PostMapping(REFRESH_TOKEN_PATH)
-    fun refreshToken(@RequestBody refreshTokenRequest: RefreshTokenRequest): LoginResponse =
+    suspend fun refreshToken(@RequestBody refreshTokenRequest: RefreshTokenRequest): LoginResponse =
             userInfoService.refreshToken(refreshTokenRequest)
 
     @ApiResponses(value = [

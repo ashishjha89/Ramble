@@ -7,6 +7,7 @@ import com.ramble.identity.models.RegisteredUserResponse
 import com.ramble.identity.service.UserInfoService
 import com.ramble.identity.service.UserRegistrationService
 import com.ramble.token.model.AccessTokenIsInvalidException
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito.mock
@@ -67,7 +68,7 @@ class AuthControllerTest {
     }
 
     @Test
-    fun `refreshToken should send new LoginResponse if successful`() {
+    fun `refreshToken should send new LoginResponse if successful`() = runBlocking<Unit> {
         val refreshTokenRequest = RefreshTokenRequest(refreshToken = "someRefreshToken")
         val loginResponse = mock(LoginResponse::class.java)
 

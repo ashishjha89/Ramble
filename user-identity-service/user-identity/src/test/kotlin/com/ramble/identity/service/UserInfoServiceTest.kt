@@ -9,6 +9,7 @@ import com.ramble.token.model.AccessClaims
 import com.ramble.token.model.AccessTokenIsInvalidException
 import com.ramble.token.model.RefreshTokenIsInvalidException
 import com.ramble.token.model.UserAuthInfo
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.BDDMockito.given
@@ -94,41 +95,43 @@ class UserInfoServiceTest {
     }
 
     @Test
-    fun `refreshToken should return LoginResponse result if auth-token-lib refreshes token successfully`() {
-        val refreshTokenStr = "someRefreshToken"
-        val refreshTokenRequest = RefreshTokenRequest(refreshToken = refreshTokenStr)
-        val now = Instant.now()
+    fun `refreshToken should return LoginResponse result if auth-token-lib refreshes token successfully`() =
+        runBlocking<Unit> {
+            val refreshTokenStr = "someRefreshToken"
+            val refreshTokenRequest = RefreshTokenRequest(refreshToken = refreshTokenStr)
+            val now = Instant.now()
 
-        val userId = "someUserId"
-        val emailId = "someEmailId@ramble.com"
-        val newAccessToken = "this_is_new_access_token"
-        val newRefreshToken = "this_is_new_refresh_token"
+            val userId = "someUserId"
+            val emailId = "someEmailId@ramble.com"
+            val newAccessToken = "this_is_new_access_token"
+            val newRefreshToken = "this_is_new_refresh_token"
 
-        val userAuthInfo = UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken)
-        val expectedLoginResponse = LoginResponse(userId, newAccessToken, newRefreshToken)
+            val userAuthInfo = UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken)
+            val expectedLoginResponse = LoginResponse(userId, newAccessToken, newRefreshToken)
 
-        // Stub
-        given(timeAndIdGenerator.getCurrentTime()).willReturn(now)
-        given(authTokensService.refreshAuthToken(refreshTokenStr, now)).willReturn(userAuthInfo)
+            // Stub
+            given(timeAndIdGenerator.getCurrentTime()).willReturn(now)
+            given(authTokensService.refreshAuthToken(refreshTokenStr, now)).willReturn(userAuthInfo)
 
-        // Call method
-        val result = userInfoService.refreshToken(refreshTokenRequest)
-        assertEquals(expectedLoginResponse, result)
-    }
+            // Call method
+            val result = userInfoService.refreshToken(refreshTokenRequest)
+            assertEquals(expectedLoginResponse, result)
+        }
 
     @Test(expected = RefreshTokenIsInvalidException::class)
-    fun `refreshToken should throw RefreshTokenIsInvalidException if auth-token-lib throws RefreshTokenIsInvalidException`() {
-        val refreshTokenStr = "someRefreshToken"
-        val refreshTokenRequest = RefreshTokenRequest(refreshToken = refreshTokenStr)
-        val now = Instant.now()
+    fun `refreshToken should throw RefreshTokenIsInvalidException if auth-token-lib throws RefreshTokenIsInvalidException`() =
+        runBlocking<Unit> {
+            val refreshTokenStr = "someRefreshToken"
+            val refreshTokenRequest = RefreshTokenRequest(refreshToken = refreshTokenStr)
+            val now = Instant.now()
 
-        // Stub
-        given(timeAndIdGenerator.getCurrentTime()).willReturn(now)
-        given(authTokensService.refreshAuthToken(refreshTokenStr, now)).willThrow(RefreshTokenIsInvalidException())
+            // Stub
+            given(timeAndIdGenerator.getCurrentTime()).willReturn(now)
+            given(authTokensService.refreshAuthToken(refreshTokenStr, now)).willThrow(RefreshTokenIsInvalidException())
 
-        // Call method
-        userInfoService.refreshToken(refreshTokenRequest)
-    }
+            // Call method
+            userInfoService.refreshToken(refreshTokenRequest)
+        }
 
     @Test
     fun `logout should return success if logged-out successfully by auth-token-lib`() {

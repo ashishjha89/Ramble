@@ -7,6 +7,11 @@ $ maildev
 ```
 Maildev web app runs on port 1080 (web ui). The SMTP server runs on port 1025.
 
+#### Start MySQL Server
+```
+$ mysql.server start
+```
+
 #### Vault for email-sender-lib
 For this POC with maildev email client, Vault is not needed to be enabled.
 

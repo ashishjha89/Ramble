@@ -12,6 +12,7 @@ import com.ramble.token.repository.AuthTokenRepo
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.JwtBuilder
 import io.jsonwebtoken.JwtParser
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import org.mockito.BDDMockito.given
@@ -49,13 +50,13 @@ class AuthTokensServiceTest {
         given(tokenComponentBuilder.accessTokenHandler()).willReturn(accessTokenHandler)
         given(tokenComponentBuilder.refreshTokenHandler()).willReturn(refreshTokenHandler)
         given(tokenComponentBuilder.usernamePasswordAuthTokenTokenGenerator())
-                .willReturn(usernamePasswordAuthTokenTokenGenerator)
+            .willReturn(usernamePasswordAuthTokenTokenGenerator)
         given(tokenComponentBuilder.jwtBuilder()).willReturn(jwtBuilder)
         given(tokenComponentBuilder.jwtParserAccessToken()).willReturn(jwtParser)
     }
 
     @Test
-    fun generateAuthTokenTest() {
+    fun generateAuthTokenTest() = runBlocking<Unit> {
         val authority = mock(SimpleGrantedAuthority::class.java)
         val authorities = listOf(authority)
         val userId = "someUserId"
@@ -75,31 +76,32 @@ class AuthTokensServiceTest {
         val expectedAuthInfo = UserAuthInfo(userId, email, accessToken, refreshToken)
 
         // Stub
-        given(accessTokenHandler
+        given(
+            accessTokenHandler
                 .generateAccessToken(
-                        authorities,
-                        clientId,
-                        userId,
-                        email,
-                        issuedInstant,
-                        accessTokenExpiryDurationAmount,
-                        accessTokenExpiryDurationUnit,
-                        jwtBuilder
+                    authorities,
+                    clientId,
+                    userId,
+                    email,
+                    issuedInstant,
+                    accessTokenExpiryDurationAmount,
+                    accessTokenExpiryDurationUnit,
+                    jwtBuilder
                 )
         ).willReturn(accessToken)
         given(refreshTokenHandler.generateRefreshToken()).willReturn(refreshToken)
 
         // Call method
         val userAuthInfo = authTokensService.generateUserAuthToken(
-                authorities,
-                clientId,
-                userId,
-                email,
-                issuedInstant,
-                accessTokenExpiryDurationAmount,
-                accessTokenExpiryDurationUnit,
-                refreshTokenExpiryDurationAmount,
-                refreshTokenExpiryDurationUnit
+            authorities,
+            clientId,
+            userId,
+            email,
+            issuedInstant,
+            accessTokenExpiryDurationAmount,
+            accessTokenExpiryDurationUnit,
+            refreshTokenExpiryDurationAmount,
+            refreshTokenExpiryDurationUnit
         )
 
         // Verify
@@ -214,209 +216,265 @@ class AuthTokensServiceTest {
 
         // Stub
         given(usernamePasswordAuthTokenTokenGenerator.getUsernamePasswordAuthenticationToken(claims, authorities))
-                .willReturn(authentication)
+            .willReturn(authentication)
 
         // Call method and assert
         assertEquals(authentication, authTokensService.springAuthentication(claims, authorities))
     }
 
     @Test
-    fun `refreshToken should generate new authTokens and disable oldAccessToken, when there was no disabled tokens before and oldAccessToken is still valid`() {
-        val refreshToken = "someRefreshToken"
-        val now = Instant.now()
-        val accessTokenExpiryDurationAmount = 30L
-        val accessTokenExpiryDurationUnit = ChronoUnit.MINUTES
+    fun `refreshToken should generate new authTokens and disable oldAccessToken, when there was no disabled tokens before and oldAccessToken is still valid`() =
+        runBlocking<Unit> {
+            val refreshToken = "someRefreshToken"
+            val now = Instant.now()
+            val accessTokenExpiryDurationAmount = 30L
+            val accessTokenExpiryDurationUnit = ChronoUnit.MINUTES
 
-        val accessTokenOld = "someOldAccessToken"
-        val clientId = "someClientId"
-        val userId = "someUserId"
-        val emailId = "someEmail@ramble.com"
-        val authority = mock(GrantedAuthority::class.java)
-        val authorities = listOf(authority)
-        val clientAuthInfo = ClientAuthInfo(clientId, userId, accessTokenOld)
+            val accessTokenOld = "someOldAccessToken"
+            val clientId = "someClientId"
+            val userId = "someUserId"
+            val emailId = "someEmail@ramble.com"
+            val authority = mock(GrantedAuthority::class.java)
+            val authorities = listOf(authority)
+            val clientAuthInfo = ClientAuthInfo(clientId, userId, accessTokenOld)
 
-        val newAccessToken = "this_is_new_generated_access_token"
-        val newRefreshToken = "this_is_new_refresh_token"
-        val expectedUserAuthInfo = UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken)
+            val newAccessToken = "this_is_new_generated_access_token"
+            val newRefreshToken = "this_is_new_refresh_token"
+            val expectedUserAuthInfo = UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken)
 
-        // Stub
-        given(authTokenRepo.deleteOldAuthTokens(refreshToken)).willReturn(clientAuthInfo)
-        given(authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)).willReturn(setOf())
+            // Stub
+            given(authTokenRepo.deleteOldAuthTokens(refreshToken)).willReturn(clientAuthInfo)
+            given(authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)).willReturn(setOf())
 
-        given(accessTokenHandler.getClientIdFromAccessToken(accessTokenOld, jwtParser)).willReturn(clientId)
-        given(accessTokenHandler.getUserIdFromAccessToken(accessTokenOld, jwtParser)).willReturn(userId)
-        given(accessTokenHandler.getEmailFromAccessToken(accessTokenOld, jwtParser)).willReturn(emailId)
-        given(accessTokenHandler.getRolesFromAccessToken(accessTokenOld, jwtParser)).willReturn(authorities)
+            given(accessTokenHandler.getClientIdFromAccessToken(accessTokenOld, jwtParser)).willReturn(clientId)
+            given(accessTokenHandler.getUserIdFromAccessToken(accessTokenOld, jwtParser)).willReturn(userId)
+            given(accessTokenHandler.getEmailFromAccessToken(accessTokenOld, jwtParser)).willReturn(emailId)
+            given(accessTokenHandler.getRolesFromAccessToken(accessTokenOld, jwtParser)).willReturn(authorities)
 
-        given(accessTokenHandler.isValidAccessToken(accessTokenOld, jwtParser, now)).willReturn(true)
+            given(accessTokenHandler.isValidAccessToken(accessTokenOld, jwtParser, now)).willReturn(true)
 
-        given(accessTokenHandler.generateAccessToken(
-                authorities, clientId, userId, emailId, now, accessTokenExpiryDurationAmount, accessTokenExpiryDurationUnit, jwtBuilder
-        )).willReturn(newAccessToken)
-        given(refreshTokenHandler.generateRefreshToken()).willReturn(newRefreshToken)
+            given(
+                accessTokenHandler.generateAccessToken(
+                    authorities,
+                    clientId,
+                    userId,
+                    emailId,
+                    now,
+                    accessTokenExpiryDurationAmount,
+                    accessTokenExpiryDurationUnit,
+                    jwtBuilder
+                )
+            ).willReturn(newAccessToken)
+            given(refreshTokenHandler.generateRefreshToken()).willReturn(newRefreshToken)
 
-        // Call method
-        val userAuthInfo = authTokensService.refreshAuthToken(
+            // Call method
+            val userAuthInfo = authTokensService.refreshAuthToken(
                 refreshToken, now, accessTokenExpiryDurationAmount, accessTokenExpiryDurationUnit
-        )
+            )
 
-        // Verify
-        assertEquals(expectedUserAuthInfo, userAuthInfo)
-        verify(authTokenRepo).updateDisabledAccessTokensForClient(clientAuthInfo, setOf(accessTokenOld))
-        verify(authTokenRepo).insertUserAuthInfo(clientId, UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken))
-    }
+            // Verify
+            assertEquals(expectedUserAuthInfo, userAuthInfo)
+            verify(authTokenRepo).updateDisabledAccessTokensForClient(clientAuthInfo, setOf(accessTokenOld))
+            verify(authTokenRepo).insertUserAuthInfo(
+                clientId,
+                UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken)
+            )
+        }
 
     @Test
-    fun `refreshToken should generate new authTokens and disable oldAccessToken, when there was no disabled tokens before and oldAccessToken is already invalid`() {
-        val refreshToken = "someRefreshToken"
-        val now = Instant.now()
-        val accessTokenExpiryDurationAmount = 30L
-        val accessTokenExpiryDurationUnit = ChronoUnit.MINUTES
+    fun `refreshToken should generate new authTokens and disable oldAccessToken, when there was no disabled tokens before and oldAccessToken is already invalid`() =
+        runBlocking<Unit> {
+            val refreshToken = "someRefreshToken"
+            val now = Instant.now()
+            val accessTokenExpiryDurationAmount = 30L
+            val accessTokenExpiryDurationUnit = ChronoUnit.MINUTES
 
-        val accessTokenOld = "someOldAccessToken"
-        val clientId = "someClientId"
-        val userId = "someUserId"
-        val emailId = "someEmail@ramble.com"
-        val authority = mock(GrantedAuthority::class.java)
-        val authorities = listOf(authority)
-        val clientAuthInfo = ClientAuthInfo(clientId, userId, accessTokenOld)
+            val accessTokenOld = "someOldAccessToken"
+            val clientId = "someClientId"
+            val userId = "someUserId"
+            val emailId = "someEmail@ramble.com"
+            val authority = mock(GrantedAuthority::class.java)
+            val authorities = listOf(authority)
+            val clientAuthInfo = ClientAuthInfo(clientId, userId, accessTokenOld)
 
-        val newAccessToken = "this_is_new_generated_access_token"
-        val newRefreshToken = "this_is_new_refresh_token"
-        val expectedUserAuthInfo = UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken)
+            val newAccessToken = "this_is_new_generated_access_token"
+            val newRefreshToken = "this_is_new_refresh_token"
+            val expectedUserAuthInfo = UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken)
 
-        // Stub
-        given(authTokenRepo.deleteOldAuthTokens(refreshToken)).willReturn(clientAuthInfo)
-        given(authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)).willReturn(setOf())
+            // Stub
+            given(authTokenRepo.deleteOldAuthTokens(refreshToken)).willReturn(clientAuthInfo)
+            given(authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)).willReturn(setOf())
 
-        given(accessTokenHandler.getClientIdFromAccessToken(accessTokenOld, jwtParser)).willReturn(clientId)
-        given(accessTokenHandler.getUserIdFromAccessToken(accessTokenOld, jwtParser)).willReturn(userId)
-        given(accessTokenHandler.getEmailFromAccessToken(accessTokenOld, jwtParser)).willReturn(emailId)
-        given(accessTokenHandler.getRolesFromAccessToken(accessTokenOld, jwtParser)).willReturn(authorities)
+            given(accessTokenHandler.getClientIdFromAccessToken(accessTokenOld, jwtParser)).willReturn(clientId)
+            given(accessTokenHandler.getUserIdFromAccessToken(accessTokenOld, jwtParser)).willReturn(userId)
+            given(accessTokenHandler.getEmailFromAccessToken(accessTokenOld, jwtParser)).willReturn(emailId)
+            given(accessTokenHandler.getRolesFromAccessToken(accessTokenOld, jwtParser)).willReturn(authorities)
 
-        given(accessTokenHandler.isValidAccessToken(accessTokenOld, jwtParser, now)).willReturn(false)
+            given(accessTokenHandler.isValidAccessToken(accessTokenOld, jwtParser, now)).willReturn(false)
 
-        given(accessTokenHandler.generateAccessToken(
-                authorities, clientId, userId, emailId, now, accessTokenExpiryDurationAmount, accessTokenExpiryDurationUnit, jwtBuilder
-        )).willReturn(newAccessToken)
-        given(refreshTokenHandler.generateRefreshToken()).willReturn(newRefreshToken)
+            given(
+                accessTokenHandler.generateAccessToken(
+                    authorities,
+                    clientId,
+                    userId,
+                    emailId,
+                    now,
+                    accessTokenExpiryDurationAmount,
+                    accessTokenExpiryDurationUnit,
+                    jwtBuilder
+                )
+            ).willReturn(newAccessToken)
+            given(refreshTokenHandler.generateRefreshToken()).willReturn(newRefreshToken)
 
-        // Call method
-        val userAuthInfo = authTokensService.refreshAuthToken(
+            // Call method
+            val userAuthInfo = authTokensService.refreshAuthToken(
                 refreshToken, now, accessTokenExpiryDurationAmount, accessTokenExpiryDurationUnit
-        )
+            )
 
-        // Verify
-        assertEquals(expectedUserAuthInfo, userAuthInfo)
-        verify(authTokenRepo).updateDisabledAccessTokensForClient(clientAuthInfo, setOf()) // since oldAccessToken is invalid
-        verify(authTokenRepo).insertUserAuthInfo(clientId, UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken))
-    }
+            // Verify
+            assertEquals(expectedUserAuthInfo, userAuthInfo)
+            verify(authTokenRepo).updateDisabledAccessTokensForClient(
+                clientAuthInfo,
+                setOf()
+            ) // since oldAccessToken is invalid
+            verify(authTokenRepo).insertUserAuthInfo(
+                clientId,
+                UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken)
+            )
+        }
 
     @Test
-    fun `refreshToken should generate new authTokens and disable oldAccessToken, when there were disabled tokens before and all of them were valid`() {
-        val refreshToken = "someRefreshToken"
-        val now = Instant.now()
-        val accessTokenExpiryDurationAmount = 30L
-        val accessTokenExpiryDurationUnit = ChronoUnit.MINUTES
+    fun `refreshToken should generate new authTokens and disable oldAccessToken, when there were disabled tokens before and all of them were valid`() =
+        runBlocking<Unit> {
+            val refreshToken = "someRefreshToken"
+            val now = Instant.now()
+            val accessTokenExpiryDurationAmount = 30L
+            val accessTokenExpiryDurationUnit = ChronoUnit.MINUTES
 
-        val accessTokenOld = "someOldAccessToken"
-        val clientId = "someClientId"
-        val userId = "someUserId"
-        val emailId = "someEmail@ramble.com"
-        val authority = mock(GrantedAuthority::class.java)
-        val authorities = listOf(authority)
-        val clientAuthInfo = ClientAuthInfo(clientId, userId, accessTokenOld)
+            val accessTokenOld = "someOldAccessToken"
+            val clientId = "someClientId"
+            val userId = "someUserId"
+            val emailId = "someEmail@ramble.com"
+            val authority = mock(GrantedAuthority::class.java)
+            val authorities = listOf(authority)
+            val clientAuthInfo = ClientAuthInfo(clientId, userId, accessTokenOld)
 
-        val disabledAccessToken1 = "someOldDisabledAccessToken1"
-        val disabledAccessToken2 = "someOldDisabledAccessToken2"
-        val disabledOldAccessTokens = setOf(disabledAccessToken1, disabledAccessToken2)
-        val allExpectedDisabledTokens = disabledOldAccessTokens.plus(accessTokenOld)
+            val disabledAccessToken1 = "someOldDisabledAccessToken1"
+            val disabledAccessToken2 = "someOldDisabledAccessToken2"
+            val disabledOldAccessTokens = setOf(disabledAccessToken1, disabledAccessToken2)
+            val allExpectedDisabledTokens = disabledOldAccessTokens.plus(accessTokenOld)
 
-        val newAccessToken = "this_is_new_generated_access_token"
-        val newRefreshToken = "this_is_new_refresh_token"
-        val expectedUserAuthInfo = UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken)
+            val newAccessToken = "this_is_new_generated_access_token"
+            val newRefreshToken = "this_is_new_refresh_token"
+            val expectedUserAuthInfo = UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken)
 
-        // Stub
-        given(authTokenRepo.deleteOldAuthTokens(refreshToken)).willReturn(clientAuthInfo)
-        given(authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)).willReturn(disabledOldAccessTokens)
+            // Stub
+            given(authTokenRepo.deleteOldAuthTokens(refreshToken)).willReturn(clientAuthInfo)
+            given(authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)).willReturn(disabledOldAccessTokens)
 
-        given(accessTokenHandler.getClientIdFromAccessToken(accessTokenOld, jwtParser)).willReturn(clientId)
-        given(accessTokenHandler.getUserIdFromAccessToken(accessTokenOld, jwtParser)).willReturn(userId)
-        given(accessTokenHandler.getEmailFromAccessToken(accessTokenOld, jwtParser)).willReturn(emailId)
-        given(accessTokenHandler.getRolesFromAccessToken(accessTokenOld, jwtParser)).willReturn(authorities)
+            given(accessTokenHandler.getClientIdFromAccessToken(accessTokenOld, jwtParser)).willReturn(clientId)
+            given(accessTokenHandler.getUserIdFromAccessToken(accessTokenOld, jwtParser)).willReturn(userId)
+            given(accessTokenHandler.getEmailFromAccessToken(accessTokenOld, jwtParser)).willReturn(emailId)
+            given(accessTokenHandler.getRolesFromAccessToken(accessTokenOld, jwtParser)).willReturn(authorities)
 
-        given(accessTokenHandler.isValidAccessToken(accessTokenOld, jwtParser, now)).willReturn(true)
-        given(accessTokenHandler.isValidAccessToken(disabledAccessToken1, jwtParser, now)).willReturn(true)
-        given(accessTokenHandler.isValidAccessToken(disabledAccessToken2, jwtParser, now)).willReturn(true)
+            given(accessTokenHandler.isValidAccessToken(accessTokenOld, jwtParser, now)).willReturn(true)
+            given(accessTokenHandler.isValidAccessToken(disabledAccessToken1, jwtParser, now)).willReturn(true)
+            given(accessTokenHandler.isValidAccessToken(disabledAccessToken2, jwtParser, now)).willReturn(true)
 
-        given(accessTokenHandler.generateAccessToken(
-                authorities, clientId, userId, emailId, now, accessTokenExpiryDurationAmount, accessTokenExpiryDurationUnit, jwtBuilder
-        )).willReturn(newAccessToken)
-        given(refreshTokenHandler.generateRefreshToken()).willReturn(newRefreshToken)
+            given(
+                accessTokenHandler.generateAccessToken(
+                    authorities,
+                    clientId,
+                    userId,
+                    emailId,
+                    now,
+                    accessTokenExpiryDurationAmount,
+                    accessTokenExpiryDurationUnit,
+                    jwtBuilder
+                )
+            ).willReturn(newAccessToken)
+            given(refreshTokenHandler.generateRefreshToken()).willReturn(newRefreshToken)
 
-        // Call method
-        val userAuthInfo = authTokensService.refreshAuthToken(
+            // Call method
+            val userAuthInfo = authTokensService.refreshAuthToken(
                 refreshToken, now, accessTokenExpiryDurationAmount, accessTokenExpiryDurationUnit
-        )
+            )
 
-        // Verify
-        assertEquals(expectedUserAuthInfo, userAuthInfo)
-        verify(authTokenRepo).updateDisabledAccessTokensForClient(clientAuthInfo, allExpectedDisabledTokens)
-        verify(authTokenRepo).insertUserAuthInfo(clientId, UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken))
-    }
+            // Verify
+            assertEquals(expectedUserAuthInfo, userAuthInfo)
+            verify(authTokenRepo).updateDisabledAccessTokensForClient(clientAuthInfo, allExpectedDisabledTokens)
+            verify(authTokenRepo).insertUserAuthInfo(
+                clientId,
+                UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken)
+            )
+        }
 
     @Test
-    fun `refreshToken should generate new authTokens and disable oldAccessToken, when there were disabled tokens before and some of them are invalid`() {
-        val refreshToken = "someRefreshToken"
-        val now = Instant.now()
-        val accessTokenExpiryDurationAmount = 30L
-        val accessTokenExpiryDurationUnit = ChronoUnit.MINUTES
+    fun `refreshToken should generate new authTokens and disable oldAccessToken, when there were disabled tokens before and some of them are invalid`() =
+        runBlocking<Unit> {
+            val refreshToken = "someRefreshToken"
+            val now = Instant.now()
+            val accessTokenExpiryDurationAmount = 30L
+            val accessTokenExpiryDurationUnit = ChronoUnit.MINUTES
 
-        val accessTokenOld = "someOldAccessToken"
-        val clientId = "someClientId"
-        val userId = "someUserId"
-        val emailId = "someEmail@ramble.com"
-        val authority = mock(GrantedAuthority::class.java)
-        val authorities = listOf(authority)
-        val clientAuthInfo = ClientAuthInfo(clientId, userId, accessTokenOld)
+            val accessTokenOld = "someOldAccessToken"
+            val clientId = "someClientId"
+            val userId = "someUserId"
+            val emailId = "someEmail@ramble.com"
+            val authority = mock(GrantedAuthority::class.java)
+            val authorities = listOf(authority)
+            val clientAuthInfo = ClientAuthInfo(clientId, userId, accessTokenOld)
 
-        val disabledAccessToken1 = "someOldDisabledAccessToken1" // it will be stubbed below as invalid
-        val disabledAccessToken2 = "someOldDisabledAccessToken2"
-        val disabledOldAccessTokens = setOf(disabledAccessToken1, disabledAccessToken2)
-        val allExpectedDisabledTokens = setOf(disabledAccessToken2, accessTokenOld) // doesn't contain disabledAccessToken1
+            val disabledAccessToken1 = "someOldDisabledAccessToken1" // it will be stubbed below as invalid
+            val disabledAccessToken2 = "someOldDisabledAccessToken2"
+            val disabledOldAccessTokens = setOf(disabledAccessToken1, disabledAccessToken2)
+            val allExpectedDisabledTokens =
+                setOf(disabledAccessToken2, accessTokenOld) // doesn't contain disabledAccessToken1
 
-        val newAccessToken = "this_is_new_generated_access_token"
-        val newRefreshToken = "this_is_new_refresh_token"
-        val expectedUserAuthInfo = UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken)
+            val newAccessToken = "this_is_new_generated_access_token"
+            val newRefreshToken = "this_is_new_refresh_token"
+            val expectedUserAuthInfo = UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken)
 
-        // Stub
-        given(authTokenRepo.deleteOldAuthTokens(refreshToken)).willReturn(clientAuthInfo)
-        given(authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)).willReturn(disabledOldAccessTokens)
+            // Stub
+            given(authTokenRepo.deleteOldAuthTokens(refreshToken)).willReturn(clientAuthInfo)
+            given(authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)).willReturn(disabledOldAccessTokens)
 
-        given(accessTokenHandler.getClientIdFromAccessToken(accessTokenOld, jwtParser)).willReturn(clientId)
-        given(accessTokenHandler.getUserIdFromAccessToken(accessTokenOld, jwtParser)).willReturn(userId)
-        given(accessTokenHandler.getEmailFromAccessToken(accessTokenOld, jwtParser)).willReturn(emailId)
-        given(accessTokenHandler.getRolesFromAccessToken(accessTokenOld, jwtParser)).willReturn(authorities)
+            given(accessTokenHandler.getClientIdFromAccessToken(accessTokenOld, jwtParser)).willReturn(clientId)
+            given(accessTokenHandler.getUserIdFromAccessToken(accessTokenOld, jwtParser)).willReturn(userId)
+            given(accessTokenHandler.getEmailFromAccessToken(accessTokenOld, jwtParser)).willReturn(emailId)
+            given(accessTokenHandler.getRolesFromAccessToken(accessTokenOld, jwtParser)).willReturn(authorities)
 
-        given(accessTokenHandler.isValidAccessToken(accessTokenOld, jwtParser, now)).willReturn(true)
-        given(accessTokenHandler.isValidAccessToken(disabledAccessToken1, jwtParser, now)).willReturn(false)
-        given(accessTokenHandler.isValidAccessToken(disabledAccessToken2, jwtParser, now)).willReturn(true)
+            given(accessTokenHandler.isValidAccessToken(accessTokenOld, jwtParser, now)).willReturn(true)
+            given(accessTokenHandler.isValidAccessToken(disabledAccessToken1, jwtParser, now)).willReturn(false)
+            given(accessTokenHandler.isValidAccessToken(disabledAccessToken2, jwtParser, now)).willReturn(true)
 
-        given(accessTokenHandler.generateAccessToken(
-                authorities, clientId, userId, emailId, now, accessTokenExpiryDurationAmount, accessTokenExpiryDurationUnit, jwtBuilder
-        )).willReturn(newAccessToken)
-        given(refreshTokenHandler.generateRefreshToken()).willReturn(newRefreshToken)
+            given(
+                accessTokenHandler.generateAccessToken(
+                    authorities,
+                    clientId,
+                    userId,
+                    emailId,
+                    now,
+                    accessTokenExpiryDurationAmount,
+                    accessTokenExpiryDurationUnit,
+                    jwtBuilder
+                )
+            ).willReturn(newAccessToken)
+            given(refreshTokenHandler.generateRefreshToken()).willReturn(newRefreshToken)
 
-        // Call method
-        val userAuthInfo = authTokensService.refreshAuthToken(
+            // Call method
+            val userAuthInfo = authTokensService.refreshAuthToken(
                 refreshToken, now, accessTokenExpiryDurationAmount, accessTokenExpiryDurationUnit
-        )
+            )
 
-        // Verify
-        assertEquals(expectedUserAuthInfo, userAuthInfo)
-        verify(authTokenRepo).updateDisabledAccessTokensForClient(clientAuthInfo, allExpectedDisabledTokens)
-        verify(authTokenRepo).insertUserAuthInfo(clientId, UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken))
-    }
+            // Verify
+            assertEquals(expectedUserAuthInfo, userAuthInfo)
+            verify(authTokenRepo).updateDisabledAccessTokensForClient(clientAuthInfo, allExpectedDisabledTokens)
+            verify(authTokenRepo).insertUserAuthInfo(
+                clientId,
+                UserAuthInfo(userId, emailId, newAccessToken, newRefreshToken)
+            )
+        }
 
     @Test
     fun `logout when valid token and there were no disabled tokens for client`() {
@@ -467,7 +525,10 @@ class AuthTokensServiceTest {
         authTokensService.logout(accessToken, now)
 
         // Verify
-        verify(authTokenRepo).updateDisabledAccessTokensForClient(clientAuthInfo, setOf(accessToken, disabledAccessToken2))
+        verify(authTokenRepo).updateDisabledAccessTokensForClient(
+            clientAuthInfo,
+            setOf(accessToken, disabledAccessToken2)
+        )
     }
 
     @Test(expected = AccessTokenIsInvalidException::class)

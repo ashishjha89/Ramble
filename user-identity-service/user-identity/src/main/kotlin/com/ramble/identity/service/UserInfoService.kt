@@ -36,7 +36,7 @@ class UserInfoService(
     }
 
     @Throws(RefreshTokenIsInvalidException::class)
-    fun refreshToken(refreshTokenRequest: RefreshTokenRequest): LoginResponse {
+    suspend fun refreshToken(refreshTokenRequest: RefreshTokenRequest): LoginResponse {
         val now = timeAndIdGenerator.getCurrentTime()
         val userAuthInfo = authTokensService.refreshAuthToken(
                 refreshToken = refreshTokenRequest.refreshToken ?: throw RefreshTokenIsInvalidException(),

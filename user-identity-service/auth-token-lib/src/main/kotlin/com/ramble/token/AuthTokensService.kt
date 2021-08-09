@@ -28,7 +28,7 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
     private val usernamePasswordAuthTokenTokenGenerator: UsernamePasswordAuthTokenTokenGenerator =
             tokenComponentBuilder.usernamePasswordAuthTokenTokenGenerator()
 
-    fun generateUserAuthToken(
+    suspend fun generateUserAuthToken(
             authorities: Collection<GrantedAuthority>,
             clientId: String,
             userId: String,
@@ -59,7 +59,7 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
     }
 
     @Throws(RefreshTokenIsInvalidException::class)
-    fun refreshAuthToken(
+    suspend fun refreshAuthToken(
             refreshToken: String,
             now: Instant,
             accessTokenExpiryDurationAmount: Long = 30,
@@ -110,7 +110,7 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
             accessTokenHandler.isValidAccessToken(token = it, parser = jwtParser, now = now)
         }.toSet()
         if (disabledTokens.size != disabledTokensNonExpired.size) {
-            // If some of the disabled-token is not invalid, update the list.
+            // If some disabled-token is not invalid, update the list.
             authTokenRepo.updateDisabledAccessTokensForClient(clientAuthInfo, disabledTokensNonExpired)
         }
         return if (!disabledTokensNonExpired.contains(accessToken)) accessClaims else null

@@ -14,3 +14,13 @@ email-sender:
 jwt:
   signingKeyAccessToken: OMQBBbeM64asPB0mvUYI4b+G08t4e6npxRXqzq6ZwmC1Ao4ibnBPT1oGH09rQuwWPHFy0hWCsfjm0MsiA2eJeA==
   signingKeyRegistrationToken: 838ff02eaa64283e369d61324661707338c1da60edbb48aa188bfcd993ffeead5b006bd4
+
+spring:
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/ramble_iam_db
+    username: ramble_user
+    password: JhlOYzexiu4o1ChGHJTwCw==
+    driver-class-name: com.mysql.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update

@@ -18,7 +18,9 @@ class TokenComponentBuilder(jwtTokenConfig: JwtTokenConfig) {
     private val jwtTokenProperties = jwtTokenConfig.jwtConfigProperties
 
     private val jwtKeyAccessToken = Keys.hmacShaKeyFor(jwtTokenProperties.signingKeyAccessToken.toByteArray())
-    private val jwtKeyRegistrationToken = Keys.hmacShaKeyFor(jwtTokenProperties.signingKeyRegistrationToken.toByteArray())
+
+    private val jwtKeyRegistrationToken =
+        Keys.hmacShaKeyFor(jwtTokenProperties.signingKeyRegistrationToken.toByteArray())
 
     private val tokenDurationGenerator = TokenDurationGenerator()
 
@@ -27,22 +29,25 @@ class TokenComponentBuilder(jwtTokenConfig: JwtTokenConfig) {
     private val accessTokenClaimsMapGenerator = AccessTokenClaimsMapGenerator()
 
     internal fun accessTokenHandler(): AccessTokenHandler =
-            AccessTokenHandler(
-                    jwtKey = jwtKeyAccessToken,
-                    tokenDurationGenerator = tokenDurationGenerator,
-                    accessTokenClaimsMapGenerator = accessTokenClaimsMapGenerator
-            )
+        AccessTokenHandler(
+            jwtKey = jwtKeyAccessToken,
+            tokenDurationGenerator = tokenDurationGenerator,
+            accessTokenClaimsMapGenerator = accessTokenClaimsMapGenerator
+        )
 
     internal fun refreshTokenHandler(): RefreshTokenHandler = RefreshTokenHandler(uuidGenerator)
 
     internal fun registrationConfirmationTokenHandler(): RegistrationConfirmationTokenHandler =
-            RegistrationConfirmationTokenHandler(jwtKey = jwtKeyRegistrationToken, tokenDurationGenerator = tokenDurationGenerator)
+        RegistrationConfirmationTokenHandler(
+            jwtKey = jwtKeyRegistrationToken,
+            tokenDurationGenerator = tokenDurationGenerator
+        )
 
     internal fun usernamePasswordAuthTokenTokenGenerator(): UsernamePasswordAuthTokenTokenGenerator =
-            UsernamePasswordAuthTokenTokenGenerator()
+        UsernamePasswordAuthTokenTokenGenerator()
 
     internal fun registrationConfirmationRepo(): RegistrationConfirmationRepo =
-            RegistrationConfirmationRepo()
+        RegistrationConfirmationRepo()
 
     internal fun jwtParserAccessToken() = Jwts.parserBuilder().setSigningKey(jwtKeyAccessToken).build()
 

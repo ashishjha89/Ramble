@@ -11,17 +11,23 @@ class EmailSenderService(private val emailComponentBuilder: EmailComponentBuilde
 
     @Throws(EmailCredentialNotFoundException::class, EmailSendingFailedException::class)
     @Synchronized
-    fun sendConfirmRegistrationEmail(emailId: String, fullName: String, token: String, signUpUrl: String, subject: String) {
+    fun sendConfirmRegistrationEmail(
+        emailId: String,
+        fullName: String,
+        token: String,
+        signUpUrl: String,
+        subject: String
+    ) {
         val confirmEmailService = confirmRegistrationEmailService
-                ?: emailComponentBuilder.confirmRegistrationEmailService()
-                ?: throw EmailCredentialNotFoundException()
+            ?: emailComponentBuilder.confirmRegistrationEmailService()
+            ?: throw EmailCredentialNotFoundException()
         this.confirmRegistrationEmailService = confirmEmailService
         confirmEmailService.sendEmail(
-                to = emailId,
-                fullName = fullName,
-                token = token,
-                signUpUrlPath = signUpUrl,
-                subject = subject
+            to = emailId,
+            fullName = fullName,
+            token = token,
+            signUpUrlPath = signUpUrl,
+            subject = subject
         )
     }
 }

@@ -7,5 +7,5 @@ import org.springframework.security.core.GrantedAuthority
 internal class UsernamePasswordAuthTokenTokenGenerator {
 
     fun getUsernamePasswordAuthenticationToken(claims: Claims, authorities: List<GrantedAuthority>) =
-            UsernamePasswordAuthenticationToken(claims, null, authorities)
+        UsernamePasswordAuthenticationToken(claims, null, authorities)
 }

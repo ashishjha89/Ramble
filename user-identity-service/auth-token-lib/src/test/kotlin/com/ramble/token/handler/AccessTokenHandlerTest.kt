@@ -37,7 +37,13 @@ class AccessTokenHandlerTest {
 
     private val usernamePasswordAuthenticationToken = mock(UsernamePasswordAuthenticationToken::class.java)
 
-    private val accessTokenHandler by lazy { AccessTokenHandler(jwtKey, tokenDurationGenerator, accessTokenClaimsMapGenerator) }
+    private val accessTokenHandler by lazy {
+        AccessTokenHandler(
+            jwtKey,
+            tokenDurationGenerator,
+            accessTokenClaimsMapGenerator
+        )
+    }
 
     @Suppress("unchecked_cast")
     @Before
@@ -58,8 +64,8 @@ class AccessTokenHandlerTest {
         val expiryDurationAmount = 30L
         val expiryDurationUnit = ChronoUnit.MINUTES
         val tokenDuration = TokenDuration(
-                issuedDate = Date.from(issuedInstant),
-                expiryDate = Date.from(issuedInstant.plus(expiryDurationAmount, expiryDurationUnit))
+            issuedDate = Date.from(issuedInstant),
+            expiryDate = Date.from(issuedInstant.plus(expiryDurationAmount, expiryDurationUnit))
         )
         val claimsMap = mapOf("ROLES" to authorities, "USER_ID" to userId)
 
@@ -67,9 +73,15 @@ class AccessTokenHandlerTest {
 
         // Stub
         given(authResult.authorities).willReturn(authorities)
-        given(accessTokenClaimsMapGenerator.getAccessTokenClaimsMap(clientId, userId, authorities)).willReturn(claimsMap)
+        given(
+            accessTokenClaimsMapGenerator.getAccessTokenClaimsMap(
+                clientId,
+                userId,
+                authorities
+            )
+        ).willReturn(claimsMap)
         given(tokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit))
-                .willReturn(tokenDuration)
+            .willReturn(tokenDuration)
 
         given(jwtBuilder.setClaims(claimsMap)).willReturn(jwtBuilder)
         given(jwtBuilder.setSubject(emailId)).willReturn(jwtBuilder)
@@ -81,17 +93,19 @@ class AccessTokenHandlerTest {
 
         // Call method and assert
         assertEquals(
-                accessTokenSigned,
-                accessTokenHandler
-                        .generateAccessToken(
-                                authorities,
-                                clientId,
-                                userId,
-                                emailId,
-                                issuedInstant,
-                                expiryDurationAmount,
-                                expiryDurationUnit,
-                                jwtBuilder))
+            accessTokenSigned,
+            accessTokenHandler
+                .generateAccessToken(
+                    authorities,
+                    clientId,
+                    userId,
+                    emailId,
+                    issuedInstant,
+                    expiryDurationAmount,
+                    expiryDurationUnit,
+                    jwtBuilder
+                )
+        )
     }
 
     @Test

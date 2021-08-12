@@ -20,40 +20,41 @@ import java.util.*
 import javax.crypto.SecretKey
 
 internal class AccessTokenHandler(
-        private val jwtKey: SecretKey,
-        private val tokenDurationGenerator: TokenDurationGenerator,
-        private val accessTokenClaimsMapGenerator: AccessTokenClaimsMapGenerator
+    private val jwtKey: SecretKey,
+    private val tokenDurationGenerator: TokenDurationGenerator,
+    private val accessTokenClaimsMapGenerator: AccessTokenClaimsMapGenerator
 ) {
 
     fun generateAccessToken(
-            authorities: Collection<GrantedAuthority>,
-            clientId: String,
-            userId: String,
-            email: String,
-            issuedInstant: Instant,
-            expiryDurationAmount: Long,
-            expiryDurationUnit: ChronoUnit,
-            jwtBuilder: JwtBuilder
+        authorities: Collection<GrantedAuthority>,
+        clientId: String,
+        userId: String,
+        email: String,
+        issuedInstant: Instant,
+        expiryDurationAmount: Long,
+        expiryDurationUnit: ChronoUnit,
+        jwtBuilder: JwtBuilder
     ): String {
-        val tokenDuration = tokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit)
+        val tokenDuration =
+            tokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit)
         val claimsMap = accessTokenClaimsMapGenerator.getAccessTokenClaimsMap(clientId, userId, authorities)
         return jwtBuilder
-                .setClaims(claimsMap)
-                .setSubject(email)
-                .setIssuedAt(tokenDuration.issuedDate)
-                .setExpiration(tokenDuration.expiryDate)
-                .signWith(jwtKey, SignatureAlgorithm.HS512)
-                .compact()
+            .setClaims(claimsMap)
+            .setSubject(email)
+            .setIssuedAt(tokenDuration.issuedDate)
+            .setExpiration(tokenDuration.expiryDate)
+            .signWith(jwtKey, SignatureAlgorithm.HS512)
+            .compact()
     }
 
     fun getTokenClaims(token: String?, parser: JwtParser, now: Instant): AccessClaims? {
         if (token == null || !isValidAccessToken(token, parser, now)) return null
         return AccessClaims(
-                clientId = getClientIdFromAccessToken(token, parser) ?: return null,
-                userId = getUserIdFromAccessToken(token, parser) ?: return null,
-                email = getEmailFromAccessToken(token, parser) ?: return null,
-                claims = getClaimsFromAccessToken(token, parser) ?: return null,
-                authorities = getRolesFromAccessToken(token, parser) ?: return null
+            clientId = getClientIdFromAccessToken(token, parser) ?: return null,
+            userId = getUserIdFromAccessToken(token, parser) ?: return null,
+            email = getEmailFromAccessToken(token, parser) ?: return null,
+            claims = getClaimsFromAccessToken(token, parser) ?: return null,
+            authorities = getRolesFromAccessToken(token, parser) ?: return null
         )
     }
 
@@ -64,40 +65,40 @@ internal class AccessTokenHandler(
         val userId = getUserId(claims) ?: return null
         val email = claims.subject ?: return null
         return AccessClaims(
-                clientId = clientId,
-                userId = userId,
-                email = email,
-                claims = claims,
-                authorities = authorities
+            clientId = clientId,
+            userId = userId,
+            email = email,
+            claims = claims,
+            authorities = authorities
         )
     }
 
     fun isValidAccessToken(token: String, parser: JwtParser, now: Instant): Boolean =
-            !isTokenExpired(token, parser, now)
-                    && !getEmailFromAccessToken(token, parser).isNullOrBlank()
-                    && !getClientIdFromAccessToken(token, parser).isNullOrBlank()
+        !isTokenExpired(token, parser, now)
+                && !getEmailFromAccessToken(token, parser).isNullOrBlank()
+                && !getClientIdFromAccessToken(token, parser).isNullOrBlank()
 
     private fun getClaimsFromAccessToken(token: String, parser: JwtParser): Claims? =
-            parser.parseClaimsJws(token)?.body
+        parser.parseClaimsJws(token)?.body
 
     @Suppress("UNCHECKED_CAST")
     fun getRolesFromAccessToken(token: String, parser: JwtParser): List<GrantedAuthority>? =
-            (getClaimsFromAccessToken(token, parser)?.get(ROLES) as? List<String>)?.map { SimpleGrantedAuthority(it) }
+        (getClaimsFromAccessToken(token, parser)?.get(ROLES) as? List<String>)?.map { SimpleGrantedAuthority(it) }
 
     fun getUserIdFromAccessToken(token: String, parser: JwtParser): String? =
-            getClaimsFromAccessToken(token, parser)?.get(USER_ID) as? String
+        getClaimsFromAccessToken(token, parser)?.get(USER_ID) as? String
 
     fun getClientIdFromAccessToken(token: String, parser: JwtParser): String? =
-            getClaimsFromAccessToken(token, parser)?.get(CLIENT_ID) as? String
+        getClaimsFromAccessToken(token, parser)?.get(CLIENT_ID) as? String
 
     fun getEmailFromAccessToken(token: String, parser: JwtParser): String? =
-            getClaimsFromAccessToken(token, parser)?.subject
+        getClaimsFromAccessToken(token, parser)?.subject
 
     private fun getExpirationDateFromToken(token: String, parser: JwtParser): Date? =
-            getClaimsFromAccessToken(token, parser)?.expiration
+        getClaimsFromAccessToken(token, parser)?.expiration
 
     private fun isTokenExpired(token: String, parser: JwtParser, now: Instant) =
-            getExpirationDateFromToken(token, parser)?.before(Date.from(now)) ?: false
+        getExpirationDateFromToken(token, parser)?.before(Date.from(now)) ?: false
 
     private fun principalClaims(principal: Principal): Claims? {
         if (principal is UsernamePasswordAuthenticationToken) {

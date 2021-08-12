@@ -28,7 +28,13 @@ class EmailSenderServiceTest {
         given(emailComponentBuilder.confirmRegistrationEmailService()).willReturn(null)
 
         // Call method
-        EmailSenderService(emailComponentBuilder).sendConfirmRegistrationEmail(emailId, fullName, token, signUpUrlPath, subject)
+        EmailSenderService(emailComponentBuilder).sendConfirmRegistrationEmail(
+            emailId,
+            fullName,
+            token,
+            signUpUrlPath,
+            subject
+        )
     }
 
     @Test
@@ -37,7 +43,13 @@ class EmailSenderServiceTest {
         given(emailComponentBuilder.confirmRegistrationEmailService()).willReturn(confirmRegistrationEmailService)
 
         // Call method
-        EmailSenderService(emailComponentBuilder).sendConfirmRegistrationEmail(emailId, fullName, token, signUpUrlPath, subject)
+        EmailSenderService(emailComponentBuilder).sendConfirmRegistrationEmail(
+            emailId,
+            fullName,
+            token,
+            signUpUrlPath,
+            subject
+        )
 
         // Verify
         verify(confirmRegistrationEmailService).sendEmail(emailId, fullName, token, signUpUrlPath, subject)
@@ -47,9 +59,17 @@ class EmailSenderServiceTest {
     fun `sendConfirmRegistrationEmail should throw EmailSendingFailedException if email sending failed`() {
         // Stub
         given(emailComponentBuilder.confirmRegistrationEmailService()).willReturn(confirmRegistrationEmailService)
-        given(confirmRegistrationEmailService.sendEmail(emailId, fullName, token, signUpUrlPath, subject)).willThrow(EmailSendingFailedException())
+        given(confirmRegistrationEmailService.sendEmail(emailId, fullName, token, signUpUrlPath, subject)).willThrow(
+            EmailSendingFailedException()
+        )
 
         // Call method
-        EmailSenderService(emailComponentBuilder).sendConfirmRegistrationEmail(emailId, fullName, token, signUpUrlPath, subject)
+        EmailSenderService(emailComponentBuilder).sendConfirmRegistrationEmail(
+            emailId,
+            fullName,
+            token,
+            signUpUrlPath,
+            subject
+        )
     }
 }

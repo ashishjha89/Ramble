@@ -14,9 +14,9 @@ internal class AccessTokenClaimsMapGenerator {
     }
 
     fun getAccessTokenClaimsMap(clientId: String, userId: String, authorities: Collection<GrantedAuthority>) =
-            mapOf(
-                    ROLES to authorities.map { it.authority },
-                    CLIENT_ID to clientId,
-                    USER_ID to userId
-            )
+        mapOf(
+            ROLES to authorities.map { it.authority },
+            CLIENT_ID to clientId,
+            USER_ID to userId
+        )
 }

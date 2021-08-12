@@ -13,88 +13,88 @@ class ControllerExceptionHandlerTest {
     @Test
     fun internalServerExceptionTest() {
         assertEquals(
-                ResponseEntity(internalServerError, HttpStatus.INTERNAL_SERVER_ERROR),
-                exceptionHandler.internalServerException()
+            ResponseEntity(internalServerError, HttpStatus.INTERNAL_SERVER_ERROR),
+            exceptionHandler.internalServerException()
         )
     }
 
     @Test
     fun userNotFoundExceptionTest() {
         assertEquals(
-                ResponseEntity(userInfoNotFound, HttpStatus.BAD_REQUEST),
-                exceptionHandler.userNotFoundException()
+            ResponseEntity(userInfoNotFound, HttpStatus.BAD_REQUEST),
+            exceptionHandler.userNotFoundException()
         )
     }
 
     @Test
     fun userNotActivatedExceptionTest() {
         assertEquals(
-                ResponseEntity(userNotActivatedError, HttpStatus.FORBIDDEN),
-                exceptionHandler.userNotActivatedException()
+            ResponseEntity(userNotActivatedError, HttpStatus.FORBIDDEN),
+            exceptionHandler.userNotActivatedException()
         )
     }
 
     @Test
     fun userSuspendedExceptionTest() {
         assertEquals(
-                ResponseEntity(userSuspendedError, HttpStatus.FORBIDDEN),
-                exceptionHandler.userSuspendedException()
+            ResponseEntity(userSuspendedError, HttpStatus.FORBIDDEN),
+            exceptionHandler.userSuspendedException()
         )
     }
 
     @Test
     fun userAlreadyActivatedExceptionTest() {
         assertEquals(
-                ResponseEntity(userAlreadyActivatedError, HttpStatus.FORBIDDEN),
-                exceptionHandler.userAlreadyActivatedException()
+            ResponseEntity(userAlreadyActivatedError, HttpStatus.FORBIDDEN),
+            exceptionHandler.userAlreadyActivatedException()
         )
     }
 
     @Test
     fun accessTokenIsInvalidExceptionTest() {
         assertEquals(
-                ResponseEntity(unauthorizedAccess, HttpStatus.FORBIDDEN),
-                exceptionHandler.accessTokenIsInvalidException()
+            ResponseEntity(unauthorizedAccess, HttpStatus.FORBIDDEN),
+            exceptionHandler.accessTokenIsInvalidException()
         )
     }
 
     @Test
     fun refreshTokenIsInvalidExceptionTest() {
         assertEquals(
-                ResponseEntity(refreshTokenInvalid, HttpStatus.FORBIDDEN),
-                exceptionHandler.refreshTokenIsInvalidException()
+            ResponseEntity(refreshTokenInvalid, HttpStatus.FORBIDDEN),
+            exceptionHandler.refreshTokenIsInvalidException()
         )
     }
 
     @Test
     fun registrationConfirmationTokenIsInvalidExceptionTest() {
         assertEquals(
-                ResponseEntity(unauthorizedAccess, HttpStatus.BAD_REQUEST),
-                exceptionHandler.registrationConfirmationTokenIsInvalidException()
+            ResponseEntity(unauthorizedAccess, HttpStatus.BAD_REQUEST),
+            exceptionHandler.registrationConfirmationTokenIsInvalidException()
         )
     }
 
     @Test
     fun credentialNotFoundExceptionTest() {
         assertEquals(
-                ResponseEntity(emailSendingFailed, HttpStatus.INTERNAL_SERVER_ERROR),
-                exceptionHandler.credentialNotFoundException()
+            ResponseEntity(emailSendingFailed, HttpStatus.INTERNAL_SERVER_ERROR),
+            exceptionHandler.credentialNotFoundException()
         )
     }
 
     @Test
     fun emailSendingFailedExceptionTest() {
         assertEquals(
-                ResponseEntity(emailSendingFailed, HttpStatus.INTERNAL_SERVER_ERROR),
-                exceptionHandler.emailSendingFailedException()
+            ResponseEntity(emailSendingFailed, HttpStatus.INTERNAL_SERVER_ERROR),
+            exceptionHandler.emailSendingFailedException()
         )
     }
 
     @Test
     fun invalidEmailExceptionTest() {
         assertEquals(
-                ResponseEntity(invalidEmailSyntaxError, HttpStatus.BAD_REQUEST),
-                exceptionHandler.invalidEmailException()
+            ResponseEntity(invalidEmailSyntaxError, HttpStatus.BAD_REQUEST),
+            exceptionHandler.invalidEmailException()
         )
     }
 }

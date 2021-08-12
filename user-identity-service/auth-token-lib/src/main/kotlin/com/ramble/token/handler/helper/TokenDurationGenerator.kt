@@ -8,14 +8,14 @@ import java.util.*
 internal class TokenDurationGenerator {
 
     fun getTokenDuration(
-            issuedInstant: Instant,
-            expiryDurationAmount: Long,
-            expiryDurationUnit: ChronoUnit
+        issuedInstant: Instant,
+        expiryDurationAmount: Long,
+        expiryDurationUnit: ChronoUnit
     ): TokenDuration {
         val expiryInstant = issuedInstant.plus(expiryDurationAmount, expiryDurationUnit)
         return TokenDuration(
-                issuedDate = Date.from(issuedInstant),
-                expiryDate = Date.from(expiryInstant)
+            issuedDate = Date.from(issuedInstant),
+            expiryDate = Date.from(expiryInstant)
         )
     }
 }

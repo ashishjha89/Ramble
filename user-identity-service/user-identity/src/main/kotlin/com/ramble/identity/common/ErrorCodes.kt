@@ -29,34 +29,34 @@ private object ErrorMessage {
 }
 
 val unauthorizedAccess: ErrorBody =
-        ErrorBody(errorCode = ErrorCode.UNAUTHORIZED_ACCESS, errorMessage = ErrorMessage.unauthorizedAccessMsg)
+    ErrorBody(errorCode = ErrorCode.UNAUTHORIZED_ACCESS, errorMessage = ErrorMessage.unauthorizedAccessMsg)
 
 val invalidUserId: ErrorBody =
-        ErrorBody(errorCode = ErrorCode.INVALID_USER_ID, errorMessage = ErrorMessage.invalidUserIdMsg)
+    ErrorBody(errorCode = ErrorCode.INVALID_USER_ID, errorMessage = ErrorMessage.invalidUserIdMsg)
 
 val userInfoNotFound: ErrorBody =
-        ErrorBody(errorCode = ErrorCode.USER_INFO_NOT_FOUND, errorMessage = ErrorMessage.userInfoNotFoundMsg)
+    ErrorBody(errorCode = ErrorCode.USER_INFO_NOT_FOUND, errorMessage = ErrorMessage.userInfoNotFoundMsg)
 
 val internalServerError: ErrorBody =
-        ErrorBody(errorCode = ErrorCode.SOMETHING_WENT_WRONG, errorMessage = ErrorMessage.somethingWentWrongMsg)
+    ErrorBody(errorCode = ErrorCode.SOMETHING_WENT_WRONG, errorMessage = ErrorMessage.somethingWentWrongMsg)
 
 val userSuspendedError: ErrorBody =
-        ErrorBody(errorCode = ErrorCode.USER_IS_SUSPENDED, errorMessage = ErrorMessage.userSuspendedMsg)
+    ErrorBody(errorCode = ErrorCode.USER_IS_SUSPENDED, errorMessage = ErrorMessage.userSuspendedMsg)
 
 val userAlreadyActivatedError: ErrorBody =
-        ErrorBody(errorCode = ErrorCode.USER_ALREADY_ACTIVATED, errorMessage = ErrorMessage.userAlreadyActivatedMsg)
+    ErrorBody(errorCode = ErrorCode.USER_ALREADY_ACTIVATED, errorMessage = ErrorMessage.userAlreadyActivatedMsg)
 
 val userNotActivatedError: ErrorBody =
-        ErrorBody(errorCode = ErrorCode.USER_NOT_ACTIVATED, errorMessage = ErrorMessage.userNotActivatedMsg)
+    ErrorBody(errorCode = ErrorCode.USER_NOT_ACTIVATED, errorMessage = ErrorMessage.userNotActivatedMsg)
 
 val emailSendingFailed: ErrorBody =
-        ErrorBody(errorCode = ErrorCode.EMAIL_SENDING_FAILED, errorMessage = ErrorMessage.emailSendingFailedMsg)
+    ErrorBody(errorCode = ErrorCode.EMAIL_SENDING_FAILED, errorMessage = ErrorMessage.emailSendingFailedMsg)
 
 val clientIdHeaderMissing: ErrorBody =
-        ErrorBody(errorCode = ErrorCode.CLIENT_ID_HEADER_MISSING, errorMessage = ErrorMessage.clientIdHeaderMissingMsg)
+    ErrorBody(errorCode = ErrorCode.CLIENT_ID_HEADER_MISSING, errorMessage = ErrorMessage.clientIdHeaderMissingMsg)
 
 val refreshTokenInvalid: ErrorBody =
-        ErrorBody(errorCode = ErrorCode.REFRESH_TOKEN_IS_INVALID, errorMessage = ErrorMessage.refreshTokenIsInvalidMsg)
+    ErrorBody(errorCode = ErrorCode.REFRESH_TOKEN_IS_INVALID, errorMessage = ErrorMessage.refreshTokenIsInvalidMsg)
 
 val invalidEmailSyntaxError: ErrorBody =
-        ErrorBody(errorCode = ErrorCode.EMAIL_IS_INVALID, errorMessage = ErrorMessage.invalidEmailMsg)
+    ErrorBody(errorCode = ErrorCode.EMAIL_IS_INVALID, errorMessage = ErrorMessage.invalidEmailMsg)

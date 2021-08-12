@@ -18,65 +18,72 @@ import java.time.temporal.ChronoUnit
 
 @Service
 class UserRegistrationService(
-        private val userRepo: UserRepo,
-        private val registrationRequestValidator: RegistrationRequestValidator,
-        private val bCryptPasswordEncoder: BCryptPasswordEncoder,
-        private val registrationConfirmationService: RegistrationConfirmationService,
-        private val emailSenderService: EmailSenderService,
-        private val timeAndIdGenerator: TimeAndIdGenerator
+    private val userRepo: UserRepo,
+    private val registrationRequestValidator: RegistrationRequestValidator,
+    private val bCryptPasswordEncoder: BCryptPasswordEncoder,
+    private val registrationConfirmationService: RegistrationConfirmationService,
+    private val emailSenderService: EmailSenderService,
+    private val timeAndIdGenerator: TimeAndIdGenerator
 ) {
 
-    @Throws(UserAlreadyActivatedException::class,
-            UserSuspendedException::class,
-            EmailCredentialNotFoundException::class,
-            EmailSendingFailedException::class,
-            InvalidEmailException::class)
+    @Throws(
+        UserAlreadyActivatedException::class,
+        UserSuspendedException::class,
+        EmailCredentialNotFoundException::class,
+        EmailSendingFailedException::class,
+        InvalidEmailException::class
+    )
     fun saveUser(
-            registerUserRequest: RegisterUserRequest,
-            expirationDurationAmount: Long = 15,
-            expiryDurationUnit: ChronoUnit = ChronoUnit.MINUTES
+        registerUserRequest: RegisterUserRequest,
+        expirationDurationAmount: Long = 15,
+        expiryDurationUnit: ChronoUnit = ChronoUnit.MINUTES
     ): RegisteredUserResponse {
         val now = timeAndIdGenerator.getCurrentTime()
         registrationRequestValidator.getRegistrationRequestError()?.let { throw InvalidEmailException() }
         val userToSave = registerUserRequest.copy(password = bCryptPasswordEncoder.encode(registerUserRequest.password))
         val newlyRegisteredUser = userRepo.saveNewUser(userToSave)
         val confirmRegistrationToken = registrationConfirmationService.addRegistrationConfirmationToken(
-                userId = newlyRegisteredUser.id,
-                email = newlyRegisteredUser.email,
-                now = now,
-                expirationDurationAmount = expirationDurationAmount,
-                expiryDurationUnit = expiryDurationUnit
+            userId = newlyRegisteredUser.id,
+            email = newlyRegisteredUser.email,
+            now = now,
+            expirationDurationAmount = expirationDurationAmount,
+            expiryDurationUnit = expiryDurationUnit
         )
         val registeredUserResponse = RegisteredUserResponse(
-                userId = confirmRegistrationToken.userId,
-                email = confirmRegistrationToken.email
+            userId = confirmRegistrationToken.userId,
+            email = confirmRegistrationToken.email
         )
         sendConfirmRegistrationEmail(confirmRegistrationToken, newlyRegisteredUser)
         return registeredUserResponse
     }
 
-    @Throws(UserNotFoundException::class,
-            UserAlreadyActivatedException::class,
-            UserSuspendedException::class,
-            InvalidRegistrationConfirmationToken::class)
+    @Throws(
+        UserNotFoundException::class,
+        UserAlreadyActivatedException::class,
+        UserSuspendedException::class,
+        InvalidRegistrationConfirmationToken::class
+    )
     fun confirmToken(token: String?): RegisteredUserResponse {
         val now = timeAndIdGenerator.getCurrentTime()
         token ?: throw InvalidRegistrationConfirmationToken()
         val confirmationToken = registrationConfirmationService.processRegistrationConfirmationToken(token, now)
-                ?: throw InvalidRegistrationConfirmationToken()
+            ?: throw InvalidRegistrationConfirmationToken()
         userRepo.activateRegisteredUser(email = confirmationToken.email)
         return RegisteredUserResponse(userId = confirmationToken.userId, email = confirmationToken.email)
     }
 
     @Throws(EmailCredentialNotFoundException::class, EmailSendingFailedException::class)
     @Async
-    fun sendConfirmRegistrationEmail(confirmRegistrationToken: RegistrationConfirmationToken, newlyRegisteredUser: ApplicationUser) {
+    fun sendConfirmRegistrationEmail(
+        confirmRegistrationToken: RegistrationConfirmationToken,
+        newlyRegisteredUser: ApplicationUser
+    ) {
         emailSenderService.sendConfirmRegistrationEmail(
-                emailId = confirmRegistrationToken.email,
-                fullName = newlyRegisteredUser.fullName,
-                token = confirmRegistrationToken.token,
-                signUpUrl = SIGN_UP_CONFIRMATION_URL,
-                subject = REGISTER_EMAIL_SUBJECT
+            emailId = confirmRegistrationToken.email,
+            fullName = newlyRegisteredUser.fullName,
+            token = confirmRegistrationToken.token,
+            signUpUrl = SIGN_UP_CONFIRMATION_URL,
+            subject = REGISTER_EMAIL_SUBJECT
         )
     }
 

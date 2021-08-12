@@ -46,15 +46,15 @@ class RegistrationConfirmationTokenHandlerTest {
         val expiryDurationAmount = 30L
         val expiryDurationUnit = ChronoUnit.MINUTES
         val tokenDuration = TokenDuration(
-                issuedDate = Date.from(issuedInstant),
-                expiryDate = Date.from(issuedInstant.plus(expiryDurationAmount, expiryDurationUnit))
+            issuedDate = Date.from(issuedInstant),
+            expiryDate = Date.from(issuedInstant.plus(expiryDurationAmount, expiryDurationUnit))
         )
         val claimsMap = mapOf("USER_ID" to userId)
         val registrationTokenSigned = "some_signed_registration_token"
 
         // Stub
         given(tokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit))
-                .willReturn(tokenDuration)
+            .willReturn(tokenDuration)
         given(jwtBuilder.setClaims(claimsMap)).willReturn(jwtBuilder)
         given(jwtBuilder.setSubject(emailId)).willReturn(jwtBuilder)
         given(jwtBuilder.setIssuedAt(tokenDuration.issuedDate)).willReturn(jwtBuilder)
@@ -64,14 +64,16 @@ class RegistrationConfirmationTokenHandlerTest {
 
         // Call method and assert
         assertEquals(
-                registrationTokenSigned,
-                registrationConfirmationTokenHandler.generateToken(
-                        userId,
-                        emailId,
-                        issuedInstant,
-                        expiryDurationAmount,
-                        expiryDurationUnit,
-                        jwtBuilder))
+            registrationTokenSigned,
+            registrationConfirmationTokenHandler.generateToken(
+                userId,
+                emailId,
+                issuedInstant,
+                expiryDurationAmount,
+                expiryDurationUnit,
+                jwtBuilder
+            )
+        )
     }
 
     @Test
@@ -128,8 +130,9 @@ class RegistrationConfirmationTokenHandlerTest {
 
         // Call method and assert
         assertEquals(
-                userId,
-                registrationConfirmationTokenHandler.getUserIdFromToken(registrationConfirmationTokenStr, parser))
+            userId,
+            registrationConfirmationTokenHandler.getUserIdFromToken(registrationConfirmationTokenStr, parser)
+        )
     }
 
 }

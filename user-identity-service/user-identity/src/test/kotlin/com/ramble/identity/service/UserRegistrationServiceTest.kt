@@ -48,9 +48,10 @@ class UserRegistrationServiceTest {
     private val registrationConfirmationToken = RegistrationConfirmationToken(userId, emailId, registrationTokenStr)
 
     private val userRegistrationService =
-            UserRegistrationService(
-                    userRepo, registrationRequestValidator, bCryptPasswordEncoder,
-                    registrationConfirmationService, emailSenderService, timeAndIdGenerator)
+        UserRegistrationService(
+            userRepo, registrationRequestValidator, bCryptPasswordEncoder,
+            registrationConfirmationService, emailSenderService, timeAndIdGenerator
+        )
 
     @Before
     fun setup() {
@@ -58,7 +59,8 @@ class UserRegistrationServiceTest {
         given(applicationUser.id).willReturn(userId)
         given(applicationUser.email).willReturn(emailId)
         given(applicationUser.fullName).willReturn(fullName)
-        given(registrationConfirmationService
+        given(
+            registrationConfirmationService
                 .addRegistrationConfirmationToken(userId, emailId, now, expirationDurationAmount, expiryDurationUnit)
         ).willReturn(registrationConfirmationToken)
         given(timeAndIdGenerator.getCurrentTime()).willReturn(now)
@@ -71,7 +73,7 @@ class UserRegistrationServiceTest {
 
         // Call method and assert
         val result =
-                userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
+            userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
         assertEquals(RegisteredUserResponse(userId, emailId), result)
     }
 
@@ -97,9 +99,11 @@ class UserRegistrationServiceTest {
     fun `saveUser should throw CredentialNotFoundException if emailSenderService throws CredentialNotFoundException when sending email`() {
         // Stub
         given(userRepo.saveNewUser(userToSave)).willReturn(applicationUser)
-        given(emailSenderService
+        given(
+            emailSenderService
                 .sendConfirmRegistrationEmail(
-                        emailId, fullName, registrationTokenStr, SIGN_UP_CONFIRMATION_URL, REGISTER_EMAIL_SUBJECT)
+                    emailId, fullName, registrationTokenStr, SIGN_UP_CONFIRMATION_URL, REGISTER_EMAIL_SUBJECT
+                )
         ).willThrow(EmailCredentialNotFoundException())
 
         // Call method and assert
@@ -110,9 +114,11 @@ class UserRegistrationServiceTest {
     fun `saveUser should throw EmailSendingFailedException if emailSenderService throws EmailSendingFailedException when sending email`() {
         // Stub
         given(userRepo.saveNewUser(userToSave)).willReturn(applicationUser)
-        given(emailSenderService
+        given(
+            emailSenderService
                 .sendConfirmRegistrationEmail(
-                        emailId, fullName, registrationTokenStr, SIGN_UP_CONFIRMATION_URL, REGISTER_EMAIL_SUBJECT)
+                    emailId, fullName, registrationTokenStr, SIGN_UP_CONFIRMATION_URL, REGISTER_EMAIL_SUBJECT
+                )
         ).willThrow(EmailSendingFailedException())
 
         // Call method and assert
@@ -123,7 +129,7 @@ class UserRegistrationServiceTest {
     fun `confirmToken should return registeredUserResponse`() {
         // Stub
         given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
-                .willReturn(registrationConfirmationToken)
+            .willReturn(registrationConfirmationToken)
         willDoNothing().given(userRepo).activateRegisteredUser(emailId)
 
         // Call method and assert
@@ -141,7 +147,7 @@ class UserRegistrationServiceTest {
     fun `confirmToken should throw InvalidRegistrationConfirmationToken when token is invalid`() {
         // Stub
         given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
-                .willReturn(null)
+            .willReturn(null)
 
         // Call method and assert
         val result = userRegistrationService.confirmToken(registrationTokenStr)
@@ -151,7 +157,7 @@ class UserRegistrationServiceTest {
     fun `confirmToken should throw UserNotFoundException if userRepo throws UserNotFoundException`() {
         // Stub
         given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
-                .willReturn(registrationConfirmationToken)
+            .willReturn(registrationConfirmationToken)
         given(userRepo.activateRegisteredUser(emailId)).willThrow(UserNotFoundException())
 
         // Call method and assert
@@ -162,7 +168,7 @@ class UserRegistrationServiceTest {
     fun `confirmToken should throw UserAlreadyActivatedException when UserAlreadyActivatedException is thrown by repo when trying to activate`() {
         // Stub
         given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
-                .willReturn(registrationConfirmationToken)
+            .willReturn(registrationConfirmationToken)
         given(userRepo.activateRegisteredUser(emailId)).willThrow(UserAlreadyActivatedException())
 
         // Call method and assert
@@ -173,7 +179,7 @@ class UserRegistrationServiceTest {
     fun `confirmToken should throw UserSuspendedException when UserSuspendedException is thrown by repo when trying to activate`() {
         // Stub
         given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
-                .willReturn(registrationConfirmationToken)
+            .willReturn(registrationConfirmationToken)
         given(userRepo.activateRegisteredUser(emailId)).willThrow(UserSuspendedException())
 
         // Call method and assert
@@ -187,7 +193,7 @@ class UserRegistrationServiceTest {
 
         // Verify
         verify(emailSenderService).sendConfirmRegistrationEmail(
-                emailId, fullName, registrationTokenStr, SIGN_UP_CONFIRMATION_URL, REGISTER_EMAIL_SUBJECT
+            emailId, fullName, registrationTokenStr, SIGN_UP_CONFIRMATION_URL, REGISTER_EMAIL_SUBJECT
         )
     }
 

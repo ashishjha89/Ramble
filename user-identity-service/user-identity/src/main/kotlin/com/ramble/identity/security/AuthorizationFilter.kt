@@ -11,8 +11,8 @@ import javax.servlet.http.HttpServletResponse
 import org.springframework.security.core.Authentication as SpringAuthentication
 
 class AuthorizationFilter(
-        authManager: AuthenticationManager,
-        private val authTokensService: AuthTokensService
+    authManager: AuthenticationManager,
+    private val authTokensService: AuthTokensService
 ) : BasicAuthenticationFilter(authManager) {
 
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, chain: FilterChain) {

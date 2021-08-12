@@ -11,7 +11,11 @@ import javax.servlet.http.HttpServletResponse
 @Component
 class AuthenticationEntryPointInterceptor : AuthenticationEntryPoint {
 
-    override fun commence(request: HttpServletRequest?, response: HttpServletResponse?, authException: AuthenticationException?) {
+    override fun commence(
+        request: HttpServletRequest?,
+        response: HttpServletResponse?,
+        authException: AuthenticationException?
+    ) {
         response ?: return
         response.apply {
             contentType = "application/json"

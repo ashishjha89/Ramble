@@ -18,9 +18,9 @@ class EmailComponentBuilder(emailSenderConfig: EmailSenderConfig) {
     internal fun confirmRegistrationEmailService(): ConfirmRegistrationEmailService? {
         val emailCredential = emailCredential() ?: return null
         return ConfirmRegistrationEmailService(
-                senderEmailId = emailCredential.username,
-                mailSender = mailSender(emailCredential),
-                confirmRegistrationEmailBuilder = ConfirmRegistrationEmailBuilder()
+            senderEmailId = emailCredential.username,
+            mailSender = mailSender(emailCredential),
+            confirmRegistrationEmailBuilder = ConfirmRegistrationEmailBuilder()
         )
     }
 
@@ -53,8 +53,8 @@ class EmailComponentBuilder(emailSenderConfig: EmailSenderConfig) {
         }
         return try {
             val response = VaultTemplate(
-                    VaultEndpoint().apply { scheme = "http" },
-                    TokenAuthentication("00000000-0000-0000-0000-000000000000")
+                VaultEndpoint().apply { scheme = "http" },
+                TokenAuthentication("00000000-0000-0000-0000-000000000000")
             ).read(configProperties.vaultPath, EmailSenderCredential::class.java)
             response?.data
         } catch (e: Exception) {

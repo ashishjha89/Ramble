@@ -1,6 +1,6 @@
 package com.ramble.identity.models
 
-class InternalServerException: Exception()
+class InternalServerException : Exception()
 
 class UserNotFoundException : Exception()
 
@@ -10,9 +10,9 @@ class UserSuspendedException : Exception()
 
 class UserNotActivatedException : Exception()
 
-class ClientIdHeaderAbsentException: Exception()
+class ClientIdHeaderAbsentException : Exception()
 
-class InvalidEmailException: Exception()
+class InvalidEmailException : Exception()
 
-class InvalidRegistrationConfirmationToken: Exception()
+class InvalidRegistrationConfirmationToken : Exception()
 

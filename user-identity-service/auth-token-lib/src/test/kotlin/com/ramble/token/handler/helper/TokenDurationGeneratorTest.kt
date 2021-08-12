@@ -18,14 +18,14 @@ class TokenDurationGeneratorTest {
         val expiryDurationUnit = ChronoUnit.MINUTES
 
         val expectedTokenDuration = TokenDuration(
-                issuedDate = Date.from(issuedInstant),
-                expiryDate = Date.from(issuedInstant.plus(expiryDurationAmount, expiryDurationUnit))
+            issuedDate = Date.from(issuedInstant),
+            expiryDate = Date.from(issuedInstant.plus(expiryDurationAmount, expiryDurationUnit))
         )
 
         // Call method and assert
         assertEquals(
-                expectedTokenDuration,
-                tokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit)
+            expectedTokenDuration,
+            tokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit)
         )
     }
 }

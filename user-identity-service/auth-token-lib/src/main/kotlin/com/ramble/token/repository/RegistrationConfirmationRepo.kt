@@ -12,18 +12,18 @@ internal class RegistrationConfirmationRepo {
      * Return true if token added successfully.
      */
     fun addRegistrationConfirmationToken(registrationConfirmationToken: RegistrationConfirmationToken): Boolean =
-            tokenMap.put(registrationConfirmationToken.userId, registrationConfirmationToken) == null
+        tokenMap.put(registrationConfirmationToken.userId, registrationConfirmationToken) == null
 
     /**
      * Return true if token deleted successfully.
      */
     fun deleteRegistrationConfirmationToken(userId: UserId): Boolean =
-            tokenMap.remove(userId) != null
+        tokenMap.remove(userId) != null
 
     /**
      * Return RegistrationConfirmationToken for the userId.
      */
     fun getRegistrationConfirmationToken(userId: UserId): RegistrationConfirmationToken? =
-            tokenMap[userId]
+        tokenMap[userId]
 
 }

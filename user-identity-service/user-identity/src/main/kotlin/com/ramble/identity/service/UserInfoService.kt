@@ -16,14 +16,14 @@ import org.springframework.security.core.userdetails.User as SpringUser
 
 @Service
 class UserInfoService(
-        private val userRepo: UserRepo,
-        private val authTokensService: AuthTokensService,
-        private val timeAndIdGenerator: TimeAndIdGenerator
+    private val userRepo: UserRepo,
+    private val authTokensService: AuthTokensService,
+    private val timeAndIdGenerator: TimeAndIdGenerator
 ) : UserDetailsService {
 
     @Throws(UserNotFoundException::class)
     fun getUserInfoResult(principal: Principal): UserInfo =
-            getUserInfo(authTokensService.getAccessTokenClaims(principal)?.email ?: throw UserNotFoundException())
+        getUserInfo(authTokensService.getAccessTokenClaims(principal)?.email ?: throw UserNotFoundException())
 
     @Throws(UserNotFoundException::class, UserSuspendedException::class, UserNotActivatedException::class)
     fun getUserInfo(email: String): UserInfo = userRepo.getUserInfo(email)
@@ -39,13 +39,13 @@ class UserInfoService(
     suspend fun refreshToken(refreshTokenRequest: RefreshTokenRequest): LoginResponse {
         val now = timeAndIdGenerator.getCurrentTime()
         val userAuthInfo = authTokensService.refreshAuthToken(
-                refreshToken = refreshTokenRequest.refreshToken ?: throw RefreshTokenIsInvalidException(),
-                now = now
+            refreshToken = refreshTokenRequest.refreshToken ?: throw RefreshTokenIsInvalidException(),
+            now = now
         ) ?: throw RefreshTokenIsInvalidException()
         return LoginResponse(
-                userId = userAuthInfo.userId,
-                accessToken = userAuthInfo.accessToken,
-                refreshToken = userAuthInfo.refreshToken
+            userId = userAuthInfo.userId,
+            accessToken = userAuthInfo.accessToken,
+            refreshToken = userAuthInfo.refreshToken
         )
     }
 

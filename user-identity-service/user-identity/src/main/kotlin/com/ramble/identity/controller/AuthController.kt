@@ -22,95 +22,122 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping(AUTH_API_BASE_PATH)
 class AuthController(
-        private val userInfoService: UserInfoService,
-        private val userRegistrationService: UserRegistrationService) {
+    private val userInfoService: UserInfoService,
+    private val userRegistrationService: UserRegistrationService
+) {
 
-    @ApiResponses(value = [
-        ApiResponse(responseCode = OK, content = [
-            Content(mediaType = "application/json", schema = Schema(implementation = RegisteredUserResponse::class))
-        ]),
-        ApiResponse(
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = OK, content = [
+                    Content(
+                        mediaType = "application/json",
+                        schema = Schema(implementation = RegisteredUserResponse::class)
+                    )
+                ]
+            ),
+            ApiResponse(
                 responseCode = BAD_REQUEST,
                 description = "errorCode: $EMAIL_IS_INVALID",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
-        ),
-        ApiResponse(
+            ),
+            ApiResponse(
                 responseCode = FORBIDDEN,
                 description = "errorCodes: [$USER_ALREADY_ACTIVATED, $USER_IS_SUSPENDED, $USER_NOT_ACTIVATED]",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
-        ),
-        ApiResponse(
+            ),
+            ApiResponse(
                 responseCode = INTERNAL_SERVER_ERROR,
                 description = "errorCode: $EMAIL_SENDING_FAILED",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
-        )])
+            )]
+    )
     @PostMapping(USER_REGISTER_PATH)
     fun signUp(@RequestBody user: RegisterUserRequest): RegisteredUserResponse =
-            userRegistrationService.saveUser(user)
+        userRegistrationService.saveUser(user)
 
-    @ApiResponses(value = [
-        ApiResponse(responseCode = OK, content = []),
-        ApiResponse(
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = OK, content = []),
+            ApiResponse(
                 responseCode = FORBIDDEN,
                 description = "errorCode: $UNAUTHORIZED_ACCESS",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
-        )])
+            )]
+    )
     @PostMapping(LOGOUT_PATH)
     fun logout(@RequestHeader(name = AUTHORIZATION_HEADER) accessToken: String) =
-            userInfoService.logout(accessToken)
+        userInfoService.logout(accessToken)
 
-    @ApiResponses(value = [
-        ApiResponse(
+    @ApiResponses(
+        value = [
+            ApiResponse(
                 responseCode = OK,
-                content = [Content(mediaType = "application/json", schema = Schema(implementation = LoginResponse::class))
-                ]),
-        ApiResponse(
+                content = [Content(
+                    mediaType = "application/json",
+                    schema = Schema(implementation = LoginResponse::class)
+                )
+                ]
+            ),
+            ApiResponse(
                 responseCode = FORBIDDEN,
                 description = "errorCode: $REFRESH_TOKEN_IS_INVALID",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
-        )])
+            )]
+    )
     @PostMapping(REFRESH_TOKEN_PATH)
     suspend fun refreshToken(@RequestBody refreshTokenRequest: RefreshTokenRequest): LoginResponse =
-            userInfoService.refreshToken(refreshTokenRequest)
+        userInfoService.refreshToken(refreshTokenRequest)
 
-    @ApiResponses(value = [
-        ApiResponse(
+    @ApiResponses(
+        value = [
+            ApiResponse(
                 responseCode = OK,
-                content = [Content(mediaType = "application/json", schema = Schema(implementation = RegisteredUserResponse::class))
-                ]),
-        ApiResponse(
+                content = [Content(
+                    mediaType = "application/json",
+                    schema = Schema(implementation = RegisteredUserResponse::class)
+                )
+                ]
+            ),
+            ApiResponse(
                 responseCode = BAD_REQUEST,
                 description = "errorCode: $USER_INFO_NOT_FOUND",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
-        ),
-        ApiResponse(
+            ),
+            ApiResponse(
                 responseCode = FORBIDDEN,
                 description = "errorCodes: [$UNAUTHORIZED_ACCESS, $USER_ALREADY_ACTIVATED, $USER_IS_SUSPENDED]",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
-        )])
+            )]
+    )
     @GetMapping(USER_REGISTRATION_CONFIRM_PATH)
     fun confirmRegistration(@RequestParam(value = "token") token: String): RegisteredUserResponse =
-            userRegistrationService.confirmToken(token)
+        userRegistrationService.confirmToken(token)
 
-    @ApiResponses(value = [
-        ApiResponse(
+    @ApiResponses(
+        value = [
+            ApiResponse(
                 responseCode = OK,
-                content = [Content(mediaType = "application/json", schema = Schema(implementation = LoginResponse::class))]
-        ),
-        ApiResponse(
+                content = [Content(
+                    mediaType = "application/json",
+                    schema = Schema(implementation = LoginResponse::class)
+                )]
+            ),
+            ApiResponse(
                 responseCode = BAD_REQUEST,
                 description = "errorCodes: [$CLIENT_ID_HEADER_MISSING, $USER_INFO_NOT_FOUND]",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
-        ),
-        ApiResponse(
+            ),
+            ApiResponse(
                 responseCode = FORBIDDEN,
                 description = "errorCodes: [$USER_IS_SUSPENDED, $USER_NOT_ACTIVATED]",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
-        )])
+            )]
+    )
     @PostMapping(LOGIN_PATH)
     fun fakeLogin(
-            @RequestHeader(name = CLIENT_ID_HEADER) clientIdHeader: String,
-            @RequestBody loginUserRequest: LoginUserRequest
+        @RequestHeader(name = CLIENT_ID_HEADER) clientIdHeader: String,
+        @RequestBody loginUserRequest: LoginUserRequest
     ): LoginResponse {
         throw IllegalStateException("This method won't be called. Login is overridden by Spring Security filters.")
     }

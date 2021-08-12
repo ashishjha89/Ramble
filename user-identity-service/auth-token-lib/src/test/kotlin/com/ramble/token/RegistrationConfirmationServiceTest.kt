@@ -48,13 +48,14 @@ class RegistrationConfirmationServiceTest {
         val expectedToken = RegistrationConfirmationToken(userId, email, tokenStr)
 
         // Stub
-        given(registrationTokenHandler
+        given(
+            registrationTokenHandler
                 .generateToken(userId, email, now, expiryDurationAmount, expiryDurationUnit, jwtBuilder)
         ).willReturn(tokenStr)
 
         // Call method
         val tokenResult = registrationConfirmationService
-                .addRegistrationConfirmationToken(userId, email, now, expiryDurationAmount, expiryDurationUnit)
+            .addRegistrationConfirmationToken(userId, email, now, expiryDurationAmount, expiryDurationUnit)
 
         // Verify
         verify(registrationConfirmationRepo).deleteRegistrationConfirmationToken(userId) // delete old token for user
@@ -69,12 +70,13 @@ class RegistrationConfirmationServiceTest {
 
         // Stub
         given(registrationTokenHandler.getUserIdFromToken(confirmRegistrationTokenStr, jwtParser))
-                .willReturn(null)
+            .willReturn(null)
 
         // Call method and assert
         assertNull(
-                registrationConfirmationService
-                        .processRegistrationConfirmationToken(confirmRegistrationTokenStr, now))
+            registrationConfirmationService
+                .processRegistrationConfirmationToken(confirmRegistrationTokenStr, now)
+        )
     }
 
     @Test
@@ -85,13 +87,13 @@ class RegistrationConfirmationServiceTest {
 
         // Stub
         given(registrationTokenHandler.getUserIdFromToken(confirmRegistrationTokenStr, jwtParser))
-                .willReturn(userId)
+            .willReturn(userId)
         given(registrationTokenHandler.isValidToken(confirmRegistrationTokenStr, now, jwtParser))
-                .willReturn(false)
+            .willReturn(false)
 
         // Call method
         val tokenResult = registrationConfirmationService
-                .processRegistrationConfirmationToken(confirmRegistrationTokenStr, now)
+            .processRegistrationConfirmationToken(confirmRegistrationTokenStr, now)
 
         // Verify
         assertNull(tokenResult)
@@ -107,15 +109,15 @@ class RegistrationConfirmationServiceTest {
 
         // Stub
         given(registrationTokenHandler.getUserIdFromToken(confirmRegistrationTokenStr, jwtParser))
-                .willReturn(userId)
+            .willReturn(userId)
         given(registrationTokenHandler.isValidToken(confirmRegistrationTokenStr, now, jwtParser))
-                .willReturn(true)
+            .willReturn(true)
         given(registrationConfirmationRepo.getRegistrationConfirmationToken(userId))
-                .willReturn(expectedToken)
+            .willReturn(expectedToken)
 
         // Call method
         val tokenResult = registrationConfirmationService
-                .processRegistrationConfirmationToken(confirmRegistrationTokenStr, now)
+            .processRegistrationConfirmationToken(confirmRegistrationTokenStr, now)
 
         // Verify
         assertEquals(expectedToken, tokenResult)

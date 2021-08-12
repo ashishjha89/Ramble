@@ -20,56 +20,56 @@ class ControllerExceptionHandler {
     @ExceptionHandler(InternalServerException::class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     fun internalServerException(): ResponseEntity<ErrorBody> =
-            ResponseEntity(internalServerError, HttpStatus.INTERNAL_SERVER_ERROR)
+        ResponseEntity(internalServerError, HttpStatus.INTERNAL_SERVER_ERROR)
 
     @ExceptionHandler(UserNotFoundException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun userNotFoundException(): ResponseEntity<ErrorBody> =
-            ResponseEntity(userInfoNotFound, HttpStatus.BAD_REQUEST)
+        ResponseEntity(userInfoNotFound, HttpStatus.BAD_REQUEST)
 
     @ExceptionHandler(UserNotActivatedException::class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     fun userNotActivatedException(): ResponseEntity<ErrorBody> =
-            ResponseEntity(userNotActivatedError, HttpStatus.FORBIDDEN)
+        ResponseEntity(userNotActivatedError, HttpStatus.FORBIDDEN)
 
     @ExceptionHandler(UserSuspendedException::class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     fun userSuspendedException(): ResponseEntity<ErrorBody> =
-            ResponseEntity(userSuspendedError, HttpStatus.FORBIDDEN)
+        ResponseEntity(userSuspendedError, HttpStatus.FORBIDDEN)
 
     @ExceptionHandler(UserAlreadyActivatedException::class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     fun userAlreadyActivatedException(): ResponseEntity<ErrorBody> =
-            ResponseEntity(userAlreadyActivatedError, HttpStatus.FORBIDDEN)
+        ResponseEntity(userAlreadyActivatedError, HttpStatus.FORBIDDEN)
 
     @ExceptionHandler(AccessTokenIsInvalidException::class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     fun accessTokenIsInvalidException(): ResponseEntity<ErrorBody> =
-            ResponseEntity(unauthorizedAccess, HttpStatus.FORBIDDEN)
+        ResponseEntity(unauthorizedAccess, HttpStatus.FORBIDDEN)
 
     @ExceptionHandler(RefreshTokenIsInvalidException::class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     fun refreshTokenIsInvalidException(): ResponseEntity<ErrorBody> =
-            ResponseEntity(refreshTokenInvalid, HttpStatus.FORBIDDEN)
+        ResponseEntity(refreshTokenInvalid, HttpStatus.FORBIDDEN)
 
     @ExceptionHandler(InvalidRegistrationConfirmationToken::class)
     @ResponseStatus(value = HttpStatus.FORBIDDEN)
     fun registrationConfirmationTokenIsInvalidException(): ResponseEntity<ErrorBody> =
-            ResponseEntity(unauthorizedAccess, HttpStatus.BAD_REQUEST)
+        ResponseEntity(unauthorizedAccess, HttpStatus.BAD_REQUEST)
 
     @ExceptionHandler(EmailCredentialNotFoundException::class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     fun credentialNotFoundException(): ResponseEntity<ErrorBody> =
-            ResponseEntity(emailSendingFailed, HttpStatus.INTERNAL_SERVER_ERROR)
+        ResponseEntity(emailSendingFailed, HttpStatus.INTERNAL_SERVER_ERROR)
 
     @ExceptionHandler(EmailSendingFailedException::class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     fun emailSendingFailedException(): ResponseEntity<ErrorBody> =
-            ResponseEntity(emailSendingFailed, HttpStatus.INTERNAL_SERVER_ERROR)
+        ResponseEntity(emailSendingFailed, HttpStatus.INTERNAL_SERVER_ERROR)
 
     @ExceptionHandler(InvalidEmailException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun invalidEmailException(): ResponseEntity<ErrorBody> =
-            ResponseEntity(invalidEmailSyntaxError, HttpStatus.BAD_REQUEST)
+        ResponseEntity(invalidEmailSyntaxError, HttpStatus.BAD_REQUEST)
 
 }

@@ -26,33 +26,33 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
     private val refreshTokenHandler: RefreshTokenHandler = tokenComponentBuilder.refreshTokenHandler()
 
     private val usernamePasswordAuthTokenTokenGenerator: UsernamePasswordAuthTokenTokenGenerator =
-            tokenComponentBuilder.usernamePasswordAuthTokenTokenGenerator()
+        tokenComponentBuilder.usernamePasswordAuthTokenTokenGenerator()
 
     suspend fun generateUserAuthToken(
-            authorities: Collection<GrantedAuthority>,
-            clientId: String,
-            userId: String,
-            email: String,
-            issuedInstant: Instant = Instant.now(),
-            accessTokenExpiryDurationAmount: Long = 30,
-            accessTokenExpiryDurationUnit: ChronoUnit = ChronoUnit.MINUTES,
-            refreshTokenExpiryDurationAmount: Long = 356,
-            refreshTokenExpiryDurationUnit: ChronoUnit = ChronoUnit.DAYS
+        authorities: Collection<GrantedAuthority>,
+        clientId: String,
+        userId: String,
+        email: String,
+        issuedInstant: Instant = Instant.now(),
+        accessTokenExpiryDurationAmount: Long = 30,
+        accessTokenExpiryDurationUnit: ChronoUnit = ChronoUnit.MINUTES,
+        refreshTokenExpiryDurationAmount: Long = 356,
+        refreshTokenExpiryDurationUnit: ChronoUnit = ChronoUnit.DAYS
     ): UserAuthInfo {
         val userAuthInfo = UserAuthInfo(
+            userId = userId,
+            email = email,
+            accessToken = accessTokenHandler.generateAccessToken(
+                authorities = authorities,
+                clientId = clientId,
                 userId = userId,
                 email = email,
-                accessToken = accessTokenHandler.generateAccessToken(
-                        authorities = authorities,
-                        clientId = clientId,
-                        userId = userId,
-                        email = email,
-                        issuedInstant = issuedInstant,
-                        expiryDurationAmount = accessTokenExpiryDurationAmount,
-                        expiryDurationUnit = accessTokenExpiryDurationUnit,
-                        jwtBuilder = jwtBuilder
-                ),
-                refreshToken = refreshTokenHandler.generateRefreshToken()
+                issuedInstant = issuedInstant,
+                expiryDurationAmount = accessTokenExpiryDurationAmount,
+                expiryDurationUnit = accessTokenExpiryDurationUnit,
+                jwtBuilder = jwtBuilder
+            ),
+            refreshToken = refreshTokenHandler.generateRefreshToken()
         )
         authTokenRepo.insertUserAuthInfo(clientId, userAuthInfo)
         return userAuthInfo
@@ -60,10 +60,10 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
 
     @Throws(RefreshTokenIsInvalidException::class)
     suspend fun refreshAuthToken(
-            refreshToken: String,
-            now: Instant,
-            accessTokenExpiryDurationAmount: Long = 30,
-            accessTokenExpiryDurationUnit: ChronoUnit = ChronoUnit.MINUTES
+        refreshToken: String,
+        now: Instant,
+        accessTokenExpiryDurationAmount: Long = 30,
+        accessTokenExpiryDurationUnit: ChronoUnit = ChronoUnit.MINUTES
     ): UserAuthInfo? {
         // 1. Delete old entry of refresh-token for the client.
         val clientAuthInfo = authTokenRepo.deleteOldAuthTokens(refreshToken)
@@ -84,13 +84,13 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
         val roles = accessTokenHandler.getRolesFromAccessToken(accessToken, jwtParser) ?: return null
 
         return generateUserAuthToken(
-                authorities = roles,
-                clientId = clientId,
-                userId = userId,
-                email = email,
-                issuedInstant = now,
-                accessTokenExpiryDurationAmount = accessTokenExpiryDurationAmount,
-                accessTokenExpiryDurationUnit = accessTokenExpiryDurationUnit
+            authorities = roles,
+            clientId = clientId,
+            userId = userId,
+            email = email,
+            issuedInstant = now,
+            accessTokenExpiryDurationAmount = accessTokenExpiryDurationAmount,
+            accessTokenExpiryDurationUnit = accessTokenExpiryDurationUnit
         )
     }
 
@@ -101,9 +101,9 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
 
         // 2. Check if token is not in disabled-token-list
         val clientAuthInfo = ClientAuthInfo(
-                clientId = accessClaims.clientId,
-                userId = accessClaims.userId,
-                accessToken = accessToken
+            clientId = accessClaims.clientId,
+            userId = accessClaims.userId,
+            accessToken = accessToken
         )
         val disabledTokens = authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)
         val disabledTokensNonExpired = disabledTokens.filter {
@@ -136,9 +136,9 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
     }
 
     fun getAccessTokenClaims(principal: Principal): AccessClaims? =
-            accessTokenHandler.getPrincipalClaims(principal)
+        accessTokenHandler.getPrincipalClaims(principal)
 
     fun springAuthentication(claims: Claims, authorities: List<GrantedAuthority>): SpringAuthentication =
-            usernamePasswordAuthTokenTokenGenerator.getUsernamePasswordAuthenticationToken(claims, authorities)
+        usernamePasswordAuthTokenTokenGenerator.getUsernamePasswordAuthenticationToken(claims, authorities)
 
 }

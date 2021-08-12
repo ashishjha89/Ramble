@@ -19,18 +19,21 @@ import java.security.Principal
 @RequestMapping(USER_INFO_API_BASE_PATH)
 class UserController(private val userInfoService: UserInfoService) {
 
-    @ApiResponses(value = [
-        ApiResponse(
+    @ApiResponses(
+        value = [
+            ApiResponse(
                 responseCode = OK,
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = UserInfo::class))
-                ]),
-        ApiResponse(
+                ]
+            ),
+            ApiResponse(
                 responseCode = BAD_REQUEST,
                 description = "errorCode: $USER_INFO_NOT_FOUND",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
-        )])
+            )]
+    )
     @GetMapping(USER_INFO_ME_PATH)
     fun getMyInfo(principal: Principal): UserInfo =
-            userInfoService.getUserInfoResult(principal)
+        userInfoService.getUserInfoResult(principal)
 
 }

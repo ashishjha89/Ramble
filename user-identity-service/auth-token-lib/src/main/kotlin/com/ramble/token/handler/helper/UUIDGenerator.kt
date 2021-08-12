@@ -4,5 +4,5 @@ import java.util.*
 
 internal class UUIDGenerator {
 
-    fun getRandomUUID() : String = UUID.randomUUID().toString()
+    fun getRandomUUID(): String = UUID.randomUUID().toString()
 }

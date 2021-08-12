@@ -6,6 +6,7 @@ import com.ramble.token.handler.RefreshTokenHandler
 import com.ramble.token.handler.helper.UsernamePasswordAuthTokenTokenGenerator
 import com.ramble.token.model.*
 import com.ramble.token.repository.AuthTokenRepo
+import com.ramble.token.repository.persistence.entities.ClientAuthInfo
 import io.jsonwebtoken.Claims
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.stereotype.Service

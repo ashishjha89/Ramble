@@ -6,9 +6,9 @@ import com.ramble.token.handler.RefreshTokenHandler
 import com.ramble.token.handler.helper.UsernamePasswordAuthTokenTokenGenerator
 import com.ramble.token.model.AccessClaims
 import com.ramble.token.model.AccessTokenIsInvalidException
-import com.ramble.token.model.ClientAuthInfo
 import com.ramble.token.model.UserAuthInfo
 import com.ramble.token.repository.AuthTokenRepo
+import com.ramble.token.repository.persistence.entities.ClientAuthInfo
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.JwtBuilder
 import io.jsonwebtoken.JwtParser

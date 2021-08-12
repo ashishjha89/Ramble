@@ -1,9 +1,9 @@
 package com.ramble.token.repository
 
-import com.ramble.token.model.ClientAuthInfo
 import com.ramble.token.model.RefreshTokenIsInvalidException
 import com.ramble.token.model.UserAuthInfo
 import com.ramble.token.repository.persistence.RefreshTokenCrudRepository
+import com.ramble.token.repository.persistence.entities.ClientAuthInfo
 import com.ramble.token.repository.persistence.entities.ClientRefreshToken
 import com.ramble.token.value
 import kotlinx.coroutines.Dispatchers

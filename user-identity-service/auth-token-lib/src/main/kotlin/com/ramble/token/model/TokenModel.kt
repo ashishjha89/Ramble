@@ -26,5 +26,3 @@ class RefreshTokenIsInvalidException : Exception()
 class AccessTokenIsInvalidException : Exception()
 
 internal data class TokenDuration(val issuedDate: Date, val expiryDate: Date)
-
-internal data class ClientAuthInfo(val clientId: String, val userId: String, val accessToken: String)

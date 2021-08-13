@@ -47,25 +47,34 @@ class AuthControllerTest {
     }
 
     @Test
-    fun `logout should send success if successfully logged out`() {
+    fun `logout should send success if successfully logged out`() = runBlocking {
         val accessToken = "some-access-token"
+        val authTokenHeader = "Bearer $accessToken"
 
         // Call method
-        authController.logout(accessToken)
+        authController.logout(authTokenHeader)
 
         verify(userInfoService).logout(accessToken)
     }
 
     @Test(expected = AccessTokenIsInvalidException::class)
-    fun `logout should throw AccessTokenIsInvalidException if userInfoService throws AccessTokenIsInvalidException`() {
-        val accessToken = "some-access-token"
+    fun `logout should throw AccessTokenIsInvalidException if userInfoService throws AccessTokenIsInvalidException`() =
+        runBlocking {
+            val accessToken = "some-access-token"
+            val authTokenHeader = "Bearer $accessToken"
 
-        // Stub
-        given(userInfoService.logout(accessToken)).willThrow(AccessTokenIsInvalidException())
+            // Stub
+            given(userInfoService.logout(accessToken)).willThrow(AccessTokenIsInvalidException())
 
-        // Call method
-        authController.logout(accessToken)
-    }
+            // Call method
+            authController.logout(authTokenHeader)
+        }
+
+    @Test(expected = AccessTokenIsInvalidException::class)
+    fun `logout should throw AccessTokenIsInvalidException if header does not start with Bearer`() =
+        runBlocking {
+            authController.logout("some-access-token")
+        }
 
     @Test
     fun `refreshToken should send new LoginResponse if successful`() = runBlocking<Unit> {

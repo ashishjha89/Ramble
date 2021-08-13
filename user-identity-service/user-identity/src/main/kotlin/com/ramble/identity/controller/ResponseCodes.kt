@@ -1,8 +1,6 @@
 package com.ramble.identity.controller
 
-import javax.servlet.http.HttpServletResponse
-
-const val BAD_REQUEST = HttpServletResponse.SC_BAD_REQUEST.toString()
-const val FORBIDDEN = HttpServletResponse.SC_FORBIDDEN.toString()
-const val INTERNAL_SERVER_ERROR = HttpServletResponse.SC_INTERNAL_SERVER_ERROR.toString()
-const val OK = HttpServletResponse.SC_OK.toString()
+const val BAD_REQUEST : String = "400"
+const val FORBIDDEN = "401"
+const val INTERNAL_SERVER_ERROR = "500"
+const val OK = "200"

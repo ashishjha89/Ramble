@@ -7,10 +7,12 @@ import com.ramble.identity.utils.TimeAndIdGenerator
 import com.ramble.token.AuthTokensService
 import com.ramble.token.model.AccessTokenIsInvalidException
 import com.ramble.token.model.RefreshTokenIsInvalidException
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Service
+import reactor.core.publisher.Mono
 import java.security.Principal
 import org.springframework.security.core.userdetails.User as SpringUser
 
@@ -19,7 +21,7 @@ class UserInfoService(
     private val userRepo: UserRepo,
     private val authTokensService: AuthTokensService,
     private val timeAndIdGenerator: TimeAndIdGenerator
-) : UserDetailsService {
+) : ReactiveUserDetailsService {
 
     @Throws(UserNotFoundException::class)
     fun getUserInfoResult(principal: Principal): UserInfo =
@@ -29,10 +31,10 @@ class UserInfoService(
     fun getUserInfo(email: String): UserInfo = userRepo.getUserInfo(email)
 
     @Throws(UsernameNotFoundException::class)
-    override fun loadUserByUsername(username: String?): UserDetails {
+    override fun findByUsername(username: String?): Mono<UserDetails> {
         if (username.isNullOrBlank()) throw UsernameNotFoundException(invalidUserId.errorMessage)
         val user = userRepo.getApplicationUser(username) ?: throw UsernameNotFoundException(invalidUserId.errorMessage)
-        return SpringUser(user.email, user.password, user.grantedAuthorities)
+        return Mono.just(SpringUser(user.email, user.password, user.grantedAuthorities))
     }
 
     @Throws(RefreshTokenIsInvalidException::class)
@@ -50,7 +52,7 @@ class UserInfoService(
     }
 
     @Throws(AccessTokenIsInvalidException::class)
-    fun logout(accessToken: String) {
+    suspend fun logout(accessToken: String) {
         authTokensService.logout(accessToken, now = timeAndIdGenerator.getCurrentTime())
     }
 

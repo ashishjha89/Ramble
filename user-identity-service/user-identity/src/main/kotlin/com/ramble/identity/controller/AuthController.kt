@@ -13,6 +13,9 @@ import com.ramble.identity.common.ErrorCode.USER_NOT_ACTIVATED
 import com.ramble.identity.models.*
 import com.ramble.identity.service.UserInfoService
 import com.ramble.identity.service.UserRegistrationService
+import com.ramble.identity.utils.getTokenFromBearerHeader
+import com.ramble.token.model.AccessTokenIsInvalidException
+import io.swagger.v3.oas.annotations.headers.Header
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -65,9 +68,12 @@ class AuthController(
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
             )]
     )
+    @Throws(AccessTokenIsInvalidException::class)
     @PostMapping(LOGOUT_PATH)
-    fun logout(@RequestHeader(name = AUTHORIZATION_HEADER) accessToken: String) =
-        userInfoService.logout(accessToken)
+    suspend fun logout(@RequestHeader(name = AUTHORIZATION_HEADER) authorizationHeader: String) =
+        userInfoService.logout(
+            accessToken = getTokenFromBearerHeader(authorizationHeader) ?: throw AccessTokenIsInvalidException()
+        )
 
     @ApiResponses(
         value = [
@@ -118,6 +124,10 @@ class AuthController(
         value = [
             ApiResponse(
                 responseCode = OK,
+                headers = [
+                    Header(name = AUTHORIZATION_HEADER, description = "Access Token in JWT format"),
+                    Header(name = REFRESH_TOKEN_HEADER, description = "Refresh Token in UUID format")
+                ],
                 content = [Content(
                     mediaType = "application/json",
                     schema = Schema(implementation = LoginResponse::class)
@@ -138,7 +148,7 @@ class AuthController(
     fun fakeLogin(
         @RequestHeader(name = CLIENT_ID_HEADER) clientIdHeader: String,
         @RequestBody loginUserRequest: LoginUserRequest
-    ): LoginResponse {
+    ) {
         throw IllegalStateException("This method won't be called. Login is overridden by Spring Security filters.")
     }
 

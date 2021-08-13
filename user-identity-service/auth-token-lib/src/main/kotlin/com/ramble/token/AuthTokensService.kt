@@ -95,7 +95,7 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
         )
     }
 
-    fun getAccessTokenClaims(accessToken: String?, now: Instant = Instant.now()): AccessClaims? {
+    suspend fun getAccessTokenClaims(accessToken: String?, now: Instant = Instant.now()): AccessClaims? {
         accessToken ?: return null
         // 1. Check if token is of correct format
         val accessClaims = accessTokenHandler.getTokenClaims(accessToken, jwtParser, now) ?: return null
@@ -118,7 +118,7 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
     }
 
     @Throws(AccessTokenIsInvalidException::class)
-    fun logout(accessToken: String, now: Instant) {
+    suspend fun logout(accessToken: String, now: Instant) {
         val clientId = accessTokenHandler.getClientIdFromAccessToken(accessToken, jwtParser)
         val userId = accessTokenHandler.getUserIdFromAccessToken(accessToken, jwtParser)
         if (clientId == null || userId == null) throw AccessTokenIsInvalidException()

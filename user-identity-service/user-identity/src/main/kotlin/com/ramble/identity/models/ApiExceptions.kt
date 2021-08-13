@@ -16,3 +16,7 @@ class InvalidEmailException : Exception()
 
 class InvalidRegistrationConfirmationToken : Exception()
 
+class UnauthorizedException : Exception()
+
+class BadRequestException : Exception()
+

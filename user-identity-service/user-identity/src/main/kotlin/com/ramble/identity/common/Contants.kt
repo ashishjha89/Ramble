@@ -1,5 +1,7 @@
 package com.ramble.identity.common
 
+import org.springframework.http.HttpHeaders
+
 // API PATHS
 
 const val USER_INFO_API_BASE_PATH = "/user-identity/user-info/v1"
@@ -26,10 +28,14 @@ const val SIGN_UP_CONFIRMATION_URL = "$SIGN_UP_URL$USER_REGISTER_CONFIRM_PATH" /
 
 const val REFRESH_TOKEN_URL = "$AUTH_API_BASE_PATH$REFRESH_TOKEN_PATH" // -> /auth/v1/refresh-token
 
+const val LOG_IN_URL = "$AUTH_API_BASE_PATH$LOGIN_PATH" // -> /auth/v1/login
+
 // HEADERS
-const val AUTHORIZATION_HEADER = "Authorization"
+const val AUTHORIZATION_HEADER = HttpHeaders.AUTHORIZATION
+const val REFRESH_TOKEN_HEADER = "Refresh-Token"
 
 const val CLIENT_ID_HEADER = "ClientId"
 
 // OTHER
 const val REGISTER_EMAIL_SUBJECT = "Confirm your email"
+const val BEARER = "Bearer "

@@ -12,7 +12,7 @@ import com.ramble.identity.utils.TimeAndIdGenerator
 import com.ramble.token.RegistrationConfirmationService
 import com.ramble.token.model.RegistrationConfirmationToken
 import org.springframework.scheduling.annotation.Async
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import java.time.temporal.ChronoUnit
 
@@ -20,7 +20,7 @@ import java.time.temporal.ChronoUnit
 class UserRegistrationService(
     private val userRepo: UserRepo,
     private val registrationRequestValidator: RegistrationRequestValidator,
-    private val bCryptPasswordEncoder: BCryptPasswordEncoder,
+    private val bCryptPasswordEncoder: PasswordEncoder,
     private val registrationConfirmationService: RegistrationConfirmationService,
     private val emailSenderService: EmailSenderService,
     private val timeAndIdGenerator: TimeAndIdGenerator
@@ -73,7 +73,7 @@ class UserRegistrationService(
     }
 
     @Throws(EmailCredentialNotFoundException::class, EmailSendingFailedException::class)
-    @Async
+    @Async // TODO: Get rid of Async!
     fun sendConfirmRegistrationEmail(
         confirmRegistrationToken: RegistrationConfirmationToken,
         newlyRegisteredUser: ApplicationUser

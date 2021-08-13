@@ -12,6 +12,11 @@ Maildev web app runs on port 1080 (web ui). The SMTP server runs on port 1025.
 $ mysql.server start
 ```
 
+#### Start Redis Server
+```
+$ brew services start redis
+```
+
 #### Vault for email-sender-lib
 For this POC with maildev email client, Vault is not needed to be enabled.
 
@@ -28,11 +33,11 @@ Other steps which are needed for Vault-setup:
 - Go to vault and 'enable new engine' -> Chose KV -> In Method-option, chose 'Version 1' from drop down -> Enable engine
 - Add key-value secret: kv/ramble.email-sender (secrets are username and password).
 
-
 #### Api Documentation
-http://localhost:8080/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config
+http://localhost:8080/webjars/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config
 
 #### Next steps
+* Disable login if already logged in for same userId and clientId, or delete old tokens.
 * SQL support for tokens & user-info
 * Redis support for storing invalid/exposed tokens
 * Integration tests

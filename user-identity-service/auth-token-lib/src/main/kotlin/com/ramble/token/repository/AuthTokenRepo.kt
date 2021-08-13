@@ -2,9 +2,11 @@ package com.ramble.token.repository
 
 import com.ramble.token.model.RefreshTokenIsInvalidException
 import com.ramble.token.model.UserAuthInfo
-import com.ramble.token.repository.persistence.RefreshTokenCrudRepository
+import com.ramble.token.repository.persistence.ClientRefreshTokenSqlRepo
+import com.ramble.token.repository.persistence.DisabledTokensRedisRepo
 import com.ramble.token.repository.persistence.entities.ClientAuthInfo
 import com.ramble.token.repository.persistence.entities.ClientRefreshToken
+import com.ramble.token.repository.persistence.entities.DisabledClientTokens
 import com.ramble.token.value
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -16,14 +18,15 @@ private typealias AccessToken = String
 internal typealias UserId = String
 
 @Repository
-class AuthTokenRepo(private val refreshTokenCrudRepo: RefreshTokenCrudRepository) {
-
-    private val disabledClientAccessTokenMap = mutableMapOf<ClientAuthInfo, Set<AccessToken>>()
+class AuthTokenRepo(
+    private val refreshTokenSqlRepo: ClientRefreshTokenSqlRepo,
+    private val disabledTokensRedisRepo: DisabledTokensRedisRepo
+) {
 
     internal suspend fun insertUserAuthInfo(clientId: String, userAuthInfo: UserAuthInfo): ClientRefreshToken =
         coroutineScope {
             withContext(Dispatchers.IO) {
-                refreshTokenCrudRepo.save(
+                refreshTokenSqlRepo.save(
                     ClientRefreshToken(
                         refreshToken = userAuthInfo.refreshToken,
                         accessToken = userAuthInfo.accessToken,
@@ -38,19 +41,29 @@ class AuthTokenRepo(private val refreshTokenCrudRepo: RefreshTokenCrudRepository
     internal suspend fun deleteOldAuthTokens(refreshToken: String): ClientAuthInfo =
         coroutineScope {
             withContext(Dispatchers.IO) {
-                val clientRefreshToken = refreshTokenCrudRepo.findById(refreshToken).value
+                val clientRefreshToken = refreshTokenSqlRepo.findById(refreshToken).value
                     ?: throw RefreshTokenIsInvalidException()
-                refreshTokenCrudRepo.deleteById(clientRefreshToken.refreshToken)
+                refreshTokenSqlRepo.deleteById(clientRefreshToken.refreshToken)
                 clientRefreshToken.toClientAuthInfo()
             }
         }
 
-    internal fun getDisabledAccessTokensForClient(clientAuthInfo: ClientAuthInfo): Set<AccessToken> =
-        disabledClientAccessTokenMap[clientAuthInfo] ?: setOf()
+    internal suspend fun getDisabledAccessTokensForClient(clientAuthInfo: ClientAuthInfo): Set<AccessToken> =
+        coroutineScope {
+            withContext(Dispatchers.IO) {
+                disabledTokensRedisRepo.findById(clientAuthInfo.clientId).value?.disabledAccessTokens?.toSet()
+                    ?: setOf()
+            }
+        }
 
-    internal fun updateDisabledAccessTokensForClient(clientAuthInfo: ClientAuthInfo, accessTokens: Set<AccessToken>?) {
-        if (accessTokens == null || accessTokens.isEmpty()) disabledClientAccessTokenMap.remove(clientAuthInfo)
-        else disabledClientAccessTokenMap[clientAuthInfo] = accessTokens
+    internal suspend fun updateDisabledAccessTokensForClient(
+        clientAuthInfo: ClientAuthInfo,
+        accessTokens: Set<AccessToken>?
+    ) {
+        if (accessTokens.isNullOrEmpty()) disabledTokensRedisRepo.deleteById(clientAuthInfo.clientId)
+        else disabledTokensRedisRepo.save(
+            DisabledClientTokens(id = clientAuthInfo.clientId, disabledAccessTokens = accessTokens.toList())
+        )
     }
 
     private fun ClientRefreshToken.toClientAuthInfo() =

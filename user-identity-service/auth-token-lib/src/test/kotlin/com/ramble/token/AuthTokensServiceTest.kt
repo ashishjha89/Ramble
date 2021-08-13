@@ -110,7 +110,7 @@ class AuthTokensServiceTest {
     }
 
     @Test
-    fun `getClaims from token when there is no disabled token for the client`() {
+    fun `getClaims from token when there is no disabled token for the client`() = runBlocking {
         val token = "some_token"
         val now = Instant.now()
         val clientId = "someClientId"
@@ -135,38 +135,39 @@ class AuthTokensServiceTest {
     }
 
     @Test
-    fun `getClaims from token when the current token is not disabled for the client, and some disabled token is now invalid`() {
-        val token = "some_token"
-        val disabledToken1 = "disabled_token_1"
-        val disabledToken2 = "disabled_token_2"
-        val now = Instant.now()
-        val clientId = "someClientId"
-        val userId = "someUserId"
-        val emailId = "someEmail@ramble.com"
-        val claims = mock(Claims::class.java)
-        val authority = mock(SimpleGrantedAuthority::class.java)
+    fun `getClaims from token when the current token is not disabled for the client, and some disabled token is now invalid`() =
+        runBlocking {
+            val token = "some_token"
+            val disabledToken1 = "disabled_token_1"
+            val disabledToken2 = "disabled_token_2"
+            val now = Instant.now()
+            val clientId = "someClientId"
+            val userId = "someUserId"
+            val emailId = "someEmail@ramble.com"
+            val claims = mock(Claims::class.java)
+            val authority = mock(SimpleGrantedAuthority::class.java)
 
-        val allDisabledTokens = setOf(disabledToken1, disabledToken2)
-        val expectedAccessClaims = AccessClaims(clientId, userId, emailId, claims, listOf(authority))
-        val expectedClientAuthInfo = ClientAuthInfo(clientId, userId, token)
-        val expectedDisabledTokens = setOf(disabledToken2)
+            val allDisabledTokens = setOf(disabledToken1, disabledToken2)
+            val expectedAccessClaims = AccessClaims(clientId, userId, emailId, claims, listOf(authority))
+            val expectedClientAuthInfo = ClientAuthInfo(clientId, userId, token)
+            val expectedDisabledTokens = setOf(disabledToken2)
 
-        // Stub
-        given(accessTokenHandler.getTokenClaims(token, jwtParser, now)).willReturn(expectedAccessClaims)
-        given(authTokenRepo.getDisabledAccessTokensForClient(expectedClientAuthInfo)).willReturn(allDisabledTokens)
-        given(accessTokenHandler.isValidAccessToken(disabledToken1, jwtParser, now)).willReturn(false)
-        given(accessTokenHandler.isValidAccessToken(disabledToken2, jwtParser, now)).willReturn(true)
+            // Stub
+            given(accessTokenHandler.getTokenClaims(token, jwtParser, now)).willReturn(expectedAccessClaims)
+            given(authTokenRepo.getDisabledAccessTokensForClient(expectedClientAuthInfo)).willReturn(allDisabledTokens)
+            given(accessTokenHandler.isValidAccessToken(disabledToken1, jwtParser, now)).willReturn(false)
+            given(accessTokenHandler.isValidAccessToken(disabledToken2, jwtParser, now)).willReturn(true)
 
-        // Call method and assert
-        val accessClaims = authTokensService.getAccessTokenClaims(token, now)
+            // Call method and assert
+            val accessClaims = authTokensService.getAccessTokenClaims(token, now)
 
-        // Verify
-        assertEquals(expectedAccessClaims, accessClaims)
-        verify(authTokenRepo).updateDisabledAccessTokensForClient(expectedClientAuthInfo, expectedDisabledTokens)
-    }
+            // Verify
+            assertEquals(expectedAccessClaims, accessClaims)
+            verify(authTokenRepo).updateDisabledAccessTokensForClient(expectedClientAuthInfo, expectedDisabledTokens)
+        }
 
     @Test
-    fun `getClaims from token when the current token is not disabled for the client`() {
+    fun `getClaims from token when the current token is not disabled for the client`() = runBlocking {
         val token = "some_token"
         val disabledToken1 = "disabled_token_1"
         val disabledToken2 = "disabled_token_2"
@@ -477,7 +478,7 @@ class AuthTokensServiceTest {
         }
 
     @Test
-    fun `logout when valid token and there were no disabled tokens for client`() {
+    fun `logout when valid token and there were no disabled tokens for client`() = runBlocking {
         val now = Instant.now()
         val accessToken = "someAccessToken"
 
@@ -500,7 +501,7 @@ class AuthTokensServiceTest {
     }
 
     @Test
-    fun `logout when valid token and there were some disabled tokens for client`() {
+    fun `logout when valid token and there were some disabled tokens for client`() = runBlocking {
         val now = Instant.now()
         val accessToken = "someAccessToken"
 
@@ -532,7 +533,7 @@ class AuthTokensServiceTest {
     }
 
     @Test(expected = AccessTokenIsInvalidException::class)
-    fun `logout when passed token is in disabled tokens list for client`() {
+    fun `logout when passed token is in disabled tokens list for client`() = runBlocking {
         val now = Instant.now()
         val accessToken = "someAccessToken"
 
@@ -556,7 +557,7 @@ class AuthTokensServiceTest {
     }
 
     @Test(expected = AccessTokenIsInvalidException::class)
-    fun `logout should throw AccessTokenIsInvalidException if clientId cannot be obtained from token`() {
+    fun `logout should throw AccessTokenIsInvalidException if clientId cannot be obtained from token`() = runBlocking {
         val now = Instant.now()
         val accessToken = "someAccessToken"
         val userId = "someUserId"
@@ -570,7 +571,7 @@ class AuthTokensServiceTest {
     }
 
     @Test(expected = AccessTokenIsInvalidException::class)
-    fun `logout should throw AccessTokenIsInvalidException if userId cannot be obtained from token`() {
+    fun `logout should throw AccessTokenIsInvalidException if userId cannot be obtained from token`() = runBlocking {
         val now = Instant.now()
         val accessToken = "someAccessToken"
         val clientId = "someClientId"

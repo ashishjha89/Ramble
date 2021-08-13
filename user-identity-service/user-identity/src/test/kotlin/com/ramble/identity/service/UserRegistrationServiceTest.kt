@@ -150,7 +150,7 @@ class UserRegistrationServiceTest {
             .willReturn(null)
 
         // Call method and assert
-        val result = userRegistrationService.confirmToken(registrationTokenStr)
+        userRegistrationService.confirmToken(registrationTokenStr)
     }
 
     @Test(expected = UserNotFoundException::class)

@@ -2,7 +2,7 @@ package com.ramble.token.handler.helper
 
 import org.springframework.security.core.GrantedAuthority
 
-internal class AccessTokenClaimsMapGenerator {
+internal class TokenClaimsMapGenerator {
 
     companion object {
 
@@ -19,4 +19,7 @@ internal class AccessTokenClaimsMapGenerator {
             CLIENT_ID to clientId,
             USER_ID to userId
         )
+
+    fun getRefreshTokenClaimsMap(clientId: String, userId: String) =
+        mapOf(CLIENT_ID to clientId, USER_ID to userId)
 }

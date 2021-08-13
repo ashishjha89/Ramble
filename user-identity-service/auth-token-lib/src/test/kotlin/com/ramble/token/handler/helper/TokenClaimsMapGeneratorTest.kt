@@ -6,7 +6,7 @@ import org.springframework.security.core.GrantedAuthority
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class AccessTokenClaimsMapGeneratorTest {
+class TokenClaimsMapGeneratorTest {
 
     @Test
     fun getAccessTokenClaimsMapTest() {
@@ -20,7 +20,7 @@ class AccessTokenClaimsMapGeneratorTest {
         given(authority.authority).willReturn(authorityStr)
 
         // Call method
-        val claimsMapResult = AccessTokenClaimsMapGenerator().getAccessTokenClaimsMap(clientId, userId, authorities)
+        val claimsMapResult = TokenClaimsMapGenerator().getAccessTokenClaimsMap(clientId, userId, authorities)
 
         // Assert
         assertEquals(clientId, claimsMapResult["CLIENT_ID"])

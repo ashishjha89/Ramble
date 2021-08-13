@@ -1,9 +1,9 @@
 package com.ramble.token.handler
 
-import com.ramble.token.handler.helper.AccessTokenClaimsMapGenerator
-import com.ramble.token.handler.helper.AccessTokenClaimsMapGenerator.Companion.CLIENT_ID
-import com.ramble.token.handler.helper.AccessTokenClaimsMapGenerator.Companion.ROLES
-import com.ramble.token.handler.helper.AccessTokenClaimsMapGenerator.Companion.USER_ID
+import com.ramble.token.handler.helper.TokenClaimsMapGenerator
+import com.ramble.token.handler.helper.TokenClaimsMapGenerator.Companion.CLIENT_ID
+import com.ramble.token.handler.helper.TokenClaimsMapGenerator.Companion.ROLES
+import com.ramble.token.handler.helper.TokenClaimsMapGenerator.Companion.USER_ID
 import com.ramble.token.handler.helper.TokenDurationGenerator
 import com.ramble.token.model.AccessClaims
 import io.jsonwebtoken.Claims
@@ -22,10 +22,10 @@ import javax.crypto.SecretKey
 internal class AccessTokenHandler(
     private val jwtKey: SecretKey,
     private val tokenDurationGenerator: TokenDurationGenerator,
-    private val accessTokenClaimsMapGenerator: AccessTokenClaimsMapGenerator
+    private val tokenClaimsMapGenerator: TokenClaimsMapGenerator
 ) {
 
-    fun generateAccessToken(
+    fun generateToken(
         authorities: Collection<GrantedAuthority>,
         clientId: String,
         userId: String,
@@ -37,7 +37,7 @@ internal class AccessTokenHandler(
     ): String {
         val tokenDuration =
             tokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit)
-        val claimsMap = accessTokenClaimsMapGenerator.getAccessTokenClaimsMap(clientId, userId, authorities)
+        val claimsMap = tokenClaimsMapGenerator.getAccessTokenClaimsMap(clientId, userId, authorities)
         return jwtBuilder
             .setClaims(claimsMap)
             .setSubject(email)
@@ -48,13 +48,13 @@ internal class AccessTokenHandler(
     }
 
     fun getTokenClaims(token: String?, parser: JwtParser, now: Instant): AccessClaims? {
-        if (token == null || !isValidAccessToken(token, parser, now)) return null
+        if (token == null || !isValidToken(token, parser, now)) return null
         return AccessClaims(
-            clientId = getClientIdFromAccessToken(token, parser) ?: return null,
-            userId = getUserIdFromAccessToken(token, parser) ?: return null,
-            email = getEmailFromAccessToken(token, parser) ?: return null,
-            claims = getClaimsFromAccessToken(token, parser) ?: return null,
-            authorities = getRolesFromAccessToken(token, parser) ?: return null
+            clientId = getClientIdFromToken(token, parser) ?: return null,
+            userId = getUserIdFromToken(token, parser) ?: return null,
+            email = getEmailFromToken(token, parser) ?: return null,
+            claims = getClaimsFromToken(token, parser) ?: return null,
+            authorities = getRolesFromToken(token, parser) ?: return null
         )
     }
 
@@ -73,29 +73,29 @@ internal class AccessTokenHandler(
         )
     }
 
-    fun isValidAccessToken(token: String, parser: JwtParser, now: Instant): Boolean =
+    fun isValidToken(token: String, parser: JwtParser, now: Instant): Boolean =
         !isTokenExpired(token, parser, now)
-                && !getEmailFromAccessToken(token, parser).isNullOrBlank()
-                && !getClientIdFromAccessToken(token, parser).isNullOrBlank()
+                && !getEmailFromToken(token, parser).isNullOrBlank()
+                && !getClientIdFromToken(token, parser).isNullOrBlank()
 
-    private fun getClaimsFromAccessToken(token: String, parser: JwtParser): Claims? =
+    private fun getClaimsFromToken(token: String, parser: JwtParser): Claims? =
         parser.parseClaimsJws(token)?.body
 
     @Suppress("UNCHECKED_CAST")
-    fun getRolesFromAccessToken(token: String, parser: JwtParser): List<GrantedAuthority>? =
-        (getClaimsFromAccessToken(token, parser)?.get(ROLES) as? List<String>)?.map { SimpleGrantedAuthority(it) }
+    fun getRolesFromToken(token: String, parser: JwtParser): List<GrantedAuthority>? =
+        (getClaimsFromToken(token, parser)?.get(ROLES) as? List<String>)?.map { SimpleGrantedAuthority(it) }
 
-    fun getUserIdFromAccessToken(token: String, parser: JwtParser): String? =
-        getClaimsFromAccessToken(token, parser)?.get(USER_ID) as? String
+    fun getUserIdFromToken(token: String, parser: JwtParser): String? =
+        getClaimsFromToken(token, parser)?.get(USER_ID) as? String
 
-    fun getClientIdFromAccessToken(token: String, parser: JwtParser): String? =
-        getClaimsFromAccessToken(token, parser)?.get(CLIENT_ID) as? String
+    fun getClientIdFromToken(token: String, parser: JwtParser): String? =
+        getClaimsFromToken(token, parser)?.get(CLIENT_ID) as? String
 
-    fun getEmailFromAccessToken(token: String, parser: JwtParser): String? =
-        getClaimsFromAccessToken(token, parser)?.subject
+    fun getEmailFromToken(token: String, parser: JwtParser): String? =
+        getClaimsFromToken(token, parser)?.subject
 
     private fun getExpirationDateFromToken(token: String, parser: JwtParser): Date? =
-        getClaimsFromAccessToken(token, parser)?.expiration
+        getClaimsFromToken(token, parser)?.expiration
 
     private fun isTokenExpired(token: String, parser: JwtParser, now: Instant) =
         getExpirationDateFromToken(token, parser)?.before(Date.from(now)) ?: false

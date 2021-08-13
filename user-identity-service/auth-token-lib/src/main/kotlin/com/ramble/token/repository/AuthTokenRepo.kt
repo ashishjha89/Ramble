@@ -6,6 +6,7 @@ import com.ramble.token.repository.persistence.ClientRefreshTokenSqlRepo
 import com.ramble.token.repository.persistence.DisabledTokensRedisRepo
 import com.ramble.token.repository.persistence.entities.ClientAuthInfo
 import com.ramble.token.repository.persistence.entities.ClientRefreshToken
+import com.ramble.token.repository.persistence.entities.ClientUserId
 import com.ramble.token.repository.persistence.entities.DisabledClientTokens
 import com.ramble.token.value
 import kotlinx.coroutines.Dispatchers
@@ -28,25 +29,29 @@ class AuthTokenRepo(
             withContext(Dispatchers.IO) {
                 refreshTokenSqlRepo.save(
                     ClientRefreshToken(
-                        refreshToken = userAuthInfo.refreshToken,
-                        accessToken = userAuthInfo.accessToken,
                         userId = userAuthInfo.userId,
-                        clientId = clientId
+                        clientId = clientId,
+                        refreshToken = userAuthInfo.refreshToken,
+                        accessToken = userAuthInfo.accessToken
                     )
                 )
             }
         }
 
     @Throws(RefreshTokenIsInvalidException::class)
-    internal suspend fun deleteOldAuthTokens(refreshToken: String): ClientAuthInfo =
+    internal suspend fun deleteOldAuthTokens(clientId: String, userId: String): ClientAuthInfo =
         coroutineScope {
             withContext(Dispatchers.IO) {
-                val clientRefreshToken = refreshTokenSqlRepo.findById(refreshToken).value
+                val clientUserId = ClientUserId(clientId, userId)
+                val clientRefreshToken = refreshTokenSqlRepo.findById(clientUserId).value
                     ?: throw RefreshTokenIsInvalidException()
-                refreshTokenSqlRepo.deleteById(clientRefreshToken.refreshToken)
+                refreshTokenSqlRepo.deleteById(clientUserId)
                 clientRefreshToken.toClientAuthInfo()
             }
         }
+
+    internal suspend fun getExistingTokensForClient(clientId: String, userAuthInfo: UserAuthInfo): ClientRefreshToken? =
+        refreshTokenSqlRepo.findById(ClientUserId(clientId, userAuthInfo.userId)).value
 
     internal suspend fun getDisabledAccessTokensForClient(clientAuthInfo: ClientAuthInfo): Set<AccessToken> =
         coroutineScope {

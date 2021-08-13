@@ -29,8 +29,8 @@ class AuthTokenRepo(
             withContext(Dispatchers.IO) {
                 refreshTokenSqlRepo.save(
                     ClientRefreshToken(
-                        userId = userAuthInfo.userId,
                         clientId = clientId,
+                        userId = userAuthInfo.userId,
                         refreshToken = userAuthInfo.refreshToken,
                         accessToken = userAuthInfo.accessToken
                     )
@@ -62,12 +62,12 @@ class AuthTokenRepo(
         }
 
     internal suspend fun updateDisabledAccessTokensForClient(
-        clientAuthInfo: ClientAuthInfo,
+        clientId: String,
         accessTokens: Set<AccessToken>?
     ) {
-        if (accessTokens.isNullOrEmpty()) disabledTokensRedisRepo.deleteById(clientAuthInfo.clientId)
+        if (accessTokens.isNullOrEmpty()) disabledTokensRedisRepo.deleteById(clientId)
         else disabledTokensRedisRepo.save(
-            DisabledClientTokens(id = clientAuthInfo.clientId, disabledAccessTokens = accessTokens.toList())
+            DisabledClientTokens(id = clientId, disabledAccessTokens = accessTokens.toList())
         )
     }
 

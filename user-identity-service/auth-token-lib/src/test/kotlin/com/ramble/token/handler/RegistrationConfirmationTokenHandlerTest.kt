@@ -87,7 +87,6 @@ class RegistrationConfirmationTokenHandlerTest {
         assertFalse(registrationConfirmationTokenHandler.isValidToken(registrationConfirmationTokenStr, now, parser))
     }
 
-
     @Test
     fun `isValidToken should return false if passed token does not have userId`() {
         val expiredInstant = now.plus(10, ChronoUnit.MINUTES)

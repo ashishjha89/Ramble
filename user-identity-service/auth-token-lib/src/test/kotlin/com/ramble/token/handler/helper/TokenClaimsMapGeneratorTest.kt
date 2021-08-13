@@ -27,4 +27,17 @@ class TokenClaimsMapGeneratorTest {
         assertEquals(userId, claimsMapResult["USER_ID"])
         assertEquals(listOf(authorityStr), claimsMapResult["ROLES"])
     }
+
+    @Test
+    fun getRefreshTokenClaimsMapTest() {
+        val userId = "someUserId"
+        val clientId = "someClientId"
+
+        // Call method
+        val claimsMapResult = TokenClaimsMapGenerator().getRefreshTokenClaimsMap(clientId, userId)
+
+        // Assert
+        assertEquals(clientId, claimsMapResult["CLIENT_ID"])
+        assertEquals(userId, claimsMapResult["USER_ID"])
+    }
 }

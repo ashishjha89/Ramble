@@ -19,7 +19,9 @@ import java.time.temporal.ChronoUnit
 import java.util.*
 import javax.crypto.SecretKey
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class AccessTokenHandlerTest {
 
@@ -109,16 +111,94 @@ class AccessTokenHandlerTest {
     }
 
     @Test
+    fun `getUserIdFromToken when claims do not have userId`() {
+        given(claims["USER_ID"]).willReturn(null)
+        assertNull(accessTokenHandler.getUserIdFromToken(accessTokenStr, parser))
+    }
+
+    @Test
+    fun `getUserIdFromToken when claims have userId`() {
+        given(claims["USER_ID"]).willReturn(userId)
+        assertEquals(userId, accessTokenHandler.getUserIdFromToken(accessTokenStr, parser))
+    }
+
+    @Test
+    fun `getClientIdFromToken when claims do not have clientId`() {
+        given(claims["CLIENT_ID"]).willReturn(null)
+        assertNull(accessTokenHandler.getClientIdFromToken(accessTokenStr, parser))
+    }
+
+    @Test
+    fun `getClientIdFromToken when claims have clientId`() {
+        given(claims["CLIENT_ID"]).willReturn(clientId)
+        assertEquals(clientId, accessTokenHandler.getClientIdFromToken(accessTokenStr, parser))
+    }
+
+    @Test
+    fun `getEmailFromToken when claims do not have clientId`() {
+        given(claims.subject).willReturn(null)
+        assertNull(accessTokenHandler.getEmailFromToken(accessTokenStr, parser))
+    }
+
+    @Test
+    fun `getEmailFromToken when claims have clientId`() {
+        given(claims.subject).willReturn(emailId)
+        assertEquals(emailId, accessTokenHandler.getEmailFromToken(accessTokenStr, parser))
+    }
+
+    @Test
+    fun `isValidToken should return false if passed token is expired`() {
+        // Stub
+        given(claims.expiration).willReturn(Date.from(now.minus(10, ChronoUnit.MINUTES)))
+        given(claims.subject).willReturn(emailId)
+        given(claims["CLIENT_ID"]).willReturn(clientId)
+
+        // Call method and assert
+        assertFalse(accessTokenHandler.isValidToken(accessTokenStr, parser, now))
+    }
+
+    @Test
+    fun `isValidToken should return false if passed token does not have email`() {
+        // Stub
+        given(claims.expiration).willReturn(Date.from(now.plus(10, ChronoUnit.MINUTES)))
+        given(claims.subject).willReturn(null)
+        given(claims["CLIENT_ID"]).willReturn(clientId)
+
+        // Call method and assert
+        assertFalse(accessTokenHandler.isValidToken(accessTokenStr, parser, now))
+    }
+
+    @Test
+    fun `isValidToken should return false if passed token does not have clientId`() {
+        // Stub
+        given(claims.expiration).willReturn(Date.from(now.plus(10, ChronoUnit.MINUTES)))
+        given(claims.subject).willReturn(emailId)
+        given(claims["CLIENT_ID"]).willReturn(null)
+
+        // Call method and assert
+        assertFalse(accessTokenHandler.isValidToken(accessTokenStr, parser, now))
+    }
+
+    @Test
+    fun `isValidToken should return true if valid token`() {
+        // Stub
+        given(claims.expiration).willReturn(Date.from(now.plus(10, ChronoUnit.MINUTES)))
+        given(claims.subject).willReturn(emailId)
+        given(claims["CLIENT_ID"]).willReturn(clientId)
+
+        // Call method and assert
+        assertTrue(accessTokenHandler.isValidToken(accessTokenStr, parser, now))
+    }
+
+    @Test
     fun `getTokenClaims should return null if passed token=null`() {
         assertNull(accessTokenHandler.getTokenClaims(null, parser, now))
     }
 
     @Test
     fun `getTokenClaims should return null if passed token is expired`() {
-        val expiredInstant = now.minus(10, ChronoUnit.MINUTES)
-
         // Stub
-        given(claims.expiration).willReturn(Date.from(expiredInstant))
+        given(claims.expiration).willReturn(Date.from(now.minus(10, ChronoUnit.MINUTES)))
 
         // Call method and assert
         assertNull(accessTokenHandler.getTokenClaims(accessTokenStr, parser, now))
@@ -126,10 +206,8 @@ class AccessTokenHandlerTest {
 
     @Test
     fun `getTokenClaims should return null if passed token does not have userId`() {
-        val expiredInstant = now.plus(10, ChronoUnit.MINUTES)
-
         // Stub
-        given(claims.expiration).willReturn(Date.from(expiredInstant))
+        given(claims.expiration).willReturn(Date.from(now.plus(10, ChronoUnit.MINUTES)))
         given(claims.subject).willReturn(emailId)
         given(claims["USER_ID"]).willReturn(null)
         given(claims["CLIENT_ID"]).willReturn(clientId)
@@ -140,10 +218,8 @@ class AccessTokenHandlerTest {
 
     @Test
     fun `getTokenClaims should return null if passed token does not have clientId`() {
-        val expiredInstant = now.plus(10, ChronoUnit.MINUTES)
-
         // Stub
-        given(claims.expiration).willReturn(Date.from(expiredInstant))
+        given(claims.expiration).willReturn(Date.from(now.plus(10, ChronoUnit.MINUTES)))
         given(claims.subject).willReturn(emailId)
         given(claims["USER_ID"]).willReturn(userId)
         given(claims["CLIENT_ID"]).willReturn(null)
@@ -154,10 +230,8 @@ class AccessTokenHandlerTest {
 
     @Test
     fun `getTokenClaims should return null if passed token does not have authorities`() {
-        val expiredInstant = now.plus(10, ChronoUnit.MINUTES)
-
         // Stub
-        given(claims.expiration).willReturn(Date.from(expiredInstant))
+        given(claims.expiration).willReturn(Date.from(now.plus(10, ChronoUnit.MINUTES)))
         given(claims.subject).willReturn(emailId)
         given(claims["USER_ID"]).willReturn(userId)
         given(claims["CLIENT_ID"]).willReturn(clientId)

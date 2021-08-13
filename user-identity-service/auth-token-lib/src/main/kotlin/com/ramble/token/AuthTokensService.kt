@@ -89,7 +89,6 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
 
         // 2. Delete old entry of token for the client.
         val clientAuthInfo = authTokenRepo.deleteOldAuthTokens(clientIdFromRefreshToken, userIdFromRefreshToken)
-        val accessToken = clientAuthInfo.accessToken
 
         // 3. Check if RefreshToken has valid format
         if (!refreshTokenHandler.isValidToken(refreshToken, jwtParserRefreshToken, now))
@@ -97,11 +96,12 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
 
         // 4a) Insert access-token for above refresh-token in disabled list.
         // 4b) Clean stale access-tokens for this client.
+        val accessToken = clientAuthInfo.accessToken
         val disabledAccessTokens = authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo).plus(accessToken)
         val validDisabledAccessTokens = disabledAccessTokens.filter {
             accessTokenHandler.isValidToken(token = it, parser = jwtParserAccessToken, now = now)
         }.toSet()
-        authTokenRepo.updateDisabledAccessTokensForClient(clientAuthInfo, validDisabledAccessTokens)
+        authTokenRepo.updateDisabledAccessTokensForClient(clientAuthInfo.clientId, validDisabledAccessTokens)
 
         // 5. Now, generate new auth-tokens
         val clientId = accessTokenHandler.getClientIdFromToken(accessToken, jwtParserAccessToken) ?: return null
@@ -164,12 +164,9 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
         usernamePasswordAuthTokenTokenGenerator.getUsernamePasswordAuthenticationToken(claims, authorities)
 
     private suspend fun disableOldAccessTokens(clientId: String, userAuthInfo: UserAuthInfo, now: Instant) {
-        val existingToken = authTokenRepo.getExistingTokensForClient(clientId, userAuthInfo)
-        println("##### disableOldAccessTokens() clientId:$clientId userAuthInfo:$userAuthInfo existingToken:$existingToken")
-        if (existingToken == null) return
+        val existingToken = authTokenRepo.getExistingTokensForClient(clientId, userAuthInfo) ?: return
         val clientAuthInfo = ClientAuthInfo(clientId, userAuthInfo.userId, userAuthInfo.accessToken)
         val disabledTokens = authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)
-        println("##### disableOldAccessTokens() disabledTokens:$disabledTokens")
         updateDisabledAccessTokensForClient(
             disabledTokens = disabledTokens.plus(existingToken.accessToken), clientAuthInfo = clientAuthInfo, now = now
         )
@@ -183,7 +180,7 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
         val validDisabledAccessTokens = disabledTokens.filter {
             accessTokenHandler.isValidToken(token = it, parser = jwtParserAccessToken, now = now)
         }.toSet()
-        authTokenRepo.updateDisabledAccessTokensForClient(clientAuthInfo, validDisabledAccessTokens)
+        authTokenRepo.updateDisabledAccessTokensForClient(clientAuthInfo.clientId, validDisabledAccessTokens)
     }
 
 }

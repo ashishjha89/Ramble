@@ -10,6 +10,6 @@ import javax.persistence.IdClass
 class ClientRefreshToken(
     @Column(length = 1000) val refreshToken: String = "",
     @Column(length = 1000) val accessToken: String = "",
-    @Id val userId: String = "",
-    @Id val clientId: String = ""
+    @Id val clientId: String = "",
+    @Id val userId: String = ""
 )

@@ -66,7 +66,6 @@ class RegistrationConfirmationTokenHandlerTest {
         assertEquals(
             registrationTokenSigned,
             registrationConfirmationTokenHandler.generateToken(
-                userId,
                 emailId,
                 issuedInstant,
                 expiryDurationAmount,
@@ -88,13 +87,12 @@ class RegistrationConfirmationTokenHandlerTest {
     }
 
     @Test
-    fun `isValidToken should return false if passed token does not have userId`() {
+    fun `isValidToken should return false if passed token does not have emailId`() {
         val expiredInstant = now.plus(10, ChronoUnit.MINUTES)
 
         // Stub
         given(claims.expiration).willReturn(Date.from(expiredInstant))
-        given(claims.subject).willReturn(emailId)
-        given(claims["USER_ID"]).willReturn(null)
+        given(claims.subject).willReturn(null)
 
         // Call method and assert
         assertFalse(registrationConfirmationTokenHandler.isValidToken(registrationConfirmationTokenStr, now, parser))
@@ -107,30 +105,29 @@ class RegistrationConfirmationTokenHandlerTest {
         // Stub
         given(claims.expiration).willReturn(Date.from(expiredInstant))
         given(claims.subject).willReturn(emailId)
-        given(claims["USER_ID"]).willReturn(userId)
 
         // Call method and assert
         assertTrue(registrationConfirmationTokenHandler.isValidToken(registrationConfirmationTokenStr, now, parser))
     }
 
     @Test
-    fun `getUserId return null if userId is missing in token`() {
+    fun `getEmail return null if userId is missing in token`() {
         // Stub
-        given(claims["USER_ID"]).willReturn(null)
+        given(claims.subject).willReturn(null)
 
         // Call method and assert
-        assertNull(registrationConfirmationTokenHandler.getUserIdFromToken(registrationConfirmationTokenStr, parser))
+        assertNull(registrationConfirmationTokenHandler.getEmailFromToken(registrationConfirmationTokenStr, parser))
     }
 
     @Test
-    fun `getUserId return user if userId is present in token`() {
+    fun `getEmail return user if userId is present in token`() {
         // Stub
-        given(claims["USER_ID"]).willReturn(userId)
+        given(claims.subject).willReturn(emailId)
 
         // Call method and assert
         assertEquals(
-            userId,
-            registrationConfirmationTokenHandler.getUserIdFromToken(registrationConfirmationTokenStr, parser)
+            emailId,
+            registrationConfirmationTokenHandler.getEmailFromToken(registrationConfirmationTokenStr, parser)
         )
     }
 

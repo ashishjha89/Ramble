@@ -6,7 +6,6 @@ import javax.persistence.Id
 
 @Entity
 class RegistrationConfirmationToken(
-    @Id val userId: String = "",
-    val email: String = "",
+    @Id val email: String = "",
     @Column(length = 1000) val token: String = ""
 )

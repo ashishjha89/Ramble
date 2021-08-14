@@ -41,7 +41,6 @@ class RegistrationConfirmationServiceTest {
 
     @Test
     fun addRegistrationConfirmationTokenTest() = runBlocking {
-        val userId = "someUserIdd"
         val email = "someEmailId@ramble.com"
         val now = Instant.now()
         val expiryDurationAmount = 30L
@@ -51,17 +50,16 @@ class RegistrationConfirmationServiceTest {
         // Stub
         given(
             registrationTokenHandler
-                .generateToken(userId, email, now, expiryDurationAmount, expiryDurationUnit, jwtBuilder)
+                .generateToken(email, now, expiryDurationAmount, expiryDurationUnit, jwtBuilder)
         ).willReturn(tokenStr)
 
         // Call method
         val tokenResult = registrationConfirmationService
-            .addRegistrationConfirmationToken(userId, email, now, expiryDurationAmount, expiryDurationUnit)
+            .addRegistrationConfirmationToken(email, now, expiryDurationAmount, expiryDurationUnit)
 
         // Verify
-        verify(registrationConfirmationRepo).deleteRegistrationConfirmationToken(userId) // delete old token for user
+        verify(registrationConfirmationRepo).deleteRegistrationConfirmationToken(email) // delete old token for user
         verify(registrationConfirmationRepo).addRegistrationConfirmationToken(any()) // add new token
-        assertEquals(userId, tokenResult.userId)
         assertEquals(email, tokenResult.email)
         assertEquals(tokenStr, tokenResult.token)
     }
@@ -72,50 +70,50 @@ class RegistrationConfirmationServiceTest {
         val now = Instant.now()
 
         // Stub
-        given(registrationTokenHandler.getUserIdFromToken(confirmRegistrationTokenStr, jwtParser))
+        given(registrationTokenHandler.getEmailFromToken(confirmRegistrationTokenStr, jwtParser))
             .willReturn(null)
 
         // Call method and assert
         assertNull(
-            registrationConfirmationService
-                .processRegistrationConfirmationToken(confirmRegistrationTokenStr, now)
+            registrationConfirmationService.processRegistrationConfirmationToken(confirmRegistrationTokenStr, now)
         )
     }
 
     @Test
-    fun `processRegistrationConfirmationToken should return null if invalid token and delete that token `() = runBlocking {
-        val confirmRegistrationTokenStr = "some_registration_confirmation_token"
-        val now = Instant.now()
-        val userId = "validUserId"
+    fun `processRegistrationConfirmationToken should return null if invalid token and delete that token `() =
+        runBlocking {
+            val confirmRegistrationTokenStr = "some_registration_confirmation_token"
+            val now = Instant.now()
+            val emailId = "someEmailId"
 
-        // Stub
-        given(registrationTokenHandler.getUserIdFromToken(confirmRegistrationTokenStr, jwtParser))
-            .willReturn(userId)
-        given(registrationTokenHandler.isValidToken(confirmRegistrationTokenStr, now, jwtParser))
-            .willReturn(false)
+            // Stub
+            given(registrationTokenHandler.getEmailFromToken(confirmRegistrationTokenStr, jwtParser))
+                .willReturn(emailId)
+            given(registrationTokenHandler.isValidToken(confirmRegistrationTokenStr, now, jwtParser))
+                .willReturn(false)
 
-        // Call method
-        val tokenResult = registrationConfirmationService
-            .processRegistrationConfirmationToken(confirmRegistrationTokenStr, now)
+            // Call method
+            val tokenResult = registrationConfirmationService
+                .processRegistrationConfirmationToken(confirmRegistrationTokenStr, now)
 
-        // Verify
-        assertNull(tokenResult)
-        verify(registrationConfirmationRepo).deleteRegistrationConfirmationToken(userId)
-    }
+            // Verify
+            assertNull(tokenResult)
+            verify(registrationConfirmationRepo).deleteRegistrationConfirmationToken(emailId)
+        }
 
     @Test
     fun `processRegistrationConfirmationToken should return token if valid token for user`() = runBlocking {
         val confirmRegistrationTokenStr = "some_registration_confirmation_token"
         val now = Instant.now()
-        val userId = "validUserId"
+        val emailId = "someEmailId"
         val expectedToken = mock(RegistrationConfirmationToken::class.java)
 
         // Stub
-        given(registrationTokenHandler.getUserIdFromToken(confirmRegistrationTokenStr, jwtParser))
-            .willReturn(userId)
+        given(registrationTokenHandler.getEmailFromToken(confirmRegistrationTokenStr, jwtParser))
+            .willReturn(emailId)
         given(registrationTokenHandler.isValidToken(confirmRegistrationTokenStr, now, jwtParser))
             .willReturn(true)
-        given(registrationConfirmationRepo.getRegistrationConfirmationToken(userId))
+        given(registrationConfirmationRepo.getRegistrationConfirmationToken(emailId))
             .willReturn(expectedToken)
 
         // Call method
@@ -124,6 +122,6 @@ class RegistrationConfirmationServiceTest {
 
         // Verify
         assertEquals(expectedToken, tokenResult)
-        verify(registrationConfirmationRepo, times(0)).deleteRegistrationConfirmationToken(userId)
+        verify(registrationConfirmationRepo, times(0)).deleteRegistrationConfirmationToken(emailId)
     }
 }

@@ -43,14 +43,13 @@ class UserRegistrationService(
         val userToSave = registerUserRequest.copy(password = bCryptPasswordEncoder.encode(registerUserRequest.password))
         val newlyRegisteredUser = userRepo.saveNewUser(userToSave)
         val confirmRegistrationToken = registrationConfirmationService.addRegistrationConfirmationToken(
-            userId = newlyRegisteredUser.id,
             email = newlyRegisteredUser.email,
             now = now,
             expirationDurationAmount = expirationDurationAmount,
             expiryDurationUnit = expiryDurationUnit
         )
         val registeredUserResponse = RegisteredUserResponse(
-            userId = confirmRegistrationToken.userId,
+            userId = newlyRegisteredUser.id,
             email = confirmRegistrationToken.email
         )
         sendConfirmRegistrationEmail(confirmRegistrationToken, newlyRegisteredUser)
@@ -68,12 +67,12 @@ class UserRegistrationService(
         token ?: throw InvalidRegistrationConfirmationToken()
         val confirmationToken = registrationConfirmationService.processRegistrationConfirmationToken(token, now)
             ?: throw InvalidRegistrationConfirmationToken()
-        userRepo.activateRegisteredUser(email = confirmationToken.email)
-        return RegisteredUserResponse(userId = confirmationToken.userId, email = confirmationToken.email)
+        val applicationUser = userRepo.activateRegisteredUser(email = confirmationToken.email)
+        return RegisteredUserResponse(userId = applicationUser.id, email = applicationUser.email)
     }
 
     @Throws(EmailCredentialNotFoundException::class, EmailSendingFailedException::class)
-    @Async // TODO: Get rid of Async!
+    @Async
     fun sendConfirmRegistrationEmail(
         confirmRegistrationToken: RegistrationConfirmationToken,
         newlyRegisteredUser: ApplicationUser

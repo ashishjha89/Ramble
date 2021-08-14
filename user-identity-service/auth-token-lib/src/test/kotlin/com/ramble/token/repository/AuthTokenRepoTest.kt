@@ -14,6 +14,7 @@ import org.junit.Test
 import org.mockito.BDDMockito.given
 import org.mockito.BDDMockito.verify
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.times
 import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -121,7 +122,10 @@ class AuthTokenRepoTest {
     }
 
     @Test
-    fun `updateDisabledAccessTokensForClient when null tokens passed`() = runBlocking {
+    fun `updateDisabledAccessTokensForClient when null tokens passed and clientId existed in Redis`() = runBlocking {
+        // Stub
+        given(disabledTokensRedisRepo.existsById(clientId)).willReturn(true)
+
         // Call method
         authTokenRepo.updateDisabledAccessTokensForClient(clientId, null)
 
@@ -130,7 +134,23 @@ class AuthTokenRepoTest {
     }
 
     @Test
-    fun `updateDisabledAccessTokensForClient when empty tokens passed`() = runBlocking {
+    fun `updateDisabledAccessTokensForClient when null tokens passed and clientId did not exist in Redis`() =
+        runBlocking {
+            // Stub
+            given(disabledTokensRedisRepo.existsById(clientId)).willReturn(false)
+
+            // Call method
+            authTokenRepo.updateDisabledAccessTokensForClient(clientId, null)
+
+            // Verify
+            verify(disabledTokensRedisRepo, times(0)).deleteById(clientId)
+        }
+
+    @Test
+    fun `updateDisabledAccessTokensForClient when empty tokens passed and clientId existed in Redis`() = runBlocking {
+        // Stub
+        given(disabledTokensRedisRepo.existsById(clientId)).willReturn(true)
+
         // Call method
         authTokenRepo.updateDisabledAccessTokensForClient(clientId, emptySet())
 
@@ -139,11 +159,28 @@ class AuthTokenRepoTest {
     }
 
     @Test
+    fun `updateDisabledAccessTokensForClient when empty tokens passed and clientId did not exist in Redis`() =
+        runBlocking {
+            // Stub
+            given(disabledTokensRedisRepo.existsById(clientId)).willReturn(false)
+
+            // Call method
+            authTokenRepo.updateDisabledAccessTokensForClient(clientId, emptySet())
+
+            // Verify
+            verify(disabledTokensRedisRepo, times(0)).deleteById(clientId)
+        }
+
+    @Test
     fun `updateDisabledAccessTokensForClient when some tokens passed`() = runBlocking<Unit> {
+        val disabledClientTokens = DisabledClientTokens(clientId, listOf(accessToken))
+        // Stub
+        given(disabledTokensRedisRepo.save(disabledClientTokens)).willReturn(disabledClientTokens)
+
         // Call method
         authTokenRepo.updateDisabledAccessTokensForClient(clientId, setOf(accessToken))
 
         // Verify
-        verify(disabledTokensRedisRepo).save(DisabledClientTokens(clientId, listOf(accessToken)))
+        verify(disabledTokensRedisRepo).save(disabledClientTokens)
     }
 }

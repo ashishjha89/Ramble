@@ -7,9 +7,9 @@ import com.ramble.identity.utils.TimeAndIdGenerator
 import com.ramble.token.AuthTokensService
 import com.ramble.token.model.AccessTokenIsInvalidException
 import com.ramble.token.model.RefreshTokenIsInvalidException
+import kotlinx.coroutines.reactor.mono
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService
 import org.springframework.security.core.userdetails.UserDetails
-import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
@@ -24,17 +24,17 @@ class UserInfoService(
 ) : ReactiveUserDetailsService {
 
     @Throws(UserNotFoundException::class)
-    fun getUserInfoResult(principal: Principal): UserInfo =
+    suspend fun getUserInfoResult(principal: Principal): UserInfo =
         getUserInfo(authTokensService.getAccessTokenClaims(principal)?.email ?: throw UserNotFoundException())
 
     @Throws(UserNotFoundException::class, UserSuspendedException::class, UserNotActivatedException::class)
-    fun getUserInfo(email: String): UserInfo = userRepo.getUserInfo(email)
+    suspend fun getUserInfo(email: String): UserInfo = userRepo.getUserInfo(email)
 
     @Throws(UsernameNotFoundException::class)
-    override fun findByUsername(username: String?): Mono<UserDetails> {
+    override fun findByUsername(username: String?): Mono<UserDetails> = mono {
         if (username.isNullOrBlank()) throw UsernameNotFoundException(invalidUserId.errorMessage)
         val user = userRepo.getApplicationUser(username) ?: throw UsernameNotFoundException(invalidUserId.errorMessage)
-        return Mono.just(SpringUser(user.email, user.password, user.grantedAuthorities))
+        return@mono SpringUser(user.email, user.password, user.grantedAuthorities)
     }
 
     @Throws(RefreshTokenIsInvalidException::class)

@@ -37,7 +37,7 @@ Other steps which are needed for Vault-setup:
 http://localhost:8080/webjars/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config
 
 #### Next steps
-* SQL support for UserRepo
+* Test for UserInfoService
 * Integration tests
 * Email and Registration fields validation
 * Cloud Vault: for DB keys, signing keys, email-credentials.

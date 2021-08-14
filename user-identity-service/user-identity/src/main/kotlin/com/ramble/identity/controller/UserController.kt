@@ -33,7 +33,7 @@ class UserController(private val userInfoService: UserInfoService) {
             )]
     )
     @GetMapping(USER_INFO_ME_PATH)
-    fun getMyInfo(principal: Principal): UserInfo =
+    suspend fun getMyInfo(principal: Principal): UserInfo =
         userInfoService.getUserInfoResult(principal)
 
 }

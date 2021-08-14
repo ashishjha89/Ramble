@@ -11,7 +11,6 @@ import kotlin.test.assertEquals
 
 class RegistrationConfirmationRepoTest {
 
-    private val userId = "someUserId"
     private val email = "someEmail"
     private val token = "someRegistrationToken"
 
@@ -22,36 +21,49 @@ class RegistrationConfirmationRepoTest {
     @Test
     fun addRegistrationConfirmationTokenTest() = runBlocking {
         // Stub
-        given(registrationTokenSqlRepo.save(any())).willReturn(RegistrationConfirmationToken(userId, email, token))
+        given(registrationTokenSqlRepo.save(any())).willReturn(RegistrationConfirmationToken(email, token))
 
         // Call method and assert
         val result = registrationConfirmationRepo.addRegistrationConfirmationToken(
-            RegistrationConfirmationToken(userId, email, token)
+            RegistrationConfirmationToken(email, token)
         )
-        assertEquals(userId, result.userId)
         assertEquals(email, result.email)
         assertEquals(token, result.token)
     }
 
     @Test
-    fun deleteRegistrationConfirmationTokenTest() = runBlocking {
+    fun `deleteRegistrationConfirmationToken when email existed before`() = runBlocking {
+        // Stub
+        given(registrationTokenSqlRepo.existsById(email)).willReturn(true)
+
         // Call method
-        registrationConfirmationRepo.deleteRegistrationConfirmationToken(userId)
+        registrationConfirmationRepo.deleteRegistrationConfirmationToken(email)
 
         // Verify
-        verify(registrationTokenSqlRepo).deleteById(userId)
+        verify(registrationTokenSqlRepo).deleteById(email)
+    }
+
+    @Test
+    fun `deleteRegistrationConfirmationToken when email not existed before`() = runBlocking {
+        // Stub
+        given(registrationTokenSqlRepo.existsById(email)).willReturn(false)
+
+        // Call method
+        registrationConfirmationRepo.deleteRegistrationConfirmationToken(email)
+
+        // Verify
+        verify(registrationTokenSqlRepo, times(0)).deleteById(email)
     }
 
     @Test
     fun getRegistrationConfirmationTokenTest() = runBlocking {
         // Stub
-        given(registrationTokenSqlRepo.findById(userId)).willReturn(
-            Optional.of(RegistrationConfirmationToken(userId, email, token))
+        given(registrationTokenSqlRepo.findById(email)).willReturn(
+            Optional.of(RegistrationConfirmationToken(email, token))
         )
 
         // Call method and assert
-        val result = registrationConfirmationRepo.getRegistrationConfirmationToken(userId)!!
-        assertEquals(userId, result.userId)
+        val result = registrationConfirmationRepo.getRegistrationConfirmationToken(email)!!
         assertEquals(email, result.email)
         assertEquals(token, result.token)
     }

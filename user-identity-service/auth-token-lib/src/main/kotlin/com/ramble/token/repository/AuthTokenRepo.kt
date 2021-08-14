@@ -61,14 +61,19 @@ class AuthTokenRepo(
             }
         }
 
-    internal suspend fun updateDisabledAccessTokensForClient(
-        clientId: String,
-        accessTokens: Set<AccessToken>?
-    ) {
-        if (accessTokens.isNullOrEmpty()) disabledTokensRedisRepo.deleteById(clientId)
-        else disabledTokensRedisRepo.save(
-            DisabledClientTokens(id = clientId, disabledAccessTokens = accessTokens.toList())
-        )
+    internal suspend fun updateDisabledAccessTokensForClient(clientId: String, accessTokens: Set<AccessToken>?) {
+        coroutineScope {
+            withContext(Dispatchers.IO) {
+                if (accessTokens.isNullOrEmpty()) {
+                    if (disabledTokensRedisRepo.existsById(clientId)) {
+                        disabledTokensRedisRepo.deleteById(clientId)
+                    } else Unit
+                } else
+                    disabledTokensRedisRepo.save(
+                        DisabledClientTokens(id = clientId, disabledAccessTokens = accessTokens.toList())
+                    )
+            }
+        }
     }
 
     private fun ClientRefreshToken.toClientAuthInfo() =

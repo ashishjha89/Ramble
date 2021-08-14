@@ -15,7 +15,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import org.mockito.BDDMockito.given
-import org.mockito.BDDMockito.willDoNothing
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -46,7 +45,7 @@ class UserRegistrationServiceTest {
     private val applicationUser = mock(ApplicationUser::class.java)
     private val timeAndIdGenerator = mock(TimeAndIdGenerator::class.java)
 
-    private val registrationConfirmationToken = RegistrationConfirmationToken(userId, emailId, registrationTokenStr)
+    private val registrationConfirmationToken = RegistrationConfirmationToken(emailId, registrationTokenStr)
 
     private val userRegistrationService =
         UserRegistrationService(
@@ -69,7 +68,7 @@ class UserRegistrationServiceTest {
         given(userRepo.saveNewUser(userToSave)).willReturn(applicationUser)
         given(
             registrationConfirmationService
-                .addRegistrationConfirmationToken(userId, emailId, now, expirationDurationAmount, expiryDurationUnit)
+                .addRegistrationConfirmationToken(emailId, now, expirationDurationAmount, expiryDurationUnit)
         ).willReturn(registrationConfirmationToken)
 
         // Call method and assert
@@ -111,13 +110,7 @@ class UserRegistrationServiceTest {
             ).willThrow(EmailCredentialNotFoundException())
             given(
                 registrationConfirmationService
-                    .addRegistrationConfirmationToken(
-                        userId,
-                        emailId,
-                        now,
-                        expirationDurationAmount,
-                        expiryDurationUnit
-                    )
+                    .addRegistrationConfirmationToken(emailId, now, expirationDurationAmount, expiryDurationUnit)
             ).willReturn(registrationConfirmationToken)
 
             // Call method and assert
@@ -137,13 +130,7 @@ class UserRegistrationServiceTest {
             ).willThrow(EmailSendingFailedException())
             given(
                 registrationConfirmationService
-                    .addRegistrationConfirmationToken(
-                        userId,
-                        emailId,
-                        now,
-                        expirationDurationAmount,
-                        expiryDurationUnit
-                    )
+                    .addRegistrationConfirmationToken(emailId, now, expirationDurationAmount, expiryDurationUnit)
             ).willReturn(registrationConfirmationToken)
 
             // Call method and assert
@@ -151,15 +138,20 @@ class UserRegistrationServiceTest {
         }
 
     @Test
-    fun `confirmToken should return registeredUserResponse`() = runBlocking {
+    fun `confirmToken should return registeredUserResponse`() = runBlocking<Unit> {
+        val applicationUser = mock(ApplicationUser::class.java)
+
         // Stub
+        given(applicationUser.id).willReturn(userId)
+        given(applicationUser.email).willReturn(emailId)
         given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
             .willReturn(registrationConfirmationToken)
-        willDoNothing().given(userRepo).activateRegisteredUser(emailId)
+        given(userRepo.activateRegisteredUser(registrationConfirmationToken.email)).willReturn(applicationUser)
 
         // Call method and assert
         val result = userRegistrationService.confirmToken(registrationTokenStr)
         assertEquals(RegisteredUserResponse(userId, emailId), result)
+        verify(userRepo).activateRegisteredUser(emailId)
     }
 
     @Test(expected = InvalidRegistrationConfirmationToken::class)

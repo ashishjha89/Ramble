@@ -21,10 +21,10 @@ class RegistrationConfirmationRepo(private val registrationTokenSqlRepo: Registr
     /**
      * Return true if token deleted successfully.
      */
-    internal suspend fun deleteRegistrationConfirmationToken(userId: UserId) {
+    internal suspend fun deleteRegistrationConfirmationToken(email: String) {
         coroutineScope {
             withContext(Dispatchers.IO) {
-                registrationTokenSqlRepo.deleteById(userId)
+                if (registrationTokenSqlRepo.existsById(email)) registrationTokenSqlRepo.deleteById(email)
             }
         }
     }
@@ -32,10 +32,10 @@ class RegistrationConfirmationRepo(private val registrationTokenSqlRepo: Registr
     /**
      * Return RegistrationConfirmationToken for the userId.
      */
-    internal suspend fun getRegistrationConfirmationToken(userId: UserId): RegistrationConfirmationToken? =
+    internal suspend fun getRegistrationConfirmationToken(email: String): RegistrationConfirmationToken? =
         coroutineScope {
             withContext(Dispatchers.IO) {
-                registrationTokenSqlRepo.findById(userId).value
+                registrationTokenSqlRepo.findById(email).value
             }
         }
 

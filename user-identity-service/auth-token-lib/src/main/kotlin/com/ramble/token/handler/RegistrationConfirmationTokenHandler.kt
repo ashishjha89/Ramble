@@ -15,12 +15,7 @@ internal class RegistrationConfirmationTokenHandler(
     private val tokenDurationGenerator: TokenDurationGenerator
 ) {
 
-    companion object {
-        private const val USER_ID = "USER_ID"
-    }
-
     fun generateToken(
-        userId: String,
         email: String,
         issuedInstant: Instant,
         expiryDurationAmount: Long,
@@ -29,9 +24,7 @@ internal class RegistrationConfirmationTokenHandler(
     ): String {
         val tokenDuration =
             tokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit)
-        val claimsMap = mapOf(USER_ID to userId)
         return jwtBuilder
-            .setClaims(claimsMap)
             .setSubject(email)
             .setIssuedAt(tokenDuration.issuedDate)
             .setExpiration(tokenDuration.expiryDate)
@@ -40,10 +33,10 @@ internal class RegistrationConfirmationTokenHandler(
     }
 
     fun isValidToken(token: String, now: Instant, parser: JwtParser): Boolean =
-        !isTokenExpired(token, parser, now) && !getUserIdFromToken(token, parser).isNullOrBlank()
+        !isTokenExpired(token, parser, now) && !getEmailFromToken(token, parser).isNullOrBlank()
 
-    fun getUserIdFromToken(token: String, parser: JwtParser): String? =
-        getClaimsFromAccessToken(token, parser)?.get(USER_ID) as? String
+    fun getEmailFromToken(token: String, parser: JwtParser): String? =
+        getClaimsFromAccessToken(token, parser)?.subject
 
     private fun getClaimsFromAccessToken(token: String, parser: JwtParser): Claims? =
         parser.parseClaimsJws(token)?.body

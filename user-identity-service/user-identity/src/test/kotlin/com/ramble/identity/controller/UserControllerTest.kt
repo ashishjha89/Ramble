@@ -2,6 +2,7 @@ package com.ramble.identity.controller
 
 import com.ramble.identity.models.UserInfo
 import com.ramble.identity.service.UserInfoService
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito.mock
@@ -15,7 +16,7 @@ class UserControllerTest {
     private val userController = UserController(userInfoService)
 
     @Test
-    fun `getMyInfo should send user if user was successfully fetched`() {
+    fun `getMyInfo should send user if user was successfully fetched`() = runBlocking {
         val principal = mock(Principal::class.java)
         val userInfo = mock(UserInfo::class.java)
 

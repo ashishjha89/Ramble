@@ -9,6 +9,7 @@ import com.ramble.token.model.AccessClaims
 import com.ramble.token.model.AccessTokenIsInvalidException
 import com.ramble.token.model.RefreshTokenIsInvalidException
 import com.ramble.token.model.UserAuthInfo
+import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
@@ -37,8 +38,8 @@ class UserInfoServiceTest {
 
     private val userInfoService = UserInfoService(userRepo, authTokensService, timeAndIdGenerator)
 
-    /*@Test
-    fun `getUserInfoResult should return user if valid principal`() {
+    @Test
+    fun `getUserInfoResult should return user if valid principal`() = runBlocking {
         val principal = mock(Principal::class.java)
 
         // Stub
@@ -52,7 +53,7 @@ class UserInfoServiceTest {
     }
 
     @Test(expected = UserNotFoundException::class)
-    fun `getUserInfoResult should throw UserNotFoundException if claims is missing principal`() {
+    fun `getUserInfoResult should throw UserNotFoundException if claims is missing principal`() = runBlocking<Unit> {
         val principal = mock(Principal::class.java)
 
         // Stub
@@ -63,7 +64,7 @@ class UserInfoServiceTest {
     }
 
     @Test
-    fun `loadUserByUsername should return SpringUser if repo returns user`() {
+    fun `findByUsername should return SpringUser if repo returns user`() = runBlocking {
         given(applicationUser.email).willReturn(emailId)
         given(applicationUser.password).willReturn(password)
         given(applicationUser.grantedAuthorities).willReturn(grantedAuthorities)
@@ -72,31 +73,32 @@ class UserInfoServiceTest {
         given(userRepo.getApplicationUser(emailId)).willReturn(applicationUser)
 
         // Call method and assert
-        val userDetailsResult = userInfoService.loadUserByUsername(emailId)
+        val userDetailsResult = userInfoService.findByUsername(emailId).awaitFirst()
         assertEquals(emailId, userDetailsResult.username)
         assertEquals(password, userDetailsResult.password)
         assertEquals(grantedAuthorities, userDetailsResult.authorities)
     }
 
     @Test
-    fun `loadUserByUsername should throw UsernameNotFoundException(invalidUserId) if repo cannot find user`() {
-        given(applicationUser.email).willReturn(emailId)
-        given(applicationUser.password).willReturn(password)
-        given(applicationUser.grantedAuthorities).willReturn(grantedAuthorities)
+    fun `findByUsername should throw UsernameNotFoundException(invalidUserId) if repo cannot find user`() =
+        runBlocking {
+            given(applicationUser.email).willReturn(emailId)
+            given(applicationUser.password).willReturn(password)
+            given(applicationUser.grantedAuthorities).willReturn(grantedAuthorities)
 
-        // Stub
-        given(userRepo.getApplicationUser(emailId)).willReturn(null)
+            // Stub
+            given(userRepo.getApplicationUser(emailId)).willReturn(null)
 
-        // Call method and assert
-        val exception: UsernameNotFoundException = assertThrows {
-            userInfoService.loadUserByUsername(emailId)
+            // Call method and assert
+            val exception: UsernameNotFoundException = assertThrows {
+                userInfoService.findByUsername(emailId).awaitFirst()
+            }
+            assertEquals(invalidUserId.errorMessage, exception.message)
         }
-        assertEquals(invalidUserId.errorMessage, exception.message)
-    }
 
     @Test
     fun `refreshToken should return LoginResponse result if auth-token-lib refreshes token successfully`() =
-        runBlocking<Unit> {
+        runBlocking {
             val refreshTokenStr = "someRefreshToken"
             val refreshTokenRequest = RefreshTokenRequest(refreshToken = refreshTokenStr)
             val now = Instant.now()
@@ -159,5 +161,5 @@ class UserInfoServiceTest {
 
         // Call method
         userInfoService.logout(accessToken)
-    }*/
+    }
 }

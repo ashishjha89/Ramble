@@ -178,4 +178,35 @@ class ModelsTest {
         )
         assertEquals(expectedUserInfo, applicationUser.toUserInfo())
     }
+
+    @Test
+    fun `applicationUserToUserInfo when default value`() {
+        val applicationUser = ApplicationUser(
+            id = "id",
+            email = "email",
+            password = "password",
+            gender = Gender.Undisclosed,
+            roles = listOf(Roles.User),
+            accountStatus = AccountStatus.Activated,
+            registrationDateInSeconds = Instant.now().epochSecond,
+            activationDateInSeconds = Instant.now().epochSecond
+        )
+        val expectedUserInfo = UserInfo(
+            id = applicationUser.id,
+            email = applicationUser.email,
+            age = null,
+            firstName = null,
+            lastName = null,
+            nickname = null,
+            fullName = null, // null in case name fields are missing
+            gender = null, // Undisclosed changed to null
+            houseNumber = null,
+            streetName = null,
+            postCode = null,
+            city = null,
+            country = null,
+            fullAddress = null
+        )
+        assertEquals(expectedUserInfo, applicationUser.toUserInfo())
+    }
 }

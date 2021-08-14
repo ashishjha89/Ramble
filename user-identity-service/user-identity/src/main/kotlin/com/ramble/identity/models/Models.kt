@@ -53,45 +53,20 @@ val Roles.grantedAuthorities: Set<GrantedAuthority>
             .plus(permissions.toList().map { SimpleGrantedAuthority(it) })
             .toSet()
 
-fun RegisterUserRequest.toApplicationUser(
-    roles: List<Roles>,
-    accountStatus: AccountStatus,
-    registrationDateInSeconds: Long,
-    id: Long
-): ApplicationUser =
-    ApplicationUser(
-        id = id.toString(),
-        email = email,
-        password = password,
-        roles = roles,
-        accountStatus = accountStatus,
-        registrationDateInSeconds = registrationDateInSeconds,
-        firstName = firstName,
-        lastName = lastName,
-        nickname = nickname,
-        age = age,
-        gender = Gender.values().find { it.name == gender } ?: Gender.Undisclosed,
-        houseNumber = houseNumber,
-        streetName = streetName,
-        postCode = postCode,
-        city = city,
-        country = country
-    )
-
 fun ApplicationUser.toUserInfo(): UserInfo =
     UserInfo(
         id = id,
         email = email,
-        firstName = firstName,
-        lastName = lastName,
-        nickname = nickname,
-        fullName = fullName,
-        age = age,
-        gender = gender.name,
-        houseNumber = houseNumber,
-        streetName = streetName,
-        postCode = postCode,
-        city = city,
-        country = country,
-        fullAddress = fullAddress
+        firstName = firstName?.ifBlank { null },
+        lastName = lastName?.ifBlank { null },
+        nickname = nickname?.ifBlank { null },
+        fullName = fullName.ifBlank { null },
+        age = if (age != null && age > 0) age else null,
+        gender = if (gender == Gender.Undisclosed) null else gender.name,
+        houseNumber = houseNumber?.ifBlank { null },
+        streetName = streetName?.ifBlank { null },
+        postCode = postCode?.ifBlank { null },
+        city = city?.ifBlank { null },
+        country = country?.ifBlank { null },
+        fullAddress = fullAddress.ifBlank { null }
     )

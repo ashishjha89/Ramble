@@ -13,7 +13,33 @@ data class RegisterUserRequest(
     val postCode: String? = null,
     val city: String? = null,
     val country: String? = null
-)
+) {
+
+    fun toApplicationUser(
+        roles: List<Roles>,
+        accountStatus: AccountStatus,
+        registrationDateInSeconds: Long,
+        id: Long
+    ): ApplicationUser =
+        ApplicationUser(
+            id = id.toString(),
+            email = email,
+            password = password,
+            roles = roles,
+            accountStatus = accountStatus,
+            registrationDateInSeconds = registrationDateInSeconds,
+            firstName = firstName,
+            lastName = lastName,
+            nickname = nickname,
+            age = age,
+            gender = Gender.values().find { it.name == gender } ?: Gender.Undisclosed,
+            houseNumber = houseNumber,
+            streetName = streetName,
+            postCode = postCode,
+            city = city,
+            country = country
+        )
+}
 
 data class RegisteredUserResponse(val userId: String, val email: String)
 

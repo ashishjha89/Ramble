@@ -4,6 +4,7 @@ import com.ramble.identity.models.*
 import com.ramble.identity.repo.persistence.UserSqlRepo
 import com.ramble.identity.repo.persistence.entity.ApplicationUserEntity
 import com.ramble.identity.utils.TimeAndIdGenerator
+import com.ramble.identity.utils.valueOf
 import com.ramble.token.value
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -27,10 +28,7 @@ class UserRepo(
                 when (getApplicationUser(email = registerUserRequest.email)?.accountStatus) {
                     AccountStatus.Activated -> throw UserAlreadyActivatedException()
                     AccountStatus.Suspended -> throw UserSuspendedException()
-                    AccountStatus.Registered -> {
-                        if (userSqlRepo.existsById(registerUserRequest.email))
-                            userSqlRepo.deleteById(registerUserRequest.email)
-                    } // delete old entry
+                    AccountStatus.Registered -> userSqlRepo.deleteById(registerUserRequest.email) // delete old entry
                 }
                 val user = registerUserRequest.toApplicationUser(
                     roles = listOf(Roles.User),
@@ -105,14 +103,14 @@ class UserRepo(
             id = id,
             email = email,
             password = password.ifBlank { null },
-            roles = roles.map { Roles.valueOf(it) },
-            accountStatus = AccountStatus.valueOf(accountStatus),
+            roles = roles.mapNotNull { valueOf<Roles>(it) },
+            accountStatus = valueOf<AccountStatus>(accountStatus) ?: AccountStatus.Registered,
             registrationDateInSeconds = registrationDateInSeconds,
             firstName = firstName.ifBlank { null },
             lastName = lastName.ifBlank { null },
             nickname = nickname.ifBlank { null },
             age = age.takeIf { it > 0 },
-            gender = Gender.valueOf(gender),
+            gender = valueOf<Gender>(gender) ?: Gender.Undisclosed,
             houseNumber = houseNumber.ifBlank { null },
             streetName = streetName.ifBlank { null },
             postCode = postCode.ifBlank { null },

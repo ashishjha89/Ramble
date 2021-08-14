@@ -56,7 +56,7 @@ class AuthController(
             )]
     )
     @PostMapping(USER_REGISTER_PATH)
-    fun signUp(@RequestBody user: RegisterUserRequest): RegisteredUserResponse =
+    suspend fun signUp(@RequestBody user: RegisterUserRequest): RegisteredUserResponse =
         userRegistrationService.saveUser(user)
 
     @ApiResponses(
@@ -117,7 +117,7 @@ class AuthController(
             )]
     )
     @GetMapping(USER_REGISTRATION_CONFIRM_PATH)
-    fun confirmRegistration(@RequestParam(value = "token") token: String): RegisteredUserResponse =
+    suspend fun confirmRegistration(@RequestParam(value = "token") token: String): RegisteredUserResponse =
         userRegistrationService.confirmToken(token)
 
     @ApiResponses(

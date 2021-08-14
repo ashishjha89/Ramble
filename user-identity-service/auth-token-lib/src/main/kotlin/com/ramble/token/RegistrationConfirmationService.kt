@@ -2,21 +2,21 @@ package com.ramble.token
 
 import com.ramble.token.config.TokenComponentBuilder
 import com.ramble.token.handler.RegistrationConfirmationTokenHandler
-import com.ramble.token.model.RegistrationConfirmationToken
 import com.ramble.token.repository.RegistrationConfirmationRepo
+import com.ramble.token.repository.persistence.entities.RegistrationConfirmationToken
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 @Service
-class RegistrationConfirmationService(tokenComponentBuilder: TokenComponentBuilder) {
+class RegistrationConfirmationService(
+    tokenComponentBuilder: TokenComponentBuilder,
+    private val registrationConfirmationRepo: RegistrationConfirmationRepo
+    ) {
 
     private val jwtParser = tokenComponentBuilder.jwtParserRegistrationToken()
 
     private val jwtBuilder = tokenComponentBuilder.jwtBuilder()
-
-    private val registrationConfirmationRepo: RegistrationConfirmationRepo =
-        tokenComponentBuilder.registrationConfirmationRepo()
 
     private val registrationConfirmationTokenHandler: RegistrationConfirmationTokenHandler =
         tokenComponentBuilder.registrationConfirmationTokenHandler()
@@ -24,7 +24,7 @@ class RegistrationConfirmationService(tokenComponentBuilder: TokenComponentBuild
     /**
      * Return newly created RegistrationConfirmationToken.
      */
-    fun addRegistrationConfirmationToken(
+    suspend fun addRegistrationConfirmationToken(
         userId: String,
         email: String,
         now: Instant,
@@ -43,7 +43,7 @@ class RegistrationConfirmationService(tokenComponentBuilder: TokenComponentBuild
     /**
      * Return RegistrationConfirmationToken if the token is still valid now.
      */
-    fun processRegistrationConfirmationToken(
+    suspend fun processRegistrationConfirmationToken(
         registrationConfirmationToken: String,
         now: Instant
     ): RegistrationConfirmationToken? {

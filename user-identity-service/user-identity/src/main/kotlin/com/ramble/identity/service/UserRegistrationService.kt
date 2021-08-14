@@ -10,7 +10,7 @@ import com.ramble.identity.repo.UserRepo
 import com.ramble.identity.service.validator.RegistrationRequestValidator
 import com.ramble.identity.utils.TimeAndIdGenerator
 import com.ramble.token.RegistrationConfirmationService
-import com.ramble.token.model.RegistrationConfirmationToken
+import com.ramble.token.repository.persistence.entities.RegistrationConfirmationToken
 import org.springframework.scheduling.annotation.Async
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -33,7 +33,7 @@ class UserRegistrationService(
         EmailSendingFailedException::class,
         InvalidEmailException::class
     )
-    fun saveUser(
+    suspend fun saveUser(
         registerUserRequest: RegisterUserRequest,
         expirationDurationAmount: Long = 15,
         expiryDurationUnit: ChronoUnit = ChronoUnit.MINUTES
@@ -63,7 +63,7 @@ class UserRegistrationService(
         UserSuspendedException::class,
         InvalidRegistrationConfirmationToken::class
     )
-    fun confirmToken(token: String?): RegisteredUserResponse {
+    suspend fun confirmToken(token: String?): RegisteredUserResponse {
         val now = timeAndIdGenerator.getCurrentTime()
         token ?: throw InvalidRegistrationConfirmationToken()
         val confirmationToken = registrationConfirmationService.processRegistrationConfirmationToken(token, now)

@@ -23,7 +23,7 @@ class AuthControllerTest {
     private val authController = AuthController(userInfoService, userRegistrationService)
 
     @Test
-    fun `signUp should send registeredUserResponse if user was successfully saved`() {
+    fun `signUp should send registeredUserResponse if user was successfully saved`() = runBlocking {
         val registerUserRequest = mock(RegisterUserRequest::class.java)
         val registeredUserResponse = mock(RegisteredUserResponse::class.java)
 
@@ -35,7 +35,7 @@ class AuthControllerTest {
     }
 
     @Test
-    fun `confirmRegistration should send registrationToken if user was successfully registered`() {
+    fun `confirmRegistration should send registrationToken if user was successfully registered`() = runBlocking {
         val confirmRegistrationToken = "some_confirm_registration_token"
         val registeredUserResponse = mock(RegisteredUserResponse::class.java)
 

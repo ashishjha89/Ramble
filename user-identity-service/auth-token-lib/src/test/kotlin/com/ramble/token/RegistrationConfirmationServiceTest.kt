@@ -2,10 +2,11 @@ package com.ramble.token
 
 import com.ramble.token.config.TokenComponentBuilder
 import com.ramble.token.handler.RegistrationConfirmationTokenHandler
-import com.ramble.token.model.RegistrationConfirmationToken
 import com.ramble.token.repository.RegistrationConfirmationRepo
+import com.ramble.token.repository.persistence.entities.RegistrationConfirmationToken
 import io.jsonwebtoken.JwtBuilder
 import io.jsonwebtoken.JwtParser
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import org.mockito.BDDMockito.given
@@ -27,25 +28,25 @@ class RegistrationConfirmationServiceTest {
 
     private val jwtParser = mock(JwtParser::class.java)
 
-    private val registrationConfirmationService by lazy { RegistrationConfirmationService(tokenComponentBuilder) }
+    private val registrationConfirmationService by lazy {
+        RegistrationConfirmationService(tokenComponentBuilder, registrationConfirmationRepo)
+    }
 
     @Before
     fun setup() {
-        given(tokenComponentBuilder.registrationConfirmationRepo()).willReturn(registrationConfirmationRepo)
         given(tokenComponentBuilder.registrationConfirmationTokenHandler()).willReturn(registrationTokenHandler)
         given(tokenComponentBuilder.jwtBuilder()).willReturn(jwtBuilder)
         given(tokenComponentBuilder.jwtParserRegistrationToken()).willReturn(jwtParser)
     }
 
     @Test
-    fun addRegistrationConfirmationTokenTest() {
+    fun addRegistrationConfirmationTokenTest() = runBlocking {
         val userId = "someUserIdd"
         val email = "someEmailId@ramble.com"
         val now = Instant.now()
         val expiryDurationAmount = 30L
         val expiryDurationUnit = ChronoUnit.MINUTES
         val tokenStr = "some_registration_confirmation_token"
-        val expectedToken = RegistrationConfirmationToken(userId, email, tokenStr)
 
         // Stub
         given(
@@ -59,12 +60,14 @@ class RegistrationConfirmationServiceTest {
 
         // Verify
         verify(registrationConfirmationRepo).deleteRegistrationConfirmationToken(userId) // delete old token for user
-        verify(registrationConfirmationRepo).addRegistrationConfirmationToken(expectedToken) // add new token
-        assertEquals(expectedToken, tokenResult)
+        verify(registrationConfirmationRepo).addRegistrationConfirmationToken(any()) // add new token
+        assertEquals(userId, tokenResult.userId)
+        assertEquals(email, tokenResult.email)
+        assertEquals(tokenStr, tokenResult.token)
     }
 
     @Test
-    fun `processRegistrationConfirmationToken should return null if passed token is invalid for user`() {
+    fun `processRegistrationConfirmationToken should return null if passed token is invalid for user`() = runBlocking {
         val confirmRegistrationTokenStr = "some_registration_confirmation_token"
         val now = Instant.now()
 
@@ -80,7 +83,7 @@ class RegistrationConfirmationServiceTest {
     }
 
     @Test
-    fun `processRegistrationConfirmationToken should return null if invalid token and delete that token `() {
+    fun `processRegistrationConfirmationToken should return null if invalid token and delete that token `() = runBlocking {
         val confirmRegistrationTokenStr = "some_registration_confirmation_token"
         val now = Instant.now()
         val userId = "validUserId"
@@ -101,7 +104,7 @@ class RegistrationConfirmationServiceTest {
     }
 
     @Test
-    fun `processRegistrationConfirmationToken should return token if valid token for user`() {
+    fun `processRegistrationConfirmationToken should return token if valid token for user`() = runBlocking {
         val confirmRegistrationTokenStr = "some_registration_confirmation_token"
         val now = Instant.now()
         val userId = "validUserId"

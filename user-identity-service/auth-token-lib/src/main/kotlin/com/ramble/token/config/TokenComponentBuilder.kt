@@ -6,7 +6,6 @@ import com.ramble.token.handler.RegistrationConfirmationTokenHandler
 import com.ramble.token.handler.helper.TokenClaimsMapGenerator
 import com.ramble.token.handler.helper.TokenDurationGenerator
 import com.ramble.token.handler.helper.UsernamePasswordAuthTokenTokenGenerator
-import com.ramble.token.repository.RegistrationConfirmationRepo
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import org.springframework.stereotype.Component
@@ -49,8 +48,6 @@ class TokenComponentBuilder(jwtTokenConfig: JwtTokenConfig) {
 
     internal fun usernamePasswordAuthTokenTokenGenerator(): UsernamePasswordAuthTokenTokenGenerator =
         UsernamePasswordAuthTokenTokenGenerator()
-
-    internal fun registrationConfirmationRepo(): RegistrationConfirmationRepo = RegistrationConfirmationRepo()
 
     internal fun jwtParserAccessToken() = Jwts.parserBuilder().setSigningKey(jwtKeyAccessToken).build()
 

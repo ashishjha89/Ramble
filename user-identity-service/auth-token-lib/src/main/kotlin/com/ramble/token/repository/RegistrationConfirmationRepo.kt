@@ -1,29 +1,42 @@
 package com.ramble.token.repository
 
-import com.ramble.token.model.RegistrationConfirmationToken
+import com.ramble.token.repository.persistence.RegistrationConfirmationTokenSqlRepo
+import com.ramble.token.repository.persistence.entities.RegistrationConfirmationToken
+import com.ramble.token.value
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Repository
 
 @Repository
-internal class RegistrationConfirmationRepo {
+class RegistrationConfirmationRepo(private val registrationTokenSqlRepo: RegistrationConfirmationTokenSqlRepo) {
 
-    private val tokenMap = mutableMapOf<UserId, RegistrationConfirmationToken>()
-
-    /**
-     * Return true if token added successfully.
-     */
-    fun addRegistrationConfirmationToken(registrationConfirmationToken: RegistrationConfirmationToken): Boolean =
-        tokenMap.put(registrationConfirmationToken.userId, registrationConfirmationToken) == null
+    internal suspend fun addRegistrationConfirmationToken(registrationConfirmationToken: RegistrationConfirmationToken): RegistrationConfirmationToken =
+        coroutineScope {
+            withContext(Dispatchers.IO) {
+                registrationTokenSqlRepo.save(registrationConfirmationToken)
+            }
+        }
 
     /**
      * Return true if token deleted successfully.
      */
-    fun deleteRegistrationConfirmationToken(userId: UserId): Boolean =
-        tokenMap.remove(userId) != null
+    internal suspend fun deleteRegistrationConfirmationToken(userId: UserId) {
+        coroutineScope {
+            withContext(Dispatchers.IO) {
+                registrationTokenSqlRepo.deleteById(userId)
+            }
+        }
+    }
 
     /**
      * Return RegistrationConfirmationToken for the userId.
      */
-    fun getRegistrationConfirmationToken(userId: UserId): RegistrationConfirmationToken? =
-        tokenMap[userId]
+    internal suspend fun getRegistrationConfirmationToken(userId: UserId): RegistrationConfirmationToken? =
+        coroutineScope {
+            withContext(Dispatchers.IO) {
+                registrationTokenSqlRepo.findById(userId).value
+            }
+        }
 
 }

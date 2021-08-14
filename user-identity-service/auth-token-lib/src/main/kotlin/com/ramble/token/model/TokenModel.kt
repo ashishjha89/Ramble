@@ -19,8 +19,6 @@ data class AccessClaims(
     val authorities: List<GrantedAuthority>
 )
 
-data class RegistrationConfirmationToken(val userId: String, val email: String, val token: String)
-
 class RefreshTokenIsInvalidException : Exception()
 
 class AccessTokenIsInvalidException : Exception()

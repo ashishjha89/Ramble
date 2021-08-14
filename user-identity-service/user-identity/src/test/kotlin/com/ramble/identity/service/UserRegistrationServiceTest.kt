@@ -10,7 +10,8 @@ import com.ramble.identity.repo.UserRepo
 import com.ramble.identity.service.validator.RegistrationRequestValidator
 import com.ramble.identity.utils.TimeAndIdGenerator
 import com.ramble.token.RegistrationConfirmationService
-import com.ramble.token.model.RegistrationConfirmationToken
+import com.ramble.token.repository.persistence.entities.RegistrationConfirmationToken
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import org.mockito.BDDMockito.given
@@ -59,17 +60,17 @@ class UserRegistrationServiceTest {
         given(applicationUser.id).willReturn(userId)
         given(applicationUser.email).willReturn(emailId)
         given(applicationUser.fullName).willReturn(fullName)
-        given(
-            registrationConfirmationService
-                .addRegistrationConfirmationToken(userId, emailId, now, expirationDurationAmount, expiryDurationUnit)
-        ).willReturn(registrationConfirmationToken)
         given(timeAndIdGenerator.getCurrentTime()).willReturn(now)
     }
 
     @Test
-    fun `saveUser should return registeredUserResponse if user saved and email sent`() {
+    fun `saveUser should return registeredUserResponse if user saved and email sent`() = runBlocking {
         // Stub
         given(userRepo.saveNewUser(userToSave)).willReturn(applicationUser)
+        given(
+            registrationConfirmationService
+                .addRegistrationConfirmationToken(userId, emailId, now, expirationDurationAmount, expiryDurationUnit)
+        ).willReturn(registrationConfirmationToken)
 
         // Call method and assert
         val result =
@@ -78,55 +79,79 @@ class UserRegistrationServiceTest {
     }
 
     @Test(expected = UserAlreadyActivatedException::class)
-    fun `saveUser should throw UserAlreadyActivatedException if repo throws UserAlreadyActivatedException when savingNewUser`() {
-        // Stub
-        given(userRepo.saveNewUser(userToSave)).willThrow(UserAlreadyActivatedException())
+    fun `saveUser should throw UserAlreadyActivatedException if repo throws UserAlreadyActivatedException when savingNewUser`() =
+        runBlocking<Unit> {
+            // Stub
+            given(userRepo.saveNewUser(userToSave)).willThrow(UserAlreadyActivatedException())
 
-        // Call method and assert
-        userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
-    }
+            // Call method and assert
+            userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
+        }
 
     @Test(expected = UserSuspendedException::class)
-    fun `saveUser should throw UserSuspendedException if repo throws UserSuspendedException when savingNewUser`() {
-        // Stub
-        given(userRepo.saveNewUser(userToSave)).willThrow(UserSuspendedException())
+    fun `saveUser should throw UserSuspendedException if repo throws UserSuspendedException when savingNewUser`() =
+        runBlocking<Unit> {
+            // Stub
+            given(userRepo.saveNewUser(userToSave)).willThrow(UserSuspendedException())
 
-        // Call method and assert
-        userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
-    }
+            // Call method and assert
+            userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
+        }
 
     @Test(expected = EmailCredentialNotFoundException::class)
-    fun `saveUser should throw CredentialNotFoundException if emailSenderService throws CredentialNotFoundException when sending email`() {
-        // Stub
-        given(userRepo.saveNewUser(userToSave)).willReturn(applicationUser)
-        given(
-            emailSenderService
-                .sendConfirmRegistrationEmail(
-                    emailId, fullName, registrationTokenStr, SIGN_UP_CONFIRMATION_URL, REGISTER_EMAIL_SUBJECT
-                )
-        ).willThrow(EmailCredentialNotFoundException())
+    fun `saveUser should throw CredentialNotFoundException if emailSenderService throws CredentialNotFoundException when sending email`() =
+        runBlocking<Unit> {
+            // Stub
+            given(userRepo.saveNewUser(userToSave)).willReturn(applicationUser)
+            given(
+                emailSenderService
+                    .sendConfirmRegistrationEmail(
+                        emailId, fullName, registrationTokenStr, SIGN_UP_CONFIRMATION_URL, REGISTER_EMAIL_SUBJECT
+                    )
+            ).willThrow(EmailCredentialNotFoundException())
+            given(
+                registrationConfirmationService
+                    .addRegistrationConfirmationToken(
+                        userId,
+                        emailId,
+                        now,
+                        expirationDurationAmount,
+                        expiryDurationUnit
+                    )
+            ).willReturn(registrationConfirmationToken)
 
-        // Call method and assert
-        userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
-    }
+            // Call method and assert
+            userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
+        }
 
     @Test(expected = EmailSendingFailedException::class)
-    fun `saveUser should throw EmailSendingFailedException if emailSenderService throws EmailSendingFailedException when sending email`() {
-        // Stub
-        given(userRepo.saveNewUser(userToSave)).willReturn(applicationUser)
-        given(
-            emailSenderService
-                .sendConfirmRegistrationEmail(
-                    emailId, fullName, registrationTokenStr, SIGN_UP_CONFIRMATION_URL, REGISTER_EMAIL_SUBJECT
-                )
-        ).willThrow(EmailSendingFailedException())
+    fun `saveUser should throw EmailSendingFailedException if emailSenderService throws EmailSendingFailedException when sending email`() =
+        runBlocking<Unit> {
+            // Stub
+            given(userRepo.saveNewUser(userToSave)).willReturn(applicationUser)
+            given(
+                emailSenderService
+                    .sendConfirmRegistrationEmail(
+                        emailId, fullName, registrationTokenStr, SIGN_UP_CONFIRMATION_URL, REGISTER_EMAIL_SUBJECT
+                    )
+            ).willThrow(EmailSendingFailedException())
+            given(
+                registrationConfirmationService
+                    .addRegistrationConfirmationToken(
+                        userId,
+                        emailId,
+                        now,
+                        expirationDurationAmount,
+                        expiryDurationUnit
+                    )
+            ).willReturn(registrationConfirmationToken)
 
-        // Call method and assert
-        userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
-    }
+            // Call method and assert
+            userRegistrationService.saveUser(registerUserRequest, expirationDurationAmount, expiryDurationUnit)
+        }
 
     @Test
-    fun `confirmToken should return registeredUserResponse`() {
+    fun `confirmToken should return registeredUserResponse`() = runBlocking {
         // Stub
         given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
             .willReturn(registrationConfirmationToken)
@@ -138,13 +163,13 @@ class UserRegistrationServiceTest {
     }
 
     @Test(expected = InvalidRegistrationConfirmationToken::class)
-    fun `confirmToken should throw InvalidRegistrationConfirmationToken when token is null`() {
+    fun `confirmToken should throw InvalidRegistrationConfirmationToken when token is null`() = runBlocking<Unit> {
         // Call method and assert
         userRegistrationService.confirmToken(null)
     }
 
     @Test(expected = InvalidRegistrationConfirmationToken::class)
-    fun `confirmToken should throw InvalidRegistrationConfirmationToken when token is invalid`() {
+    fun `confirmToken should throw InvalidRegistrationConfirmationToken when token is invalid`() = runBlocking<Unit> {
         // Stub
         given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
             .willReturn(null)
@@ -154,37 +179,40 @@ class UserRegistrationServiceTest {
     }
 
     @Test(expected = UserNotFoundException::class)
-    fun `confirmToken should throw UserNotFoundException if userRepo throws UserNotFoundException`() {
-        // Stub
-        given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
-            .willReturn(registrationConfirmationToken)
-        given(userRepo.activateRegisteredUser(emailId)).willThrow(UserNotFoundException())
+    fun `confirmToken should throw UserNotFoundException if userRepo throws UserNotFoundException`() =
+        runBlocking<Unit> {
+            // Stub
+            given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
+                .willReturn(registrationConfirmationToken)
+            given(userRepo.activateRegisteredUser(emailId)).willThrow(UserNotFoundException())
 
-        // Call method and assert
-        userRegistrationService.confirmToken(registrationTokenStr)
-    }
+            // Call method and assert
+            userRegistrationService.confirmToken(registrationTokenStr)
+        }
 
     @Test(expected = UserAlreadyActivatedException::class)
-    fun `confirmToken should throw UserAlreadyActivatedException when UserAlreadyActivatedException is thrown by repo when trying to activate`() {
-        // Stub
-        given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
-            .willReturn(registrationConfirmationToken)
-        given(userRepo.activateRegisteredUser(emailId)).willThrow(UserAlreadyActivatedException())
+    fun `confirmToken should throw UserAlreadyActivatedException when UserAlreadyActivatedException is thrown by repo when trying to activate`() =
+        runBlocking<Unit> {
+            // Stub
+            given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
+                .willReturn(registrationConfirmationToken)
+            given(userRepo.activateRegisteredUser(emailId)).willThrow(UserAlreadyActivatedException())
 
-        // Call method and assert
-        userRegistrationService.confirmToken(registrationTokenStr)
-    }
+            // Call method and assert
+            userRegistrationService.confirmToken(registrationTokenStr)
+        }
 
     @Test(expected = UserSuspendedException::class)
-    fun `confirmToken should throw UserSuspendedException when UserSuspendedException is thrown by repo when trying to activate`() {
-        // Stub
-        given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
-            .willReturn(registrationConfirmationToken)
-        given(userRepo.activateRegisteredUser(emailId)).willThrow(UserSuspendedException())
+    fun `confirmToken should throw UserSuspendedException when UserSuspendedException is thrown by repo when trying to activate`() =
+        runBlocking<Unit> {
+            // Stub
+            given(registrationConfirmationService.processRegistrationConfirmationToken(registrationTokenStr, now))
+                .willReturn(registrationConfirmationToken)
+            given(userRepo.activateRegisteredUser(emailId)).willThrow(UserSuspendedException())
 
-        // Call method and assert
-        userRegistrationService.confirmToken(registrationTokenStr)
-    }
+            // Call method and assert
+            userRegistrationService.confirmToken(registrationTokenStr)
+        }
 
     @Test
     fun sendConfirmRegistrationEmailTest() {

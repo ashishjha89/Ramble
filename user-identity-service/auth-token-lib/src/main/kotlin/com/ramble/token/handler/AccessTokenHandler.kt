@@ -6,10 +6,7 @@ import com.ramble.token.handler.helper.TokenClaimsMapGenerator.Companion.ROLES
 import com.ramble.token.handler.helper.TokenClaimsMapGenerator.Companion.USER_ID
 import com.ramble.token.handler.helper.TokenDurationGenerator
 import com.ramble.token.model.AccessClaims
-import io.jsonwebtoken.Claims
-import io.jsonwebtoken.JwtBuilder
-import io.jsonwebtoken.JwtParser
-import io.jsonwebtoken.SignatureAlgorithm
+import io.jsonwebtoken.*
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -78,8 +75,13 @@ internal class AccessTokenHandler(
                 && !getEmailFromToken(token, parser).isNullOrBlank()
                 && !getClientIdFromToken(token, parser).isNullOrBlank()
 
-    private fun getClaimsFromToken(token: String, parser: JwtParser): Claims? =
-        parser.parseClaimsJws(token)?.body
+    private fun getClaimsFromToken(token: String, parser: JwtParser): Claims? {
+        return try {
+            parser.parseClaimsJws(token)?.body
+        } catch (e: JwtException) {
+            null
+        }
+    }
 
     @Suppress("UNCHECKED_CAST")
     fun getRolesFromToken(token: String, parser: JwtParser): List<GrantedAuthority>? =

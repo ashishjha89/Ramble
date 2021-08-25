@@ -17,11 +17,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 @Hidden // To hide it from Swagger! Controllers are specifying their exact errors.
 class ControllerExceptionHandler {
 
-    @ExceptionHandler(InternalServerException::class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    fun internalServerException(): ResponseEntity<ErrorBody> =
-        ResponseEntity(internalServerError, HttpStatus.INTERNAL_SERVER_ERROR)
-
     @ExceptionHandler(UserNotFoundException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun userNotFoundException(): ResponseEntity<ErrorBody> =
@@ -71,5 +66,15 @@ class ControllerExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun invalidEmailException(): ResponseEntity<ErrorBody> =
         ResponseEntity(invalidEmailSyntaxError, HttpStatus.BAD_REQUEST)
+
+    @ExceptionHandler(InternalServerException::class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    fun internalServerException(): ResponseEntity<ErrorBody> =
+        ResponseEntity(internalServerError, HttpStatus.INTERNAL_SERVER_ERROR)
+
+    @ExceptionHandler(Exception::class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    fun uncaughtException(): ResponseEntity<ErrorBody> =
+        ResponseEntity(internalServerError, HttpStatus.INTERNAL_SERVER_ERROR)
 
 }

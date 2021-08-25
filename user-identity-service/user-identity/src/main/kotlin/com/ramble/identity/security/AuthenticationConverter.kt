@@ -18,7 +18,7 @@ import reactor.core.publisher.Mono
 @Component
 class AuthenticationConverter(private val jacksonDecoder: AbstractJackson2Decoder) : ServerAuthenticationConverter {
 
-    @Throws(InternalServerException::class, BadRequestException::class)
+    @Throws(BadRequestException::class)
     override fun convert(exchange: ServerWebExchange?): Mono<Authentication> = mono {
         val loginRequest = getUsernameAndPassword(exchange) ?: throw BadRequestException()
         return@mono UsernamePasswordAuthenticationToken(loginRequest.email, loginRequest.password)

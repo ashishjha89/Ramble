@@ -16,8 +16,6 @@ import org.springframework.stereotype.Repository
 
 private typealias AccessToken = String
 
-internal typealias UserId = String
-
 @Repository
 class AuthTokenRepo(
     private val refreshTokenSqlRepo: ClientRefreshTokenSqlRepo,

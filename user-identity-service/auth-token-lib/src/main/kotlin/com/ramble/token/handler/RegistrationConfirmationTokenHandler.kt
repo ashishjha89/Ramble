@@ -36,15 +36,20 @@ internal class RegistrationConfirmationTokenHandler(
         !isTokenExpired(token, parser, now) && !getEmailFromToken(token, parser).isNullOrBlank()
 
     fun getEmailFromToken(token: String, parser: JwtParser): String? =
-        getClaimsFromAccessToken(token, parser)?.subject
-
-    private fun getClaimsFromAccessToken(token: String, parser: JwtParser): Claims? =
-        parser.parseClaimsJws(token)?.body
+        getClaimsFromToken(token, parser)?.subject
 
     private fun getExpirationDateFromToken(token: String, parser: JwtParser): Date? =
-        getClaimsFromAccessToken(token, parser)?.expiration
+        getClaimsFromToken(token, parser)?.expiration
 
     private fun isTokenExpired(token: String, parser: JwtParser, now: Instant) =
         getExpirationDateFromToken(token, parser)?.before(Date.from(now)) ?: false
+
+    private fun getClaimsFromToken(token: String, parser: JwtParser): Claims? {
+        return try {
+            parser.parseClaimsJws(token)?.body
+        } catch (e: Exception) {
+            null
+        }
+    }
 
 }

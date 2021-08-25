@@ -54,6 +54,11 @@ internal class RefreshTokenHandler(
     private fun isTokenExpired(token: String, parser: JwtParser, now: Instant) =
         getExpirationDateFromToken(token, parser)?.before(Date.from(now)) ?: false
 
-    private fun getClaimsFromRefreshToken(token: String, parser: JwtParser): Claims? =
-        parser.parseClaimsJws(token)?.body
+    private fun getClaimsFromRefreshToken(token: String, parser: JwtParser): Claims? {
+        return try {
+            parser.parseClaimsJws(token)?.body
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

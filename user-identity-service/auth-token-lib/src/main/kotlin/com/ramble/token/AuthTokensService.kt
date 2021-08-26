@@ -4,10 +4,7 @@ import com.ramble.token.config.TokenComponentBuilder
 import com.ramble.token.handler.AccessTokenHandler
 import com.ramble.token.handler.RefreshTokenHandler
 import com.ramble.token.handler.helper.UsernamePasswordAuthTokenTokenGenerator
-import com.ramble.token.model.AccessClaims
-import com.ramble.token.model.AccessTokenIsInvalidException
-import com.ramble.token.model.RefreshTokenIsInvalidException
-import com.ramble.token.model.UserAuthInfo
+import com.ramble.token.model.*
 import com.ramble.token.repository.AuthTokenRepo
 import com.ramble.token.repository.persistence.entities.ClientAuthInfo
 import io.jsonwebtoken.Claims
@@ -34,6 +31,7 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
     private val usernamePasswordAuthTokenTokenGenerator: UsernamePasswordAuthTokenTokenGenerator =
         tokenComponentBuilder.usernamePasswordAuthTokenTokenGenerator()
 
+    @Throws(InternalTokenStorageException::class)
     suspend fun generateUserAuthToken(
         authorities: Collection<GrantedAuthority>,
         clientId: String,
@@ -72,7 +70,7 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
         return userAuthInfo
     }
 
-    @Throws(RefreshTokenIsInvalidException::class)
+    @Throws(RefreshTokenIsInvalidException::class, InternalTokenStorageException::class)
     suspend fun refreshAuthToken(
         refreshToken: String,
         now: Instant,
@@ -122,6 +120,7 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
         )
     }
 
+    @Throws(InternalTokenStorageException::class)
     suspend fun getAccessTokenClaims(accessToken: String?, now: Instant = Instant.now()): AccessClaims? {
         accessToken ?: return null
         // 1. Check if token is of correct format
@@ -138,7 +137,7 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
         return if (!disabledTokens.contains(accessToken)) accessClaims else null
     }
 
-    @Throws(AccessTokenIsInvalidException::class)
+    @Throws(AccessTokenIsInvalidException::class, InternalTokenStorageException::class)
     suspend fun logout(accessToken: String, now: Instant) {
         val clientId = accessTokenHandler.getClientIdFromToken(accessToken, jwtParserAccessToken)
         val userId = accessTokenHandler.getUserIdFromToken(accessToken, jwtParserAccessToken)
@@ -163,6 +162,7 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
     fun springAuthentication(claims: Claims, authorities: List<GrantedAuthority>): SpringAuthentication =
         usernamePasswordAuthTokenTokenGenerator.getUsernamePasswordAuthenticationToken(claims, authorities)
 
+    @Throws(InternalTokenStorageException::class)
     private suspend fun disableOldAccessTokens(clientId: String, userAuthInfo: UserAuthInfo, now: Instant) {
         val existingToken = authTokenRepo.getExistingTokensForClient(clientId, userAuthInfo) ?: return
         val clientAuthInfo = ClientAuthInfo(clientId, userAuthInfo.userId, userAuthInfo.accessToken)
@@ -172,6 +172,7 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
         )
     }
 
+    @Throws(InternalTokenStorageException::class)
     private suspend fun updateDisabledAccessTokensForClient(
         disabledTokens: Set<String>,
         clientAuthInfo: ClientAuthInfo,

@@ -1,25 +1,33 @@
 package com.ramble.identity.repo
 
 import com.ramble.identity.models.*
-import com.ramble.identity.repo.persistence.UserSqlRepo
-import com.ramble.identity.repo.persistence.entity.ApplicationUserEntity
+import com.ramble.identity.repo.persistence.UserDbImpl
+import com.ramble.identity.utils.CoroutineScopeBuilder
 import com.ramble.identity.utils.TimeAndIdGenerator
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
+import org.junit.Before
 import org.junit.Test
 import org.mockito.BDDMockito.*
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.spy
 import java.time.Instant
-import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class UserRepoTest {
 
-    private val userSqlRepo = mock(UserSqlRepo::class.java)
+    private val userDbImpl = mock(UserDbImpl::class.java)
     private val timeAndIdGenerator = mock(TimeAndIdGenerator::class.java)
+    private val coroutineScopeBuilder = mock(CoroutineScopeBuilder::class.java)
+    private val scope = mock(CoroutineScope::class.java)
 
-    private val userRepo = UserRepo(userSqlRepo, timeAndIdGenerator)
+    private val userRepo = UserRepo(userDbImpl, timeAndIdGenerator, coroutineScopeBuilder)
+
+    @Before
+    fun setup() {
+        given(coroutineScopeBuilder.defaultIoScope).willReturn(scope)
+    }
 
     @Test(expected = UserAlreadyActivatedException::class)
     fun `saveNewUser should throw UserAlreadyActivatedException if user is already activated`() = runBlocking<Unit> {
@@ -28,12 +36,12 @@ class UserRepoTest {
         val email = "someEmailId"
         val password = "somePassword"
         val registerUserResponse = RegisterUserRequest(email = email, password = password)
-        val userEntity = getApplicationUserEntity(email = email, accountStatus = AccountStatus.Activated.name)
+        val user = getApplicationUser(email = email, accountStatus = AccountStatus.Activated)
 
         // Stub
         given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
         given(timeAndIdGenerator.getTimeBasedId()).willReturn(timeBasedId)
-        given(userSqlRepo.findById(email)).willReturn(Optional.of(userEntity))
+        given(userDbImpl.getApplicationUser(email, scope)).willReturn(user)
 
         // Call method and assert
         userRepo.saveNewUser(registerUserResponse)
@@ -46,12 +54,12 @@ class UserRepoTest {
         val email = "someEmailId"
         val password = "somePassword"
         val registerUserResponse = RegisterUserRequest(email = email, password = password)
-        val userEntity = getApplicationUserEntity(email = email, accountStatus = AccountStatus.Suspended.name)
+        val user = getApplicationUser(email = email, accountStatus = AccountStatus.Suspended)
 
         // Stub
         given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
         given(timeAndIdGenerator.getTimeBasedId()).willReturn(timeBasedId)
-        given(userSqlRepo.findById(email)).willReturn(Optional.of(userEntity))
+        given(userDbImpl.getApplicationUser(email, scope)).willReturn(user)
 
         // Call method and assert
         userRepo.saveNewUser(registerUserResponse)
@@ -67,7 +75,7 @@ class UserRepoTest {
         val lastName = "someLastName"
         val nickName = "someNickName"
         val age = 32
-        val gender = Gender.Male.name
+        val gender = Gender.Male
         val houseNumber = "123"
         val streetName = "Some Street"
         val postCode = "Some Postcode"
@@ -80,7 +88,7 @@ class UserRepoTest {
             lastName = lastName,
             nickname = nickName,
             age = age,
-            gender = gender,
+            gender = gender.name,
             houseNumber = houseNumber,
             streetName = streetName,
             postCode = postCode,
@@ -88,24 +96,6 @@ class UserRepoTest {
             country = country
         )
         val registerUserRequestSpy = spy(registerUserRequest)
-        val userEntity = getApplicationUserEntity(
-            id = timeBasedId.toString(),
-            email = email,
-            password = password,
-            roles = listOf(Roles.User.name),
-            accountStatus = AccountStatus.Registered.name,
-            registrationDateInSeconds = currentTimeInSeconds,
-            firstName = firstName,
-            lastName = lastName,
-            nickname = nickName,
-            age = age,
-            gender = gender,
-            houseNumber = houseNumber,
-            streetName = streetName,
-            postCode = postCode,
-            city = city,
-            country = country
-        )
         val expectedApplicationUser = ApplicationUser(
             id = timeBasedId.toString(),
             email = email,
@@ -117,7 +107,7 @@ class UserRepoTest {
             lastName = lastName,
             nickname = nickName,
             age = age,
-            gender = Gender.valueOf(gender),
+            gender = gender,
             houseNumber = houseNumber,
             streetName = streetName,
             postCode = postCode,
@@ -128,19 +118,19 @@ class UserRepoTest {
         // Stub
         given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
         given(timeAndIdGenerator.getTimeBasedId()).willReturn(timeBasedId)
-        given(userSqlRepo.findById(email)).willReturn(Optional.empty())
-        given(userSqlRepo.save(any())).willReturn(userEntity)
+        given(userDbImpl.getApplicationUser(email, scope)).willReturn(null)
+        given(userDbImpl.save(expectedApplicationUser, scope)).willReturn(expectedApplicationUser)
 
         // Call method and assert
         assertEquals(expectedApplicationUser, userRepo.saveNewUser(registerUserRequestSpy))
-        verify(userSqlRepo, times(0)).deleteById(email)
+        verify(userDbImpl, times(0)).deleteUser(email, scope)
         verify(registerUserRequestSpy, times(1)).toApplicationUser(
             roles = listOf(Roles.User),
             accountStatus = AccountStatus.Registered,
             registrationDateInSeconds = currentTimeInSeconds,
             id = timeBasedId
         )
-        verify(userSqlRepo).save(any())
+        verify(userDbImpl).save(expectedApplicationUser, scope)
     }
 
     @Test
@@ -151,16 +141,8 @@ class UserRepoTest {
         val password = "somePassword"
         val registerUserRequest = RegisterUserRequest(email = email, password = password)
         val registerUserRequestSpy = spy(registerUserRequest)
-        val userEntityOld = getApplicationUserEntity(email = email, accountStatus = AccountStatus.Registered.name)
-        val userEntityNew = getApplicationUserEntity(
-            id = timeBasedId.toString(),
-            email = email,
-            password = password,
-            roles = listOf(Roles.User.name),
-            accountStatus = AccountStatus.Registered.name,
-            registrationDateInSeconds = currentTimeInSeconds
-        )
-        val expectedApplicationUser = ApplicationUser(
+        val userOld = getApplicationUser(email = email, accountStatus = AccountStatus.Registered)
+        val userNew = ApplicationUser(
             id = timeBasedId.toString(),
             email = email,
             password = password,
@@ -172,19 +154,19 @@ class UserRepoTest {
         // Stub
         given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
         given(timeAndIdGenerator.getTimeBasedId()).willReturn(timeBasedId)
-        given(userSqlRepo.findById(email)).willReturn(Optional.of(userEntityOld))
-        given(userSqlRepo.save(any())).willReturn(userEntityNew)
+        given(userDbImpl.getApplicationUser(email, scope)).willReturn(userOld)
+        given(userDbImpl.save(userNew, scope)).willReturn(userNew)
 
         // Call method and assert
-        assertEquals(expectedApplicationUser, userRepo.saveNewUser(registerUserRequestSpy))
-        verify(userSqlRepo).deleteById(email)
-        verify(registerUserRequestSpy, times(1)).toApplicationUser(
+        assertEquals(userNew, userRepo.saveNewUser(registerUserRequestSpy))
+        verify(userDbImpl).deleteUser(email, scope)
+        verify(registerUserRequestSpy).toApplicationUser(
             roles = listOf(Roles.User),
             accountStatus = AccountStatus.Registered,
             registrationDateInSeconds = currentTimeInSeconds,
             id = timeBasedId
         )
-        verify(userSqlRepo).save(any())
+        verify(userDbImpl).save(userNew, scope)
     }
 
     @Test(expected = UserNotFoundException::class)
@@ -195,7 +177,7 @@ class UserRepoTest {
 
             // Stub
             given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
-            given(userSqlRepo.findById(email)).willReturn(Optional.empty())
+            given(userDbImpl.getApplicationUser(email, scope)).willReturn(null)
 
             // Call method and assert
             userRepo.activateRegisteredUser(email)
@@ -206,12 +188,11 @@ class UserRepoTest {
         runBlocking<Unit> {
             val currentTimeInSeconds = Instant.now().epochSecond
             val email = "someEmailId"
-            val userEntityActivated =
-                getApplicationUserEntity(email = email, accountStatus = AccountStatus.Activated.name)
+            val userActivated = getApplicationUser(email = email, accountStatus = AccountStatus.Activated)
 
             // Stub
             given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
-            given(userSqlRepo.findById(email)).willReturn(Optional.of(userEntityActivated))
+            given(userDbImpl.getApplicationUser(email, scope)).willReturn(userActivated)
 
             // Call method and assert
             userRepo.activateRegisteredUser(email)
@@ -221,11 +202,11 @@ class UserRepoTest {
     fun `activateRegisteredUser should throw UserSuspendedException if user is Suspended`() = runBlocking<Unit> {
         val currentTimeInSeconds = Instant.now().epochSecond
         val email = "someEmailId"
-        val userEntityActivated = getApplicationUserEntity(email = email, accountStatus = AccountStatus.Suspended.name)
+        val userActivated = getApplicationUser(email = email, accountStatus = AccountStatus.Suspended)
 
         // Stub
         given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
-        given(userSqlRepo.findById(email)).willReturn(Optional.of(userEntityActivated))
+        given(userDbImpl.getApplicationUser(email, scope)).willReturn(userActivated)
 
         // Call method and assert
         userRepo.activateRegisteredUser(email)
@@ -235,31 +216,20 @@ class UserRepoTest {
     fun `activateRegisteredUser should set accountStatus to Activated if user has activated before`() = runBlocking {
         val currentTimeInSeconds = Instant.now().epochSecond
         val email = "someEmailId"
-        val userEntityRegistered =
-            getApplicationUserEntity(email = email, accountStatus = AccountStatus.Registered.name)
-        val userEntityActivated = getApplicationUserEntity(
+        val userRegistered = getApplicationUser(email = email, accountStatus = AccountStatus.Registered)
+        val userActivated = getApplicationUser(
             email = email,
-            accountStatus = AccountStatus.Activated.name,
-            roles = listOf(Roles.User.name),
-            activationDateInSeconds = currentTimeInSeconds
-        )
-        val expectedApplicationUser = ApplicationUser(
-            id = userEntityActivated.id,
-            email = userEntityActivated.email,
-            password = userEntityActivated.password,
-            roles = listOf(Roles.User),
             accountStatus = AccountStatus.Activated,
-            registrationDateInSeconds = userEntityActivated.registrationDateInSeconds,
-            activationDateInSeconds = userEntityActivated.activationDateInSeconds
+            activationDateInSeconds = currentTimeInSeconds
         )
 
         // Stub
         given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
-        given(userSqlRepo.findById(email)).willReturn(Optional.of(userEntityRegistered))
-        given(userSqlRepo.save(any())).willReturn(userEntityActivated)
+        given(userDbImpl.getApplicationUser(email, scope)).willReturn(userRegistered)
+        given(userDbImpl.save(userActivated, scope)).willReturn(userActivated)
 
         // Call method and assert
-        assertEquals(expectedApplicationUser, userRepo.activateRegisteredUser(email))
+        assertEquals(userActivated, userRepo.activateRegisteredUser(email))
     }
 
     @Test(expected = UserNotFoundException::class)
@@ -269,7 +239,7 @@ class UserRepoTest {
 
         // Stub
         given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
-        given(userSqlRepo.findById(email)).willReturn(Optional.empty())
+        given(userDbImpl.getApplicationUser(email, scope)).willReturn(null)
 
         // Call method and assert
         userRepo.getUserInfo(email)
@@ -279,11 +249,11 @@ class UserRepoTest {
     fun `getUserInfo should throw UserNotActivatedException if user is not activated`() = runBlocking<Unit> {
         val currentTimeInSeconds = Instant.now().epochSecond
         val email = "someEmailId"
-        val userEntityActivated = getApplicationUserEntity(email = email, accountStatus = AccountStatus.Registered.name)
+        val userRegistered = getApplicationUser(email = email, accountStatus = AccountStatus.Registered)
 
         // Stub
         given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
-        given(userSqlRepo.findById(email)).willReturn(Optional.of(userEntityActivated))
+        given(userDbImpl.getApplicationUser(email, scope)).willReturn(userRegistered)
 
         // Call method and assert
         userRepo.getUserInfo(email)
@@ -293,11 +263,11 @@ class UserRepoTest {
     fun `getUserInfo should throw UserSuspendedException if user is Suspended`() = runBlocking<Unit> {
         val currentTimeInSeconds = Instant.now().epochSecond
         val email = "someEmailId"
-        val userEntityActivated = getApplicationUserEntity(email = email, accountStatus = AccountStatus.Suspended.name)
+        val userSuspended = getApplicationUser(email = email, accountStatus = AccountStatus.Suspended)
 
         // Stub
         given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
-        given(userSqlRepo.findById(email)).willReturn(Optional.of(userEntityActivated))
+        given(userDbImpl.getApplicationUser(email, scope)).willReturn(userSuspended)
 
         // Call method and assert
         userRepo.getUserInfo(email)
@@ -307,17 +277,17 @@ class UserRepoTest {
     fun `getUserInfo should return userInfo if user is Activated`() = runBlocking<Unit> {
         val currentTimeInSeconds = Instant.now().epochSecond
         val email = "someEmailId"
-        val userEntityActivated = getApplicationUserEntity(
+        val userActivated = getApplicationUser(
             email = email,
-            accountStatus = AccountStatus.Activated.name,
-            roles = listOf(Roles.User.name),
+            accountStatus = AccountStatus.Activated,
+            roles = listOf(Roles.User),
             activationDateInSeconds = currentTimeInSeconds
         )
-        val expectedUserInfo = UserInfo(id = userEntityActivated.id, email = userEntityActivated.email)
+        val expectedUserInfo = UserInfo(id = userActivated.id, email = userActivated.email)
 
         // Stub
         given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
-        given(userSqlRepo.findById(email)).willReturn(Optional.of(userEntityActivated))
+        given(userDbImpl.getApplicationUser(email, scope)).willReturn(userActivated)
 
         // Call method and assert
         assertEquals(expectedUserInfo, userRepo.getUserInfo(email))
@@ -328,7 +298,7 @@ class UserRepoTest {
         val email = "someEmailId"
 
         // Stub
-        given(userSqlRepo.findById(email)).willReturn(Optional.empty())
+        given(userDbImpl.getApplicationUser(email, scope)).willReturn(null)
 
         // Call method and assert
         assertNull(userRepo.getApplicationUser(email))
@@ -338,41 +308,32 @@ class UserRepoTest {
     fun `getApplicationUser should return user when user is present in DB`() = runBlocking {
         val email = "someEmailId"
         val currentTimeInSeconds = Instant.now().epochSecond
-        val userEntityActivated = getApplicationUserEntity(
+        val userActivated = getApplicationUser(
             email = email,
-            accountStatus = AccountStatus.Activated.name,
-            roles = listOf(Roles.User.name),
-            activationDateInSeconds = currentTimeInSeconds
-        )
-        val expectedApplicationUser = ApplicationUser(
-            id = userEntityActivated.id,
-            email = userEntityActivated.email,
-            password = userEntityActivated.password,
-            roles = listOf(Roles.User),
             accountStatus = AccountStatus.Activated,
-            registrationDateInSeconds = userEntityActivated.registrationDateInSeconds,
-            activationDateInSeconds = userEntityActivated.activationDateInSeconds
+            roles = listOf(Roles.User),
+            registrationDateInSeconds = currentTimeInSeconds
         )
 
         // Stub
-        given(userSqlRepo.findById(email)).willReturn(Optional.of(userEntityActivated))
+        given(userDbImpl.getApplicationUser(email, scope)).willReturn(userActivated)
 
         // Call method and assert
-        assertEquals(expectedApplicationUser, userRepo.getApplicationUser(email))
+        assertEquals(userActivated, userRepo.getApplicationUser(email))
     }
 
-    private fun getApplicationUserEntity(
+    private fun getApplicationUser(
         id: String = "someUserId",
         email: String = "someEmailId",
         password: String = "somePassword",
-        roles: List<String> = emptyList(),
-        accountStatus: String = "",
+        roles: List<Roles> = emptyList(),
+        accountStatus: AccountStatus = AccountStatus.Activated,
         registrationDateInSeconds: Long = -1,
         firstName: String = "",
         lastName: String = "",
         nickname: String = "",
         age: Int = -1,
-        gender: String = Gender.Undisclosed.name,
+        gender: Gender = Gender.Undisclosed,
         houseNumber: String = "",
         streetName: String = "",
         postCode: String = "",
@@ -380,7 +341,7 @@ class UserRepoTest {
         country: String = "",
         activationDateInSeconds: Long = -1
     ) =
-        ApplicationUserEntity(
+        ApplicationUser(
             id = id,
             email = email,
             password = password,

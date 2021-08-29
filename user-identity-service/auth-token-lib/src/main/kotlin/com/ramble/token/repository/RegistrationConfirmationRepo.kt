@@ -1,42 +1,33 @@
 package com.ramble.token.repository
 
-import com.ramble.token.repository.persistence.RegistrationConfirmationTokenSqlRepo
+import com.ramble.token.model.InternalTokenStorageException
+import com.ramble.token.repository.persistence.RegistrationConfirmationTokenDbImpl
 import com.ramble.token.repository.persistence.entities.RegistrationConfirmationToken
-import com.ramble.token.value
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.withContext
+import com.ramble.token.util.AuthTokenCoroutineScopeBuilder
 import org.springframework.stereotype.Repository
 
 @Repository
-class RegistrationConfirmationRepo(private val registrationTokenSqlRepo: RegistrationConfirmationTokenSqlRepo) {
+class RegistrationConfirmationRepo(
+    private val registrationTokenSqlRepo: RegistrationConfirmationTokenDbImpl,
+    private val coroutineScopeBuilder: AuthTokenCoroutineScopeBuilder
+) {
 
+    @Throws(InternalTokenStorageException::class)
     internal suspend fun addRegistrationConfirmationToken(registrationConfirmationToken: RegistrationConfirmationToken): RegistrationConfirmationToken =
-        coroutineScope {
-            withContext(Dispatchers.IO) {
-                registrationTokenSqlRepo.save(registrationConfirmationToken)
-            }
-        }
+        registrationTokenSqlRepo.saveRegistrationConfirmationToken(
+            registrationConfirmationToken,
+            coroutineScopeBuilder.defaultIoScope
+        )
 
-    /**
-     * Return true if token deleted successfully.
-     */
+    @Throws(InternalTokenStorageException::class)
     internal suspend fun deleteRegistrationConfirmationToken(email: String) {
-        coroutineScope {
-            withContext(Dispatchers.IO) {
-                if (registrationTokenSqlRepo.existsById(email)) registrationTokenSqlRepo.deleteById(email)
-            }
-        }
+        val scope = coroutineScopeBuilder.defaultIoScope
+        if (registrationTokenSqlRepo.hasRegistrationConfirmationToken(email, scope))
+            registrationTokenSqlRepo.deleteRegistrationConfirmationToken(email, scope)
     }
 
-    /**
-     * Return RegistrationConfirmationToken for the userId.
-     */
+    @Throws(InternalTokenStorageException::class)
     internal suspend fun getRegistrationConfirmationToken(email: String): RegistrationConfirmationToken? =
-        coroutineScope {
-            withContext(Dispatchers.IO) {
-                registrationTokenSqlRepo.findById(email).value
-            }
-        }
+        registrationTokenSqlRepo.getRegistrationConfirmationToken(email, coroutineScopeBuilder.defaultIoScope)
 
 }

@@ -6,6 +6,7 @@ import com.ramble.identity.repo.UserRepo
 import com.ramble.identity.utils.TimeAndIdGenerator
 import com.ramble.token.AuthTokensService
 import com.ramble.token.model.AccessTokenIsInvalidException
+import com.ramble.token.model.InternalTokenStorageException
 import com.ramble.token.model.RefreshTokenIsInvalidException
 import kotlinx.coroutines.reactor.mono
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService
@@ -23,21 +24,25 @@ class UserInfoService(
     private val timeAndIdGenerator: TimeAndIdGenerator
 ) : ReactiveUserDetailsService {
 
-    @Throws(UserNotFoundException::class)
+    @Throws(UserNotFoundException::class, InternalServerException::class, InternalTokenStorageException::class)
     suspend fun getUserInfoResult(principal: Principal): UserInfo =
         getUserInfo(authTokensService.getAccessTokenClaims(principal)?.email ?: throw UserNotFoundException())
 
-    @Throws(UserNotFoundException::class, UserSuspendedException::class, UserNotActivatedException::class)
-    suspend fun getUserInfo(email: String): UserInfo = userRepo.getUserInfo(email)
+    @Throws(
+        UserNotFoundException::class, UserSuspendedException::class,
+        UserNotActivatedException::class, InternalServerException::class
+    )
+    suspend fun getUserInfo(email: String): UserInfo =
+        userRepo.getUserInfo(email)
 
-    @Throws(UsernameNotFoundException::class)
+    @Throws(UsernameNotFoundException::class, InternalServerException::class)
     override fun findByUsername(username: String?): Mono<UserDetails> = mono {
         if (username.isNullOrBlank()) throw UsernameNotFoundException(invalidUserId.errorMessage)
         val user = userRepo.getApplicationUser(username) ?: throw UsernameNotFoundException(invalidUserId.errorMessage)
         return@mono SpringUser(user.email, user.password, user.grantedAuthorities)
     }
 
-    @Throws(RefreshTokenIsInvalidException::class)
+    @Throws(RefreshTokenIsInvalidException::class, InternalTokenStorageException::class)
     suspend fun refreshToken(refreshTokenRequest: RefreshTokenRequest): LoginResponse {
         val now = timeAndIdGenerator.getCurrentTime()
         val userAuthInfo = authTokensService.refreshAuthToken(
@@ -51,7 +56,7 @@ class UserInfoService(
         )
     }
 
-    @Throws(AccessTokenIsInvalidException::class)
+    @Throws(AccessTokenIsInvalidException::class, InternalTokenStorageException::class)
     suspend fun logout(accessToken: String) {
         authTokensService.logout(accessToken, now = timeAndIdGenerator.getCurrentTime())
     }

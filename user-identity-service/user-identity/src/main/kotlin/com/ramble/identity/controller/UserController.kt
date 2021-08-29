@@ -1,6 +1,7 @@
 package com.ramble.identity.controller
 
 import com.ramble.identity.common.ErrorBody
+import com.ramble.identity.common.ErrorCode.SOMETHING_WENT_WRONG
 import com.ramble.identity.common.ErrorCode.USER_INFO_NOT_FOUND
 import com.ramble.identity.common.USER_INFO_API_BASE_PATH
 import com.ramble.identity.common.USER_INFO_ME_PATH
@@ -29,6 +30,11 @@ class UserController(private val userInfoService: UserInfoService) {
             ApiResponse(
                 responseCode = BAD_REQUEST,
                 description = "errorCode: $USER_INFO_NOT_FOUND",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
+            ),
+            ApiResponse(
+                responseCode = INTERNAL_SERVER_ERROR,
+                description = "errorCode: $SOMETHING_WENT_WRONG",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
             )]
     )

@@ -2,7 +2,7 @@ package com.ramble.identity.repo
 
 import com.ramble.identity.models.*
 import com.ramble.identity.repo.persistence.UserDbImpl
-import com.ramble.identity.utils.CoroutineScopeBuilder
+import com.ramble.identity.utils.UserIdentityCoroutineScopeBuilder
 import com.ramble.identity.utils.TimeAndIdGenerator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
@@ -19,7 +19,7 @@ class UserRepoTest {
 
     private val userDbImpl = mock(UserDbImpl::class.java)
     private val timeAndIdGenerator = mock(TimeAndIdGenerator::class.java)
-    private val coroutineScopeBuilder = mock(CoroutineScopeBuilder::class.java)
+    private val coroutineScopeBuilder = mock(UserIdentityCoroutineScopeBuilder::class.java)
     private val scope = mock(CoroutineScope::class.java)
 
     private val userRepo = UserRepo(userDbImpl, timeAndIdGenerator, coroutineScopeBuilder)

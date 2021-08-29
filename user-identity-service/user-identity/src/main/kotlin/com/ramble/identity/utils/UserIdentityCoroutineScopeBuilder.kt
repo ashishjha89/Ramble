@@ -6,7 +6,7 @@ import kotlinx.coroutines.Job
 import org.springframework.stereotype.Component
 
 @Component
-class CoroutineScopeBuilder {
+class UserIdentityCoroutineScopeBuilder {
 
     val defaultIoScope: CoroutineScope
         get() = CoroutineScope(Job() + Dispatchers.IO)

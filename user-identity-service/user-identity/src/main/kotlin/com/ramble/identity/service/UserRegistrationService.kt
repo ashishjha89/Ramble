@@ -10,6 +10,7 @@ import com.ramble.identity.repo.UserRepo
 import com.ramble.identity.service.validator.RegistrationRequestValidator
 import com.ramble.identity.utils.TimeAndIdGenerator
 import com.ramble.token.RegistrationConfirmationService
+import com.ramble.token.model.InternalTokenStorageException
 import com.ramble.token.repository.persistence.entities.RegistrationConfirmationToken
 import org.springframework.scheduling.annotation.Async
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -27,11 +28,9 @@ class UserRegistrationService(
 ) {
 
     @Throws(
-        UserAlreadyActivatedException::class,
-        UserSuspendedException::class,
-        EmailCredentialNotFoundException::class,
-        EmailSendingFailedException::class,
-        InvalidEmailException::class
+        UserAlreadyActivatedException::class, UserSuspendedException::class, EmailCredentialNotFoundException::class,
+        EmailSendingFailedException::class, InvalidEmailException::class,
+        InternalServerException::class, InternalTokenStorageException::class
     )
     suspend fun saveUser(
         registerUserRequest: RegisterUserRequest,
@@ -57,10 +56,9 @@ class UserRegistrationService(
     }
 
     @Throws(
-        UserNotFoundException::class,
-        UserAlreadyActivatedException::class,
-        UserSuspendedException::class,
-        InvalidRegistrationConfirmationToken::class
+        UserNotFoundException::class, UserAlreadyActivatedException::class,
+        UserSuspendedException::class, InvalidRegistrationConfirmationToken::class,
+        InternalServerException::class, InternalTokenStorageException::class
     )
     suspend fun confirmToken(token: String?): RegisteredUserResponse {
         val now = timeAndIdGenerator.getCurrentTime()

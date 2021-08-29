@@ -2,6 +2,7 @@ package com.ramble.token
 
 import com.ramble.token.config.TokenComponentBuilder
 import com.ramble.token.handler.RegistrationConfirmationTokenHandler
+import com.ramble.token.model.InternalTokenStorageException
 import com.ramble.token.repository.RegistrationConfirmationRepo
 import com.ramble.token.repository.persistence.entities.RegistrationConfirmationToken
 import org.springframework.stereotype.Service
@@ -24,6 +25,7 @@ class RegistrationConfirmationService(
     /**
      * Return newly created RegistrationConfirmationToken.
      */
+    @Throws(InternalTokenStorageException::class)
     suspend fun addRegistrationConfirmationToken(
         email: String,
         now: Instant,
@@ -41,6 +43,7 @@ class RegistrationConfirmationService(
     /**
      * Return RegistrationConfirmationToken if the token is still valid now.
      */
+    @Throws(InternalTokenStorageException::class)
     suspend fun processRegistrationConfirmationToken(
         registrationConfirmationToken: String,
         now: Instant

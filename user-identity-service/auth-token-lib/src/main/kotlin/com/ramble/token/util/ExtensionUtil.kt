@@ -1,4 +1,4 @@
-package com.ramble.token
+package com.ramble.token.util
 
 import java.util.*
 

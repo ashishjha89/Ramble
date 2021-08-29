@@ -5,6 +5,7 @@ import com.ramble.identity.common.ErrorCode.CLIENT_ID_HEADER_MISSING
 import com.ramble.identity.common.ErrorCode.EMAIL_IS_INVALID
 import com.ramble.identity.common.ErrorCode.EMAIL_SENDING_FAILED
 import com.ramble.identity.common.ErrorCode.REFRESH_TOKEN_IS_INVALID
+import com.ramble.identity.common.ErrorCode.SOMETHING_WENT_WRONG
 import com.ramble.identity.common.ErrorCode.UNAUTHORIZED_ACCESS
 import com.ramble.identity.common.ErrorCode.USER_ALREADY_ACTIVATED
 import com.ramble.identity.common.ErrorCode.USER_INFO_NOT_FOUND
@@ -66,6 +67,11 @@ class AuthController(
                 responseCode = FORBIDDEN,
                 description = "errorCode: $UNAUTHORIZED_ACCESS",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
+            ),
+            ApiResponse(
+                responseCode = INTERNAL_SERVER_ERROR,
+                description = "errorCode: $SOMETHING_WENT_WRONG",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
             )]
     )
     @Throws(AccessTokenIsInvalidException::class)
@@ -88,6 +94,11 @@ class AuthController(
             ApiResponse(
                 responseCode = FORBIDDEN,
                 description = "errorCode: $REFRESH_TOKEN_IS_INVALID",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
+            ),
+            ApiResponse(
+                responseCode = INTERNAL_SERVER_ERROR,
+                description = "errorCode: $SOMETHING_WENT_WRONG",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
             )]
     )
@@ -113,6 +124,11 @@ class AuthController(
             ApiResponse(
                 responseCode = FORBIDDEN,
                 description = "errorCodes: [$UNAUTHORIZED_ACCESS, $USER_ALREADY_ACTIVATED, $USER_IS_SUSPENDED]",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
+            ),
+            ApiResponse(
+                responseCode = INTERNAL_SERVER_ERROR,
+                description = "errorCode: $SOMETHING_WENT_WRONG",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
             )]
     )
@@ -141,6 +157,11 @@ class AuthController(
             ApiResponse(
                 responseCode = FORBIDDEN,
                 description = "errorCodes: [$USER_IS_SUSPENDED, $USER_NOT_ACTIVATED]",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
+            ),
+            ApiResponse(
+                responseCode = INTERNAL_SERVER_ERROR,
+                description = "errorCode: $SOMETHING_WENT_WRONG",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
             )]
     )

@@ -4,7 +4,7 @@ import com.ramble.identity.models.*
 import com.ramble.identity.repo.Email
 import com.ramble.identity.repo.persistence.entity.ApplicationUserEntity
 import com.ramble.identity.utils.valueOf
-import com.ramble.token.value
+import com.ramble.token.util.value
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -26,19 +26,10 @@ class UserDbImpl(private val userSqlRepo: UserSqlRepo) {
     ): ApplicationUser? =
         performDeferredTask(
             deferredTask = scope.async { userSqlRepo.findById(email).value?.toApplicationUser() },
-            timeoutInMilliseconds
+            timeoutInMilliseconds = timeoutInMilliseconds
         )
 
-    suspend fun deleteUser(
-        email: Email,
-        scope: CoroutineScope,
-        timeoutInMilliseconds: Long = SQL_TIMEOUT
-    ) =
-        performDeferredTask(
-            deferredTask = scope.async { userSqlRepo.deleteById(email) },
-            timeoutInMilliseconds
-        )
-
+    @Throws(InternalServerException::class)
     suspend fun save(
         applicationUser: ApplicationUser,
         scope: CoroutineScope,
@@ -48,7 +39,18 @@ class UserDbImpl(private val userSqlRepo: UserSqlRepo) {
             deferredTask = scope.async {
                 userSqlRepo.save(applicationUser.toApplicationUserEntity()).toApplicationUser()
             },
-            timeoutInMilliseconds
+            timeoutInMilliseconds = timeoutInMilliseconds
+        )
+
+    @Throws(InternalServerException::class)
+    suspend fun deleteUser(
+        email: Email,
+        scope: CoroutineScope,
+        timeoutInMilliseconds: Long = SQL_TIMEOUT
+    ) =
+        performDeferredTask(
+            deferredTask = scope.async { userSqlRepo.deleteById(email) },
+            timeoutInMilliseconds = timeoutInMilliseconds
         )
 
     private fun ApplicationUser.toApplicationUserEntity(): ApplicationUserEntity =

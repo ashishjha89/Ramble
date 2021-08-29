@@ -23,4 +23,6 @@ class RefreshTokenIsInvalidException : Exception()
 
 class AccessTokenIsInvalidException : Exception()
 
+class InternalTokenStorageException: Exception()
+
 internal data class TokenDuration(val issuedDate: Date, val expiryDate: Date)

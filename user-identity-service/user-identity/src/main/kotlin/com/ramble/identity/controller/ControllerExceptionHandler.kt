@@ -5,6 +5,7 @@ import com.ramble.email.EmailSendingFailedException
 import com.ramble.identity.common.*
 import com.ramble.identity.models.*
 import com.ramble.token.model.AccessTokenIsInvalidException
+import com.ramble.token.model.InternalTokenStorageException
 import com.ramble.token.model.RefreshTokenIsInvalidException
 import io.swagger.v3.oas.annotations.Hidden
 import org.springframework.http.HttpStatus
@@ -70,6 +71,11 @@ class ControllerExceptionHandler {
     @ExceptionHandler(InternalServerException::class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     fun internalServerException(): ResponseEntity<ErrorBody> =
+        ResponseEntity(internalServerError, HttpStatus.INTERNAL_SERVER_ERROR)
+
+    @ExceptionHandler(InternalTokenStorageException::class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    fun tokenStorageException(): ResponseEntity<ErrorBody> =
         ResponseEntity(internalServerError, HttpStatus.INTERNAL_SERVER_ERROR)
 
     @ExceptionHandler(Exception::class)

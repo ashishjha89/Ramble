@@ -1,21 +1,24 @@
 package com.ramble.token.repository
 
 import com.ramble.token.any
+import com.ramble.token.model.InternalTokenStorageException
 import com.ramble.token.model.RefreshTokenIsInvalidException
 import com.ramble.token.model.UserAuthInfo
-import com.ramble.token.repository.persistence.ClientRefreshTokenSqlRepo
-import com.ramble.token.repository.persistence.DisabledTokensRedisRepo
+import com.ramble.token.repository.persistence.DisabledTokensCacheImpl
+import com.ramble.token.repository.persistence.RefreshTokenDbImpl
 import com.ramble.token.repository.persistence.entities.ClientAuthInfo
 import com.ramble.token.repository.persistence.entities.ClientRefreshToken
 import com.ramble.token.repository.persistence.entities.ClientUserId
 import com.ramble.token.repository.persistence.entities.DisabledClientTokens
+import com.ramble.token.util.AuthTokenCoroutineScopeBuilder
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
+import org.junit.Before
 import org.junit.Test
 import org.mockito.BDDMockito.given
 import org.mockito.BDDMockito.verify
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.times
-import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
@@ -28,24 +31,38 @@ class AuthTokenRepoTest {
     private val refreshToken = "someRefreshToken"
     private val userAuthInfo = UserAuthInfo(userId, email, accessToken, refreshToken)
 
-    private val refreshTokenSqlRepo = mock(ClientRefreshTokenSqlRepo::class.java)
-    private val disabledTokensRedisRepo = mock(DisabledTokensRedisRepo::class.java)
+    private val refreshTokenDb = mock(RefreshTokenDbImpl::class.java)
+    private val disabledTokensCache = mock(DisabledTokensCacheImpl::class.java)
+    private val coroutineScopeBuilder = mock(AuthTokenCoroutineScopeBuilder::class.java)
+    private val ioCoroutineScope = mock(CoroutineScope::class.java)
 
-    private val authTokenRepo = AuthTokenRepo(refreshTokenSqlRepo, disabledTokensRedisRepo)
+    private val authTokenRepo = AuthTokenRepo(refreshTokenDb, disabledTokensCache, coroutineScopeBuilder)
+
+    @Before
+    fun setup() {
+        given(coroutineScopeBuilder.defaultIoScope).willReturn(ioCoroutineScope)
+    }
 
     @Test
     fun insertUserAuthInfoTest() = runBlocking {
         val expectedClientRefreshToken = ClientRefreshToken(refreshToken, accessToken, clientId)
 
         // Stub
-        given(refreshTokenSqlRepo.save(any())).willReturn(expectedClientRefreshToken)
+        given(refreshTokenDb.saveClientRefreshToken(any(), any())).willReturn(expectedClientRefreshToken)
 
         // Call method and assert
-        val clientRefreshToken = authTokenRepo.insertUserAuthInfo(clientId, userAuthInfo)
-        assertEquals(expectedClientRefreshToken.refreshToken, clientRefreshToken.refreshToken)
-        assertEquals(expectedClientRefreshToken.accessToken, clientRefreshToken.accessToken)
-        assertEquals(expectedClientRefreshToken.clientId, clientRefreshToken.clientId)
-        assertEquals(expectedClientRefreshToken.userId, clientRefreshToken.userId)
+        assertEquals(expectedClientRefreshToken, authTokenRepo.insertUserAuthInfo(clientId, userAuthInfo))
+    }
+
+    @Test(expected = InternalTokenStorageException::class)
+    fun `insertUserAuthInfoTest throws InternalTokenStorageException if db operation fails`() = runBlocking {
+        val expectedClientRefreshToken = ClientRefreshToken(refreshToken, accessToken, clientId)
+
+        // Stub
+        given(refreshTokenDb.saveClientRefreshToken(any(), any())).willThrow(InternalTokenStorageException())
+
+        // Call method and assert
+        assertEquals(expectedClientRefreshToken, authTokenRepo.insertUserAuthInfo(clientId, userAuthInfo))
     }
 
     @Test
@@ -55,30 +72,45 @@ class AuthTokenRepoTest {
         val clientAuthInfo = ClientAuthInfo(clientId, userId, accessToken)
 
         // Stub
-        given(refreshTokenSqlRepo.findById(clientUserId)).willReturn(Optional.of(clientRefreshToken))
+        given(refreshTokenDb.getClientRefreshToken(clientUserId, ioCoroutineScope))
+            .willReturn(clientRefreshToken)
 
         // Call method and assert
         assertEquals(clientAuthInfo, authTokenRepo.deleteOldAuthTokens(clientId, userId))
     }
 
     @Test(expected = RefreshTokenIsInvalidException::class)
-    fun `deleteOldAuthTokens when token is absent in Sql`() = runBlocking<Unit> {
-        val clientUserId = ClientUserId(clientId, userId)
+    fun `deleteOldAuthTokens should throw RefreshTokenIsInvalidException when token is absent in Sql`() =
+        runBlocking<Unit> {
+            val clientUserId = ClientUserId(clientId, userId)
 
-        // Stub
-        given(refreshTokenSqlRepo.findById(clientUserId)).willReturn(Optional.empty())
+            // Stub
+            given(refreshTokenDb.getClientRefreshToken(clientUserId, ioCoroutineScope)).willReturn(null)
 
-        // Call method and assert
-        authTokenRepo.deleteOldAuthTokens(clientId, userId)
-    }
+            // Call method and assert
+            authTokenRepo.deleteOldAuthTokens(clientId, userId)
+        }
+
+    @Test(expected = InternalTokenStorageException::class)
+    fun `deleteOldAuthTokens should throw InternalTokenStorageException when sql operation fails`() =
+        runBlocking<Unit> {
+            val clientUserId = ClientUserId(clientId, userId)
+
+            // Stub
+            given(refreshTokenDb.getClientRefreshToken(clientUserId, ioCoroutineScope))
+                .willThrow(InternalTokenStorageException())
+
+            // Call method and assert
+            authTokenRepo.deleteOldAuthTokens(clientId, userId)
+        }
 
     @Test
     fun `getExistingTokensForClient when token is present in Sql`() = runBlocking {
         val expectedClientRefreshToken = ClientRefreshToken(refreshToken, accessToken, clientId, userId)
 
         // Stub
-        given(refreshTokenSqlRepo.findById(ClientUserId(clientId, userAuthInfo.userId)))
-            .willReturn(Optional.of(expectedClientRefreshToken))
+        given(refreshTokenDb.getClientRefreshToken(ClientUserId(clientId, userAuthInfo.userId), ioCoroutineScope))
+            .willReturn(expectedClientRefreshToken)
 
         // Call method and assert
         val clientRefreshToken = authTokenRepo.getExistingTokensForClient(clientId, userAuthInfo)!!
@@ -91,7 +123,18 @@ class AuthTokenRepoTest {
     @Test
     fun `getExistingTokensForClient when token is absent in Sql`() = runBlocking {
         // Stub
-        given(refreshTokenSqlRepo.findById(ClientUserId(clientId, userAuthInfo.userId))).willReturn(Optional.empty())
+        given(refreshTokenDb.getClientRefreshToken(ClientUserId(clientId, userAuthInfo.userId), ioCoroutineScope))
+            .willReturn(null)
+
+        // Call method and assert
+        assertNull(authTokenRepo.getExistingTokensForClient(clientId, userAuthInfo))
+    }
+
+    @Test(expected = InternalTokenStorageException::class)
+    fun `getExistingTokensForClient should throw InternalTokenStorageException when Sql fails`() = runBlocking {
+        // Stub
+        given(refreshTokenDb.getClientRefreshToken(ClientUserId(clientId, userAuthInfo.userId), ioCoroutineScope))
+            .willThrow(InternalTokenStorageException())
 
         // Call method and assert
         assertNull(authTokenRepo.getExistingTokensForClient(clientId, userAuthInfo))
@@ -100,11 +143,9 @@ class AuthTokenRepoTest {
     @Test
     fun `getDisabledAccessTokensForClient when disabled tokens are present in Redis`() = runBlocking {
         val clientAuthInfo = ClientAuthInfo(clientId, userId, accessToken)
-        val disabledClientTokens = DisabledClientTokens(
-            id = clientId, disabledAccessTokens = listOf("disabled_1", "disabled_2")
-        )
         // Stub
-        given(disabledTokensRedisRepo.findById(clientId)).willReturn(Optional.of(disabledClientTokens))
+        given(disabledTokensCache.getDisabledTokens(clientId, ioCoroutineScope))
+            .willReturn(setOf("disabled_1", "disabled_2"))
 
         // Call method and assert
         assertEquals(setOf("disabled_1", "disabled_2"), authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo))
@@ -115,72 +156,134 @@ class AuthTokenRepoTest {
         val clientAuthInfo = ClientAuthInfo(clientId, userId, accessToken)
 
         // Stub
-        given(disabledTokensRedisRepo.findById(clientId)).willReturn(Optional.empty())
+        given(disabledTokensCache.getDisabledTokens(clientId, ioCoroutineScope)).willReturn(emptySet())
 
         // Call method and assert
         assertEquals(emptySet(), authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo))
     }
 
+    @Test(expected = InternalTokenStorageException::class)
+    fun `getDisabledAccessTokensForClient should throw InternalTokenStorageException when Redis operation fails`() =
+        runBlocking {
+            val clientAuthInfo = ClientAuthInfo(clientId, userId, accessToken)
+
+            // Stub
+            given(disabledTokensCache.getDisabledTokens(clientId, ioCoroutineScope))
+                .willThrow(InternalTokenStorageException())
+
+            // Call method and assert
+            assertEquals(emptySet(), authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo))
+        }
+
     @Test
     fun `updateDisabledAccessTokensForClient when null tokens passed and clientId existed in Redis`() = runBlocking {
         // Stub
-        given(disabledTokensRedisRepo.existsById(clientId)).willReturn(true)
+        given(disabledTokensCache.hasDisabledToken(clientId, ioCoroutineScope)).willReturn(true)
 
         // Call method
         authTokenRepo.updateDisabledAccessTokensForClient(clientId, null)
 
         // Verify
-        verify(disabledTokensRedisRepo).deleteById(clientId)
+        verify(disabledTokensCache).deleteDisabledToken(clientId, ioCoroutineScope)
     }
 
     @Test
     fun `updateDisabledAccessTokensForClient when null tokens passed and clientId did not exist in Redis`() =
         runBlocking {
             // Stub
-            given(disabledTokensRedisRepo.existsById(clientId)).willReturn(false)
+            given(disabledTokensCache.hasDisabledToken(clientId, ioCoroutineScope)).willReturn(false)
 
             // Call method
             authTokenRepo.updateDisabledAccessTokensForClient(clientId, null)
 
             // Verify
-            verify(disabledTokensRedisRepo, times(0)).deleteById(clientId)
+            verify(disabledTokensCache, times(0)).deleteDisabledToken(clientId, ioCoroutineScope)
         }
 
     @Test
     fun `updateDisabledAccessTokensForClient when empty tokens passed and clientId existed in Redis`() = runBlocking {
         // Stub
-        given(disabledTokensRedisRepo.existsById(clientId)).willReturn(true)
+        given(disabledTokensCache.hasDisabledToken(clientId, ioCoroutineScope)).willReturn(true)
 
         // Call method
         authTokenRepo.updateDisabledAccessTokensForClient(clientId, emptySet())
 
         // Verify
-        verify(disabledTokensRedisRepo).deleteById(clientId)
+        verify(disabledTokensCache).deleteDisabledToken(clientId, ioCoroutineScope)
     }
 
     @Test
     fun `updateDisabledAccessTokensForClient when empty tokens passed and clientId did not exist in Redis`() =
         runBlocking {
             // Stub
-            given(disabledTokensRedisRepo.existsById(clientId)).willReturn(false)
+            given(disabledTokensCache.hasDisabledToken(clientId, ioCoroutineScope)).willReturn(false)
 
             // Call method
             authTokenRepo.updateDisabledAccessTokensForClient(clientId, emptySet())
 
             // Verify
-            verify(disabledTokensRedisRepo, times(0)).deleteById(clientId)
+            verify(disabledTokensCache, times(0)).deleteDisabledToken(clientId, ioCoroutineScope)
+        }
+
+    @Test(expected = InternalTokenStorageException::class)
+    fun `updateDisabledAccessTokens should throw Exception when tokens not passed and Redis fails in hasDisabledToken`() =
+        runBlocking<Unit> {
+            val disabledClientTokens = DisabledClientTokens(clientId, emptyList())
+            // Stub
+            given(disabledTokensCache.hasDisabledToken(clientId, ioCoroutineScope))
+                .willThrow(InternalTokenStorageException())
+
+            // Call method
+            authTokenRepo.updateDisabledAccessTokensForClient(clientId, emptySet())
+
+            // Verify
+            verify(disabledTokensCache).saveDisabledToken(disabledClientTokens, ioCoroutineScope)
+        }
+
+    @Test(expected = InternalTokenStorageException::class)
+    fun `updateDisabledAccessTokens should throw Exception when tokens not passed and Redis fails deleting old existing tokens`() =
+        runBlocking<Unit> {
+            val disabledClientTokens = DisabledClientTokens(clientId, emptyList())
+            // Stub
+            given(disabledTokensCache.hasDisabledToken(clientId, ioCoroutineScope))
+                .willReturn(true)
+            given(disabledTokensCache.deleteDisabledToken(clientId, ioCoroutineScope))
+                .willThrow(InternalTokenStorageException())
+
+            // Call method
+            authTokenRepo.updateDisabledAccessTokensForClient(clientId, emptySet())
+
+            // Verify
+            verify(disabledTokensCache).saveDisabledToken(disabledClientTokens, ioCoroutineScope)
         }
 
     @Test
-    fun `updateDisabledAccessTokensForClient when some tokens passed`() = runBlocking<Unit> {
+    fun `updateDisabledAccessTokens when some tokens passed`() = runBlocking<Unit> {
         val disabledClientTokens = DisabledClientTokens(clientId, listOf(accessToken))
         // Stub
-        given(disabledTokensRedisRepo.save(disabledClientTokens)).willReturn(disabledClientTokens)
+        given(disabledTokensCache.saveDisabledToken(disabledClientTokens, ioCoroutineScope)).willReturn(
+            disabledClientTokens
+        )
 
         // Call method
         authTokenRepo.updateDisabledAccessTokensForClient(clientId, setOf(accessToken))
 
         // Verify
-        verify(disabledTokensRedisRepo).save(disabledClientTokens)
+        verify(disabledTokensCache).saveDisabledToken(disabledClientTokens, ioCoroutineScope)
     }
+
+    @Test(expected = InternalTokenStorageException::class)
+    fun `updateDisabledAccessTokens should throw Exception when tokens passed and Redis fails in saving it`() =
+        runBlocking<Unit> {
+            val disabledClientTokens = DisabledClientTokens(clientId, listOf(accessToken))
+            // Stub
+            given(disabledTokensCache.saveDisabledToken(disabledClientTokens, ioCoroutineScope))
+                .willThrow(InternalTokenStorageException())
+
+            // Call method
+            authTokenRepo.updateDisabledAccessTokensForClient(clientId, setOf(accessToken))
+
+            // Verify
+            verify(disabledTokensCache).saveDisabledToken(disabledClientTokens, ioCoroutineScope)
+        }
 }

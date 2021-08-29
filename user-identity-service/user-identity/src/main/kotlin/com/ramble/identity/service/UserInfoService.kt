@@ -25,15 +25,31 @@ class UserInfoService(
 ) : ReactiveUserDetailsService {
 
     @Throws(UserNotFoundException::class, InternalServerException::class, InternalTokenStorageException::class)
-    suspend fun getUserInfoResult(principal: Principal): UserInfo =
-        getUserInfo(authTokensService.getAccessTokenClaims(principal)?.email ?: throw UserNotFoundException())
+    suspend fun getMyUserInfo(principal: Principal): UserInfo =
+        getMyUserInfo(authTokensService.getAccessTokenClaims(principal)?.email ?: throw UserNotFoundException())
 
     @Throws(
         UserNotFoundException::class, UserSuspendedException::class,
         UserNotActivatedException::class, InternalServerException::class
     )
-    suspend fun getUserInfo(email: String): UserInfo =
+    suspend fun getMyUserInfo(email: String): UserInfo =
         userRepo.getUserInfo(email)
+
+    @Throws(
+        UserNotFoundException::class, UserSuspendedException::class,
+        UserNotActivatedException::class, InternalServerException::class
+    )
+    suspend fun getUserProfile(email: String): UserProfile {
+        val userInfo = userRepo.getUserInfo(email)
+        return UserProfile(
+            email = userInfo.email,
+            firstName = userInfo.firstName,
+            lastName = userInfo.lastName,
+            fullName = userInfo.fullName,
+            age = userInfo.age,
+            gender = userInfo.gender
+        )
+    }
 
     @Throws(UsernameNotFoundException::class, InternalServerException::class)
     override fun findByUsername(username: String?): Mono<UserDetails> = mono {

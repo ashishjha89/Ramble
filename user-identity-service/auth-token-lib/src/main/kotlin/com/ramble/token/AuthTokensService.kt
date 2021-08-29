@@ -40,7 +40,7 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
         issuedInstant: Instant = Instant.now(),
         accessTokenExpiryDurationAmount: Long = 30,
         accessTokenExpiryDurationUnit: ChronoUnit = ChronoUnit.MINUTES,
-        refreshTokenExpiryDurationAmount: Long = 356,
+        refreshTokenExpiryDurationAmount: Long = 365,
         refreshTokenExpiryDurationUnit: ChronoUnit = ChronoUnit.DAYS
     ): UserAuthInfo {
         val userAuthInfo = UserAuthInfo(
@@ -76,7 +76,7 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
         now: Instant,
         accessTokenExpiryDurationAmount: Long = 30,
         accessTokenExpiryDurationUnit: ChronoUnit = ChronoUnit.MINUTES,
-        refreshTokenExpiryDurationAmount: Long = 356,
+        refreshTokenExpiryDurationAmount: Long = 365,
         refreshTokenExpiryDurationUnit: ChronoUnit = ChronoUnit.DAYS
     ): UserAuthInfo? {
         // 1. Get clientId and userId from RefreshToken

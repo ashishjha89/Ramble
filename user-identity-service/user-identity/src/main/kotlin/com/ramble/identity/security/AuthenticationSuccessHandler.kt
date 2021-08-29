@@ -32,7 +32,7 @@ class AuthenticationSuccessHandler(
         val email = authentication?.name ?: throw InternalServerException()
 
         try {
-            val userId = userInfoService.getUserInfo(email).id
+            val userId = userInfoService.getMyUserInfo(email).id
             val authToken = authTokensService.generateUserAuthToken(authentication.authorities, deviceId, userId, email)
             val loginResponse = LoginResponse(userId, authToken.accessToken, authToken.refreshToken)
             response.also {

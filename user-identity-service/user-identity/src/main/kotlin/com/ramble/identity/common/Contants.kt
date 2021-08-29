@@ -18,6 +18,8 @@ const val LOGOUT_PATH = "/logout"
 
 const val USER_INFO_ME_PATH = "/me"
 
+const val USER_PROFILE_PATH = "/user"
+
 private const val USER_REGISTER_CONFIRM_PATH = "/confirm"
 
 const val USER_REGISTRATION_CONFIRM_PATH = "$USER_REGISTER_PATH$USER_REGISTER_CONFIRM_PATH" // -> /register/confirm

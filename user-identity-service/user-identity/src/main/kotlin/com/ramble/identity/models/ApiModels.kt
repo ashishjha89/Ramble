@@ -1,5 +1,7 @@
 package com.ramble.identity.models
 
+import com.fasterxml.jackson.annotation.JsonInclude
+
 data class RegisterUserRequest(
     val email: String,
     val password: String,
@@ -49,6 +51,7 @@ data class LoginResponse(val userId: String, val accessToken: String, val refres
 
 data class RefreshTokenRequest(val refreshToken: String? = null)
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class UserInfo(
     val id: String,
     val email: String,
@@ -64,4 +67,15 @@ data class UserInfo(
     val city: String? = null,
     val country: String? = null,
     val fullAddress: String? = null
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UserProfile(
+    val email: String,
+    val firstName: String? = null,
+    val lastName: String? = null,
+    val nickname: String? = null,
+    val fullName: String? = null,
+    val age: Int? = null,
+    val gender: String? = Gender.Undisclosed.name
 )

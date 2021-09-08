@@ -7,9 +7,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories
 
 @SpringBootApplication(scanBasePackages = ["com.ramble"])
-@EnableRedisRepositories(basePackages = ["com.ramble.token"])
+@EnableRedisRepositories(basePackages = ["com.ramble.accesstoken"])
 @EnableJpaRepositories(basePackages = ["com.ramble.token", "com.ramble.identity"])
-@EntityScan(value = ["com.ramble.token.*", "com.ramble.identity.*"])
+@EntityScan(value = ["com.ramble.token.*", "com.ramble.accesstoken.*", "com.ramble.identity.*"])
 class IdentityServiceApplication
 
 fun main(args: Array<String>) {

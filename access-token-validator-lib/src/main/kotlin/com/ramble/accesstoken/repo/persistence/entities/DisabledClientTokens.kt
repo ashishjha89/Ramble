@@ -1,7 +1,7 @@
-package com.ramble.token.repository.persistence.entities
+package com.ramble.accesstoken.repo.persistence.entities
 
+import org.springframework.data.annotation.Id
 import org.springframework.data.redis.core.RedisHash
-import javax.persistence.Id
 
 @RedisHash("DisabledClientTokens")
 data class DisabledClientTokens(

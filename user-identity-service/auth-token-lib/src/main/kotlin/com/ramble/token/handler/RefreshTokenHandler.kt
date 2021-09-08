@@ -1,6 +1,6 @@
 package com.ramble.token.handler
 
-import com.ramble.token.handler.helper.TokenClaimsMapGenerator
+import com.ramble.token.handler.helper.RefreshTokenClaimsMapGenerator
 import com.ramble.token.handler.helper.TokenDurationGenerator
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.JwtBuilder
@@ -14,10 +14,10 @@ import javax.crypto.SecretKey
 internal class RefreshTokenHandler(
     private val jwtKey: SecretKey,
     private val tokenDurationGenerator: TokenDurationGenerator,
-    private val tokenClaimsMapGenerator: TokenClaimsMapGenerator
+    private val tokenClaimsMapGenerator: RefreshTokenClaimsMapGenerator
 ) {
 
-    fun generateToken(
+    fun generateRefreshToken(
         clientId: String,
         userId: String,
         issuedInstant: Instant,
@@ -43,10 +43,10 @@ internal class RefreshTokenHandler(
                 && !getClientIdFromToken(token, parser).isNullOrBlank()
 
     fun getUserIdFromToken(token: String, parser: JwtParser): String? =
-        getClaimsFromRefreshToken(token, parser)?.get(TokenClaimsMapGenerator.USER_ID) as? String
+        getClaimsFromRefreshToken(token, parser)?.get(RefreshTokenClaimsMapGenerator.USER_ID) as? String
 
     fun getClientIdFromToken(token: String, parser: JwtParser): String? =
-        getClaimsFromRefreshToken(token, parser)?.get(TokenClaimsMapGenerator.CLIENT_ID) as? String
+        getClaimsFromRefreshToken(token, parser)?.get(RefreshTokenClaimsMapGenerator.CLIENT_ID) as? String
 
     private fun getExpirationDateFromToken(token: String, parser: JwtParser): Date? =
         getClaimsFromRefreshToken(token, parser)?.expiration

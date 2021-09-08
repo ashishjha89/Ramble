@@ -7,11 +7,7 @@ import org.springframework.context.annotation.Configuration
 
 @ConstructorBinding
 @ConfigurationProperties(prefix = "jwt")
-data class JwtConfigProperties(
-    val signingKeyAccessToken: String,
-    val signingKeyRefreshToken: String,
-    val signingKeyRegistrationToken: String
-)
+data class JwtConfigProperties(val signingKeyRefreshToken: String, val signingKeyRegistrationToken: String)
 
 @Configuration
 @EnableConfigurationProperties(JwtConfigProperties::class)

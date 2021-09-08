@@ -39,6 +39,11 @@
             <artifactId>email-sender-lib</artifactId>
             <version>1.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.ramble.accesstoken</groupId>
+            <artifactId>access-token-validator-lib</artifactId>
+            <version>1.0</version>
+        </dependency>
 
         <!-- KOTLIN -->
         <dependency>

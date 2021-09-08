@@ -1,11 +1,11 @@
 package com.ramble.identity.service
 
+import com.ramble.accesstoken.model.AccessClaims
 import com.ramble.identity.common.invalidUserId
 import com.ramble.identity.models.*
 import com.ramble.identity.repo.UserRepo
 import com.ramble.identity.utils.TimeAndIdGenerator
 import com.ramble.token.AuthTokensService
-import com.ramble.token.model.AccessClaims
 import com.ramble.token.model.AccessTokenIsInvalidException
 import com.ramble.token.model.RefreshTokenIsInvalidException
 import com.ramble.token.model.UserAuthInfo

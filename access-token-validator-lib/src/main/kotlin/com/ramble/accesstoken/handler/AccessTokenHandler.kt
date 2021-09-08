@@ -1,16 +1,14 @@
-package com.ramble.token.handler
+package com.ramble.accesstoken.handler
 
-import com.ramble.token.handler.helper.TokenClaimsMapGenerator
-import com.ramble.token.handler.helper.TokenClaimsMapGenerator.Companion.CLIENT_ID
-import com.ramble.token.handler.helper.TokenClaimsMapGenerator.Companion.ROLES
-import com.ramble.token.handler.helper.TokenClaimsMapGenerator.Companion.USER_ID
-import com.ramble.token.handler.helper.TokenDurationGenerator
-import com.ramble.token.model.AccessClaims
+import com.ramble.accesstoken.handler.helper.TokenClaimsMapGenerator
+import com.ramble.accesstoken.handler.helper.TokenClaimsMapGenerator.Companion.CLIENT_ID
+import com.ramble.accesstoken.handler.helper.TokenClaimsMapGenerator.Companion.ROLES
+import com.ramble.accesstoken.handler.helper.TokenClaimsMapGenerator.Companion.USER_ID
+import com.ramble.accesstoken.handler.helper.TokenDurationGenerator
+import com.ramble.accesstoken.model.AccessClaims
 import io.jsonwebtoken.*
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
-import java.security.Principal
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
@@ -44,7 +42,7 @@ internal class AccessTokenHandler(
             .compact()
     }
 
-    fun getTokenClaims(token: String?, parser: JwtParser, now: Instant): AccessClaims? {
+    fun getAccessClaims(token: String?, parser: JwtParser, now: Instant): AccessClaims? {
         if (token == null || !isValidToken(token, parser, now)) return null
         return AccessClaims(
             clientId = getClientIdFromToken(token, parser) ?: return null,
@@ -55,9 +53,9 @@ internal class AccessTokenHandler(
         )
     }
 
-    fun getPrincipalClaims(principal: Principal): AccessClaims? {
-        val claims = principalClaims(principal) ?: return null
-        val authorities = getAuthorities(principal) ?: return null
+    fun getAccessClaims(claims: Claims?, authorities: List<GrantedAuthority>?): AccessClaims? {
+        claims ?: return null
+        authorities ?: return null
         val clientId = getClientId(claims) ?: return null
         val userId = getUserId(claims) ?: return null
         val email = claims.subject ?: return null
@@ -75,13 +73,12 @@ internal class AccessTokenHandler(
                 && !getEmailFromToken(token, parser).isNullOrBlank()
                 && !getClientIdFromToken(token, parser).isNullOrBlank()
 
-    private fun getClaimsFromToken(token: String, parser: JwtParser): Claims? {
-        return try {
+    private fun getClaimsFromToken(token: String, parser: JwtParser): Claims? =
+        try {
             parser.parseClaimsJws(token)?.body
         } catch (e: JwtException) {
             null
         }
-    }
 
     @Suppress("UNCHECKED_CAST")
     fun getRolesFromToken(token: String, parser: JwtParser): List<GrantedAuthority>? =
@@ -102,29 +99,10 @@ internal class AccessTokenHandler(
     private fun isTokenExpired(token: String, parser: JwtParser, now: Instant) =
         getExpirationDateFromToken(token, parser)?.before(Date.from(now)) ?: false
 
-    private fun principalClaims(principal: Principal): Claims? {
-        if (principal is UsernamePasswordAuthenticationToken) {
-            val claims = principal.principal
-            if (claims is Claims) {
-                return claims
-            }
-        }
-        return null
-    }
+    private fun getClientId(claims: Claims): String? =
+        claims[CLIENT_ID].takeIf { it is String }?.toString()
 
-    private fun getAuthorities(principal: Principal): List<GrantedAuthority>? {
-        if (principal is UsernamePasswordAuthenticationToken) {
-            return principal.authorities?.toList()
-        }
-        return null
-    }
-
-    private fun getClientId(claims: Claims): String? {
-        return claims[CLIENT_ID].takeIf { it is String }?.toString()
-    }
-
-    private fun getUserId(claims: Claims): String? {
-        return claims[USER_ID].takeIf { it is String }?.toString()
-    }
+    private fun getUserId(claims: Claims): String? =
+        claims[USER_ID].takeIf { it is String }?.toString()
 
 }

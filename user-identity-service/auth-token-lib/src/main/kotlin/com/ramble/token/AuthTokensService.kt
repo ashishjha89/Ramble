@@ -1,13 +1,17 @@
 package com.ramble.token
 
+import com.ramble.accesstoken.AccessTokenValidatorService
+import com.ramble.accesstoken.model.AccessClaims
 import com.ramble.token.config.TokenComponentBuilder
-import com.ramble.token.handler.AccessTokenHandler
 import com.ramble.token.handler.RefreshTokenHandler
 import com.ramble.token.handler.helper.UsernamePasswordAuthTokenTokenGenerator
-import com.ramble.token.model.*
+import com.ramble.token.model.AccessTokenIsInvalidException
+import com.ramble.token.model.InternalTokenStorageException
+import com.ramble.token.model.RefreshTokenIsInvalidException
+import com.ramble.token.model.UserAuthInfo
 import com.ramble.token.repository.AuthTokenRepo
-import com.ramble.token.repository.persistence.entities.ClientAuthInfo
 import io.jsonwebtoken.Claims
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.stereotype.Service
 import java.security.Principal
@@ -16,15 +20,15 @@ import java.time.temporal.ChronoUnit
 import org.springframework.security.core.Authentication as SpringAuthentication
 
 @Service
-class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponentBuilder: TokenComponentBuilder) {
-
-    private val jwtParserAccessToken = tokenComponentBuilder.jwtParserAccessToken()
+class AuthTokensService(
+    private val authTokenRepo: AuthTokenRepo,
+    private val tokenValidatorService: AccessTokenValidatorService,
+    tokenComponentBuilder: TokenComponentBuilder
+) {
 
     private val jwtParserRefreshToken = tokenComponentBuilder.jwtParserRefreshToken()
 
     private val jwtBuilder = tokenComponentBuilder.jwtBuilder()
-
-    private val accessTokenHandler: AccessTokenHandler = tokenComponentBuilder.accessTokenHandler()
 
     private val refreshTokenHandler: RefreshTokenHandler = tokenComponentBuilder.refreshTokenHandler()
 
@@ -46,17 +50,16 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
         val userAuthInfo = UserAuthInfo(
             userId = userId,
             email = email,
-            accessToken = accessTokenHandler.generateToken(
+            accessToken = tokenValidatorService.generateAccessToken(
                 authorities = authorities,
                 clientId = clientId,
                 userId = userId,
                 email = email,
                 issuedInstant = issuedInstant,
                 expiryDurationAmount = accessTokenExpiryDurationAmount,
-                expiryDurationUnit = accessTokenExpiryDurationUnit,
-                jwtBuilder = jwtBuilder
+                expiryDurationUnit = accessTokenExpiryDurationUnit
             ),
-            refreshToken = refreshTokenHandler.generateToken(
+            refreshToken = refreshTokenHandler.generateRefreshToken(
                 clientId = clientId,
                 userId = userId,
                 issuedInstant = issuedInstant,
@@ -65,7 +68,8 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
                 jwtBuilder = jwtBuilder
             )
         )
-        disableOldAccessTokens(clientId, userAuthInfo, issuedInstant)
+        val existingToken = authTokenRepo.getExistingTokensForClient(clientId, userAuthInfo)
+        disableAccessToken(clientId, existingToken?.accessToken, issuedInstant)
         authTokenRepo.insertUserAuthInfo(clientId, userAuthInfo)
         return userAuthInfo
     }
@@ -92,20 +96,15 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
         if (!refreshTokenHandler.isValidToken(refreshToken, jwtParserRefreshToken, now))
             throw RefreshTokenIsInvalidException()
 
-        // 4a) Insert access-token for above refresh-token in disabled list.
-        // 4b) Clean stale access-tokens for this client.
+        // 4) Clean old access-token for this client.
         val accessToken = clientAuthInfo.accessToken
-        val disabledAccessTokens = authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo).plus(accessToken)
-        val validDisabledAccessTokens = disabledAccessTokens.filter {
-            accessTokenHandler.isValidToken(token = it, parser = jwtParserAccessToken, now = now)
-        }.toSet()
-        authTokenRepo.updateDisabledAccessTokensForClient(clientAuthInfo.clientId, validDisabledAccessTokens)
+        disableAccessToken(clientAuthInfo.clientId, accessToken, now)
 
         // 5. Now, generate new auth-tokens
-        val clientId = accessTokenHandler.getClientIdFromToken(accessToken, jwtParserAccessToken) ?: return null
-        val userId = accessTokenHandler.getUserIdFromToken(accessToken, jwtParserAccessToken) ?: return null
-        val email = accessTokenHandler.getEmailFromToken(accessToken, jwtParserAccessToken) ?: return null
-        val roles = accessTokenHandler.getRolesFromToken(accessToken, jwtParserAccessToken) ?: return null
+        val clientId = tokenValidatorService.getClientIdFromToken(accessToken) ?: return null
+        val userId = tokenValidatorService.getUserIdFromToken(accessToken) ?: return null
+        val email = tokenValidatorService.getEmailFromToken(accessToken) ?: return null
+        val roles = tokenValidatorService.getRolesFromToken(accessToken) ?: return null
 
         return generateUserAuthToken(
             authorities = roles,
@@ -121,67 +120,46 @@ class AuthTokensService(private val authTokenRepo: AuthTokenRepo, tokenComponent
     }
 
     @Throws(InternalTokenStorageException::class)
-    suspend fun getAccessTokenClaims(accessToken: String?, now: Instant = Instant.now()): AccessClaims? {
-        accessToken ?: return null
-        // 1. Check if token is of correct format
-        val accessClaims = accessTokenHandler.getTokenClaims(accessToken, jwtParserAccessToken, now) ?: return null
-
-        // 2. Check if token is not in disabled-token-list
-        val disabledTokens = authTokenRepo.getDisabledAccessTokensForClient(
-            ClientAuthInfo(
-                clientId = accessClaims.clientId,
-                userId = accessClaims.userId,
-                accessToken = accessToken
-            )
-        )
-        return if (!disabledTokens.contains(accessToken)) accessClaims else null
-    }
-
-    @Throws(AccessTokenIsInvalidException::class, InternalTokenStorageException::class)
-    suspend fun logout(accessToken: String, now: Instant) {
-        val clientId = accessTokenHandler.getClientIdFromToken(accessToken, jwtParserAccessToken)
-        val userId = accessTokenHandler.getUserIdFromToken(accessToken, jwtParserAccessToken)
-        if (clientId == null || userId == null) throw AccessTokenIsInvalidException()
-        val clientAuthInfo = ClientAuthInfo(clientId, userId, accessToken)
-
-        // Get existing disabled tokens for the client.
-        val disabledTokens = authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)
-
-        // Throw error if current accessToken is disabled!
-        if (disabledTokens.contains(accessToken)) throw AccessTokenIsInvalidException()
-
-        // Add current accessToken in disabled accessTokens for client with .
-        updateDisabledAccessTokensForClient(
-            disabledTokens = disabledTokens.plus(accessToken), clientAuthInfo = clientAuthInfo, now = now
-        )
-    }
+    suspend fun getAccessTokenClaims(accessToken: String?, now: Instant = Instant.now()): AccessClaims? =
+        tokenValidatorService.getClaimsFromAccessToken(accessToken, now)
 
     fun getAccessTokenClaims(principal: Principal): AccessClaims? =
-        accessTokenHandler.getPrincipalClaims(principal)
+        tokenValidatorService.getAccessClaims(principalClaims(principal), authorities(principal))
+
+    @Throws(InternalTokenStorageException::class, AccessTokenIsInvalidException::class)
+    suspend fun logout(accessToken: String, now: Instant) {
+        val clientId = tokenValidatorService.getClientIdFromToken(accessToken) ?: throw AccessTokenIsInvalidException()
+        disableAccessToken(clientId, accessToken, now)
+    }
 
     fun springAuthentication(claims: Claims, authorities: List<GrantedAuthority>): SpringAuthentication =
         usernamePasswordAuthTokenTokenGenerator.getUsernamePasswordAuthenticationToken(claims, authorities)
 
     @Throws(InternalTokenStorageException::class)
-    private suspend fun disableOldAccessTokens(clientId: String, userAuthInfo: UserAuthInfo, now: Instant) {
-        val existingToken = authTokenRepo.getExistingTokensForClient(clientId, userAuthInfo) ?: return
-        val clientAuthInfo = ClientAuthInfo(clientId, userAuthInfo.userId, userAuthInfo.accessToken)
-        val disabledTokens = authTokenRepo.getDisabledAccessTokensForClient(clientAuthInfo)
-        updateDisabledAccessTokensForClient(
-            disabledTokens = disabledTokens.plus(existingToken.accessToken), clientAuthInfo = clientAuthInfo, now = now
-        )
+    suspend fun disableAccessToken(clientId: String, accessToken: String?, now: Instant) {
+        accessToken ?: return
+        try {
+            tokenValidatorService.disableAccessToken(clientId, accessToken, now)
+        } catch (e: Exception) {
+            throw InternalTokenStorageException()
+        }
     }
 
-    @Throws(InternalTokenStorageException::class)
-    private suspend fun updateDisabledAccessTokensForClient(
-        disabledTokens: Set<String>,
-        clientAuthInfo: ClientAuthInfo,
-        now: Instant
-    ) {
-        val validDisabledAccessTokens = disabledTokens.filter {
-            accessTokenHandler.isValidToken(token = it, parser = jwtParserAccessToken, now = now)
-        }.toSet()
-        authTokenRepo.updateDisabledAccessTokensForClient(clientAuthInfo.clientId, validDisabledAccessTokens)
+    private fun principalClaims(principal: Principal): Claims? {
+        if (principal is UsernamePasswordAuthenticationToken) {
+            val claims = principal.principal
+            if (claims is Claims) {
+                return claims
+            }
+        }
+        return null
+    }
+
+    private fun authorities(principal: Principal): List<GrantedAuthority>? {
+        if (principal is UsernamePasswordAuthenticationToken) {
+            return principal.authorities?.toList()
+        }
+        return null
     }
 
 }

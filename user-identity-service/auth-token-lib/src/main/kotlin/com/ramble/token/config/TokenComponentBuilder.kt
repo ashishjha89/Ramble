@@ -1,9 +1,8 @@
 package com.ramble.token.config
 
-import com.ramble.token.handler.AccessTokenHandler
 import com.ramble.token.handler.RefreshTokenHandler
 import com.ramble.token.handler.RegistrationConfirmationTokenHandler
-import com.ramble.token.handler.helper.TokenClaimsMapGenerator
+import com.ramble.token.handler.helper.RefreshTokenClaimsMapGenerator
 import com.ramble.token.handler.helper.TokenDurationGenerator
 import com.ramble.token.handler.helper.UsernamePasswordAuthTokenTokenGenerator
 import io.jsonwebtoken.Jwts
@@ -15,8 +14,6 @@ class TokenComponentBuilder(jwtTokenConfig: JwtTokenConfig) {
 
     private val jwtTokenProperties = jwtTokenConfig.jwtConfigProperties
 
-    private val jwtKeyAccessToken = Keys.hmacShaKeyFor(jwtTokenProperties.signingKeyAccessToken.toByteArray())
-
     private val jwtKeyRefreshToken = Keys.hmacShaKeyFor(jwtTokenProperties.signingKeyRefreshToken.toByteArray())
 
     private val jwtKeyRegistrationToken =
@@ -24,20 +21,11 @@ class TokenComponentBuilder(jwtTokenConfig: JwtTokenConfig) {
 
     private val tokenDurationGenerator = TokenDurationGenerator()
 
-    private val tokenClaimsMapGenerator = TokenClaimsMapGenerator()
-
-    internal fun accessTokenHandler(): AccessTokenHandler =
-        AccessTokenHandler(
-            jwtKey = jwtKeyAccessToken,
-            tokenDurationGenerator = tokenDurationGenerator,
-            tokenClaimsMapGenerator = tokenClaimsMapGenerator
-        )
-
     internal fun refreshTokenHandler(): RefreshTokenHandler =
         RefreshTokenHandler(
             jwtKey = jwtKeyRefreshToken,
             tokenDurationGenerator = tokenDurationGenerator,
-            tokenClaimsMapGenerator = tokenClaimsMapGenerator
+            tokenClaimsMapGenerator = RefreshTokenClaimsMapGenerator()
         )
 
     internal fun registrationConfirmationTokenHandler(): RegistrationConfirmationTokenHandler =
@@ -48,8 +36,6 @@ class TokenComponentBuilder(jwtTokenConfig: JwtTokenConfig) {
 
     internal fun usernamePasswordAuthTokenTokenGenerator(): UsernamePasswordAuthTokenTokenGenerator =
         UsernamePasswordAuthTokenTokenGenerator()
-
-    internal fun jwtParserAccessToken() = Jwts.parserBuilder().setSigningKey(jwtKeyAccessToken).build()
 
     internal fun jwtParserRefreshToken() = Jwts.parserBuilder().setSigningKey(jwtKeyRefreshToken).build()
 

@@ -1,6 +1,6 @@
 package com.ramble.token.handler
 
-import com.ramble.token.handler.helper.TokenClaimsMapGenerator
+import com.ramble.token.handler.helper.RefreshTokenClaimsMapGenerator
 import com.ramble.token.handler.helper.TokenDurationGenerator
 import com.ramble.token.model.TokenDuration
 import io.jsonwebtoken.*
@@ -21,7 +21,7 @@ class RefreshTokenHandlerTest {
 
     private val jwtKey = mock(SecretKey::class.java)
     private val tokenDurationGenerator = mock(TokenDurationGenerator::class.java)
-    private val tokenClaimsMapGenerator = mock(TokenClaimsMapGenerator::class.java)
+    private val tokenClaimsMapGenerator = mock(RefreshTokenClaimsMapGenerator::class.java)
 
     private val parser = mock(JwtParser::class.java)
     private val now = Instant.now()
@@ -31,11 +31,7 @@ class RefreshTokenHandlerTest {
     private val clientId = "someClientId"
 
     private val refreshTokenHandler by lazy {
-        RefreshTokenHandler(
-            jwtKey,
-            tokenDurationGenerator,
-            tokenClaimsMapGenerator
-        )
+        RefreshTokenHandler(jwtKey, tokenDurationGenerator, tokenClaimsMapGenerator)
     }
 
     @Suppress("unchecked_cast")
@@ -77,7 +73,7 @@ class RefreshTokenHandlerTest {
         assertEquals(
             refreshTokenSigned,
             refreshTokenHandler
-                .generateToken(clientId, userId, issuedInstant, expiryDurationAmount, expiryDurationUnit, jwtBuilder)
+                .generateRefreshToken(clientId, userId, issuedInstant, expiryDurationAmount, expiryDurationUnit, jwtBuilder)
         )
     }
 

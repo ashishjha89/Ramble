@@ -5,7 +5,6 @@ import com.ramble.accesstoken.model.AccessClaims
 import com.ramble.accesstoken.model.AccessTokenValidatorInternalException
 import com.ramble.accesstoken.repo.AccessTokenValidatorRepo
 import io.jsonwebtoken.Claims
-import org.springframework.security.core.GrantedAuthority
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -32,12 +31,10 @@ class AccessTokenValidatorService(
         issuedInstant: Instant,
         expiryDurationAmount: Long,
         expiryDurationUnit: ChronoUnit
-    ): String {
-        val authorities = accessTokenHandler.getAuthoritiesForRoles(roles)
-        return accessTokenHandler.generateToken(
-            authorities, clientId, userId, email, issuedInstant, expiryDurationAmount, expiryDurationUnit, jwtBuilder
+    ): String =
+        accessTokenHandler.generateToken(
+            roles, clientId, userId, email, issuedInstant, expiryDurationAmount, expiryDurationUnit, jwtBuilder
         )
-    }
 
     @Throws(AccessTokenValidatorInternalException::class)
     suspend fun getClaimsFromAccessToken(accessToken: String, now: Instant): AccessClaims? {
@@ -52,8 +49,8 @@ class AccessTokenValidatorService(
         return if (!disabledTokens.contains(accessToken)) accessClaims else null
     }
 
-    fun getAccessClaims(claims: Claims, authorities: List<GrantedAuthority>): AccessClaims? =
-        accessTokenHandler.getAccessClaims(claims, authorities)
+    fun getAccessClaims(claims: Claims): AccessClaims? =
+        accessTokenHandler.getAccessClaims(claims)
 
     @Throws(AccessTokenValidatorInternalException::class)
     suspend fun disableAccessToken(clientId: String, accessToken: AccessToken, now: Instant) {

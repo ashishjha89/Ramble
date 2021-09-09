@@ -1,0 +1,3 @@
+jwt:
+  signingKeyRefreshToken: oCVm82o74dGKjKyKS/GLeK3HfJD4p7py4AWJI9TZzQj4y4isudcXWf2N8DWYX6uAEQS7hfSAaRVIp42
+  signingKeyRegistrationToken: 838ff02eaa64283e369d61324661707338c1da60edbb48aa188bfcd993ffeead5b006bd4

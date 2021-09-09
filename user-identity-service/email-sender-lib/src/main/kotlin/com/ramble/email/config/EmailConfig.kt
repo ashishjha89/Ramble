@@ -1,9 +1,18 @@
 package com.ramble.email.config
 
+import com.ramble.email.EmailSenderService
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.PropertySource
+
+@Suppress("unused")
+@ComponentScan(basePackageClasses = [EmailSenderService::class])
+@Configuration
+@PropertySource(value = ["classpath:email-sender-application.yml"], factory = YamlPropertySourceFactory::class)
+class EmailConfig {}
 
 @ConstructorBinding
 @ConfigurationProperties(prefix = "email-sender")

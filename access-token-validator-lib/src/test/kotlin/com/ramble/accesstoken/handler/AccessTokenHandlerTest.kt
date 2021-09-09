@@ -9,9 +9,6 @@ import org.junit.Before
 import org.junit.Test
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito.mock
-import org.springframework.security.core.Authentication
-import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.authority.SimpleGrantedAuthority
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
@@ -54,9 +51,7 @@ class AccessTokenHandlerTest {
     @Test
     fun generateAccessTokenTest() {
         val jwtBuilder = mock(JwtBuilder::class.java)
-        val authResult = mock(Authentication::class.java)
-        val authority = mock(GrantedAuthority::class.java)
-        val authorities = listOf(authority)
+        val roles = listOf("user", "admin")
 
         val issuedInstant = Instant.now()
         val expiryDurationAmount = 30L
@@ -65,17 +60,16 @@ class AccessTokenHandlerTest {
             issuedDate = Date.from(issuedInstant),
             expiryDate = Date.from(issuedInstant.plus(expiryDurationAmount, expiryDurationUnit))
         )
-        val claimsMap = mapOf("ROLES" to authorities, "USER_ID" to userId)
+        val claimsMap = mapOf("ROLES" to roles, "USER_ID" to userId)
 
         val accessTokenSigned = "some_signed_access_token"
 
         // Stub
-        given(authResult.authorities).willReturn(authorities)
         given(
             tokenClaimsMapGenerator.getAccessTokenClaimsMap(
                 clientId,
                 userId,
-                authorities
+                roles
             )
         ).willReturn(claimsMap)
         given(tokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit))
@@ -94,7 +88,7 @@ class AccessTokenHandlerTest {
             accessTokenSigned,
             accessTokenHandler
                 .generateToken(
-                    authorities,
+                    roles,
                     clientId,
                     userId,
                     emailId,
@@ -172,16 +166,16 @@ class AccessTokenHandlerTest {
     @Test
     fun `getAccessClaims should return valid AccessClaims if valid claims and authorities`() {
         val roles = listOf("user", "admin")
-        val authorities = roles.map { SimpleGrantedAuthority(it) }
 
         // Stub
         given(claims.subject).willReturn(emailId)
         given(claims["USER_ID"]).willReturn(userId)
         given(claims["CLIENT_ID"]).willReturn(clientId)
+        given(claims["ROLES"]).willReturn(roles)
 
         // Call method and assert
         val claimsResult = AccessClaims(clientId, userId, emailId, claims, roles)
-        assertEquals(claimsResult, accessTokenHandler.getAccessClaims(claims, authorities))
+        assertEquals(claimsResult, accessTokenHandler.getAccessClaims(claims))
     }
 
     @Test

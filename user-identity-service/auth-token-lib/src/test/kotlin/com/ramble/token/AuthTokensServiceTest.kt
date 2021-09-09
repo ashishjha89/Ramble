@@ -213,13 +213,10 @@ class AuthTokensServiceTest {
         val principal = mock(UsernamePasswordAuthenticationToken::class.java)
         val accessClaims = mock(AccessClaims::class.java)
         val claims = mock(Claims::class.java)
-        val authority = mock(GrantedAuthority::class.java)
-        val authorities = listOf(authority)
 
         // Stub
         given(principal.principal).willReturn(claims)
-        given(principal.authorities).willReturn(authorities)
-        given(tokenValidatorService.getAccessClaims(claims, authorities)).willReturn(accessClaims)
+        given(tokenValidatorService.getAccessClaims(claims)).willReturn(accessClaims)
 
         // Call method and assert
         assertEquals(accessClaims, authTokensService.getAccessTokenClaims(principal))
@@ -246,19 +243,6 @@ class AuthTokensServiceTest {
     fun `getAccessTokenClaims from Principal should return null if principal claims is not instance of Jwt Claims`() {
         val principal = mock(UsernamePasswordAuthenticationToken::class.java)
         given(principal.principal).willReturn("Hello") // Not claims
-
-        // Call method and assert
-        assertNull(authTokensService.getAccessTokenClaims(principal))
-    }
-
-    @Test
-    fun `getAccessTokenClaims from Principal should return null if authorities not present`() {
-        val principal = mock(UsernamePasswordAuthenticationToken::class.java)
-        val accessClaims = mock(AccessClaims::class.java)
-
-        // Stub
-        given(principal.principal).willReturn(accessClaims)
-        given(principal.authorities).willReturn(null)
 
         // Call method and assert
         assertNull(authTokensService.getAccessTokenClaims(principal))

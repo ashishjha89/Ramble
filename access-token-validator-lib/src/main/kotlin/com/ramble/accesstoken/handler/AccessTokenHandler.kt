@@ -7,8 +7,6 @@ import com.ramble.accesstoken.handler.helper.TokenClaimsMapGenerator.Companion.U
 import com.ramble.accesstoken.handler.helper.TokenDurationGenerator
 import com.ramble.accesstoken.model.AccessClaims
 import io.jsonwebtoken.*
-import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.authority.SimpleGrantedAuthority
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
@@ -21,7 +19,7 @@ internal class AccessTokenHandler(
 ) {
 
     fun generateToken(
-        authorities: Collection<GrantedAuthority>,
+        roles: List<String>,
         clientId: String,
         userId: String,
         email: String,
@@ -32,7 +30,7 @@ internal class AccessTokenHandler(
     ): String {
         val tokenDuration =
             tokenDurationGenerator.getTokenDuration(issuedInstant, expiryDurationAmount, expiryDurationUnit)
-        val claimsMap = tokenClaimsMapGenerator.getAccessTokenClaimsMap(clientId, userId, authorities)
+        val claimsMap = tokenClaimsMapGenerator.getAccessTokenClaimsMap(clientId, userId, roles)
         return jwtBuilder
             .setClaims(claimsMap)
             .setSubject(email)
@@ -53,16 +51,17 @@ internal class AccessTokenHandler(
         )
     }
 
-    fun getAccessClaims(claims: Claims, authorities: List<GrantedAuthority>): AccessClaims? {
+    fun getAccessClaims(claims: Claims): AccessClaims? {
         val clientId = getClientId(claims) ?: return null
         val userId = getUserId(claims) ?: return null
+        val roles = getRoles(claims) ?: return null
         val email = claims.subject ?: return null
         return AccessClaims(
             clientId = clientId,
             userId = userId,
             email = email,
             claims = claims,
-            roles = authorities.map { (it as SimpleGrantedAuthority).authority }
+            roles = roles
         )
     }
 
@@ -70,9 +69,6 @@ internal class AccessTokenHandler(
         !isTokenExpired(token, parser, now)
                 && !getEmailFromToken(token, parser).isNullOrBlank()
                 && !getClientIdFromToken(token, parser).isNullOrBlank()
-
-    fun getAuthoritiesForRoles(roles: List<String>): List<GrantedAuthority> =
-        roles.map { SimpleGrantedAuthority(it) }
 
     fun getUserIdFromToken(token: String, parser: JwtParser): String? =
         getClaimsFromToken(token, parser)?.get(USER_ID) as? String
@@ -101,6 +97,10 @@ internal class AccessTokenHandler(
 
     private fun getUserId(claims: Claims): String? =
         claims[USER_ID].takeIf { it is String }?.toString()
+
+    @Suppress("UNCHECKED_CAST")
+    private fun getRoles(claims: Claims): List<String>? =
+        claims[ROLES] as? List<String>
 
     @Suppress("UNCHECKED_CAST")
     private fun getRolesFromToken(token: String, parser: JwtParser): List<String>? =

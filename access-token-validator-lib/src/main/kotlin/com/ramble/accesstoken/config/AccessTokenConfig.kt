@@ -11,7 +11,7 @@ import org.springframework.context.annotation.PropertySource
 @Suppress("unused")
 @ComponentScan(basePackageClasses = [AccessTokenValidatorService::class])
 @Configuration
-@PropertySource(value = ["classpath:accesstoken-application.yml"], factory = YamlPropertySourceFactory::class)
+@PropertySource(value = ["classpath:access-token-application.yml"], factory = YamlPropertySourceFactory::class)
 class AccessTokenConfig {}
 
 @ConstructorBinding

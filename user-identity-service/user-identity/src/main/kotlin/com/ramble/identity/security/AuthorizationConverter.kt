@@ -6,6 +6,7 @@ import com.ramble.token.AuthTokensService
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactor.mono
 import org.springframework.http.HttpHeaders
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
 import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.WebFilter
@@ -21,7 +22,8 @@ class AuthorizationConverter(private val authTokensService: AuthTokensService) :
         val accessToken = getTokenFromBearerHeader(authHeader) ?: return@mono chain.filter(exchange).awaitFirstOrNull()
         return@mono try {
             val tokenClaims = authTokensService.getAccessTokenClaims(accessToken) ?: throw UnauthorizedException()
-            val springAuthUser = authTokensService.springAuthentication(tokenClaims.claims, tokenClaims.authorities)
+            val authorities = tokenClaims.roles.map { SimpleGrantedAuthority(it) }
+            val springAuthUser = authTokensService.springAuthentication(tokenClaims.claims, authorities)
             chain.filter(exchange).contextWrite(ReactiveSecurityContextHolder.withAuthentication(springAuthUser))
                 .awaitFirstOrNull()
         } catch (e: Exception) {

@@ -125,10 +125,7 @@ class AuthTokensService(
     }
 
     fun getAccessTokenClaims(principal: Principal): AccessClaims? {
-        return tokenValidatorService.getAccessClaims(
-            claims = principalClaims(principal) ?: return null,
-            authorities = authorities(principal) ?: return null
-        )
+        return tokenValidatorService.getAccessClaims(claims = principalClaims(principal) ?: return null)
     }
 
     @Throws(InternalTokenStorageException::class, AccessTokenIsInvalidException::class)
@@ -157,13 +154,6 @@ class AuthTokensService(
             if (claims is Claims) {
                 return claims
             }
-        }
-        return null
-    }
-
-    private fun authorities(principal: Principal): List<GrantedAuthority>? {
-        if (principal is UsernamePasswordAuthenticationToken) {
-            return principal.authorities?.toList()
         }
         return null
     }

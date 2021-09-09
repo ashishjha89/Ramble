@@ -22,6 +22,3 @@ $ maven clean install
 ```
 The library will be saved to:
 /Users/{your-home-directory}/.m2/repository/com/ramble/accesstoken/access-token-validator-lib/1.0/access-token-validator-lib-1.0.jar
-
-### Note for user-identity
-Authorities type is SimpleGrantedAuthority

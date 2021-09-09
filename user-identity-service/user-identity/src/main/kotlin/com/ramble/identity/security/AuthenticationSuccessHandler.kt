@@ -9,6 +9,7 @@ import com.ramble.token.AuthTokensService
 import kotlinx.coroutines.reactor.mono
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.Authentication
+import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.web.server.WebFilterExchange
 import org.springframework.security.web.server.authentication.ServerAuthenticationSuccessHandler
 import org.springframework.stereotype.Component
@@ -33,7 +34,8 @@ class AuthenticationSuccessHandler(
 
         try {
             val userId = userInfoService.getMyUserInfo(email).id
-            val authToken = authTokensService.generateUserAuthToken(authentication.authorities, deviceId, userId, email)
+            val roles = authentication.authorities.map { (it as GrantedAuthority).authority }
+            val authToken = authTokensService.generateUserAuthToken(roles, deviceId, userId, email)
             val loginResponse = LoginResponse(userId, authToken.accessToken, authToken.refreshToken)
             response.also {
                 it.statusCode = HttpStatus.OK

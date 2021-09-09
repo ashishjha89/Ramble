@@ -15,8 +15,6 @@ import org.junit.Test
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
-import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.authority.SimpleGrantedAuthority
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import kotlin.test.assertEquals
@@ -48,8 +46,6 @@ class AccessTokenValidatorServiceTest {
     @Test
     fun generateAccessTokenTest() = runBlocking {
         val roles = listOf("User")
-        val authority = mock(SimpleGrantedAuthority::class.java)
-        val authorities = listOf(authority)
         val userId = "someUserId"
         val clientId = "someClientId"
         val email = "someEmailId@ramble.com"
@@ -59,11 +55,10 @@ class AccessTokenValidatorServiceTest {
         val accessToken = "some_long_random_access_token"
 
         // Stub
-        given(accessTokenHandler.getAuthoritiesForRoles(roles)).willReturn(authorities)
         given(
             accessTokenHandler
                 .generateToken(
-                    authorities,
+                    roles,
                     clientId,
                     userId,
                     email,
@@ -158,13 +153,11 @@ class AccessTokenValidatorServiceTest {
     @Test
     fun getAccessClaimsTest() = runBlocking {
         val claims = mock(Claims::class.java)
-        val authority = mock(GrantedAuthority::class.java)
-        val authorities = listOf(authority)
         val accessClaims = mock(AccessClaims::class.java)
         // Stub
-        given(accessTokenHandler.getAccessClaims(claims, authorities)).willReturn(accessClaims)
+        given(accessTokenHandler.getAccessClaims(claims)).willReturn(accessClaims)
         // Call method and assert
-        assertEquals(accessClaims, authTokensService.getAccessClaims(claims, authorities))
+        assertEquals(accessClaims, authTokensService.getAccessClaims(claims))
     }
 
     @Test

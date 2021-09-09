@@ -41,6 +41,7 @@
             <version>2.5.2</version>
         </dependency>
 
+        <!-- Validate access-token for Ramble applications -->
         <dependency>
             <groupId>com.ramble.accesstoken</groupId>
             <artifactId>access-token-validator-lib</artifactId>

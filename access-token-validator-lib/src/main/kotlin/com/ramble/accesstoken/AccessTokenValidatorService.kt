@@ -25,21 +25,22 @@ class AccessTokenValidatorService(
     private val accessTokenHandler = tokenComponentBuilder.accessTokenHandler()
 
     fun generateAccessToken(
-        authorities: Collection<GrantedAuthority>,
+        roles: List<String>,
         clientId: String,
         userId: String,
         email: String,
         issuedInstant: Instant,
         expiryDurationAmount: Long,
         expiryDurationUnit: ChronoUnit
-    ): String =
-        accessTokenHandler.generateToken(
+    ): String {
+        val authorities = accessTokenHandler.getAuthoritiesForRoles(roles)
+        return accessTokenHandler.generateToken(
             authorities, clientId, userId, email, issuedInstant, expiryDurationAmount, expiryDurationUnit, jwtBuilder
         )
+    }
 
     @Throws(AccessTokenValidatorInternalException::class)
-    suspend fun getClaimsFromAccessToken(accessToken: String?, now: Instant): AccessClaims? {
-        accessToken ?: return null
+    suspend fun getClaimsFromAccessToken(accessToken: String, now: Instant): AccessClaims? {
         // 1. Check if token is of correct format
         val accessClaims = accessTokenHandler.getAccessClaims(accessToken, jwtParserAccessToken, now) ?: return null
 
@@ -50,6 +51,9 @@ class AccessTokenValidatorService(
         )
         return if (!disabledTokens.contains(accessToken)) accessClaims else null
     }
+
+    fun getAccessClaims(claims: Claims, authorities: List<GrantedAuthority>): AccessClaims? =
+        accessTokenHandler.getAccessClaims(claims, authorities)
 
     @Throws(AccessTokenValidatorInternalException::class)
     suspend fun disableAccessToken(clientId: String, accessToken: AccessToken, now: Instant) {
@@ -62,20 +66,5 @@ class AccessTokenValidatorService(
             clientId, validDisabledAccessTokens.plus(accessToken), scope
         )
     }
-
-    fun getAccessClaims(claims: Claims?, authorities: List<GrantedAuthority>?): AccessClaims? =
-        accessTokenHandler.getAccessClaims(claims, authorities)
-
-    fun getRolesFromToken(token: String): List<GrantedAuthority>? =
-        accessTokenHandler.getRolesFromToken(token, jwtParserAccessToken)
-
-    fun getUserIdFromToken(token: String): String? =
-        accessTokenHandler.getUserIdFromToken(token, jwtParserAccessToken)
-
-    fun getClientIdFromToken(token: String): String? =
-        accessTokenHandler.getClientIdFromToken(token, jwtParserAccessToken)
-
-    fun getEmailFromToken(token: String): String? =
-        accessTokenHandler.getEmailFromToken(token, jwtParserAccessToken)
 
 }

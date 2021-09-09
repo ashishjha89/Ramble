@@ -37,7 +37,7 @@ class AuthTokensService(
 
     @Throws(InternalTokenStorageException::class)
     suspend fun generateUserAuthToken(
-        authorities: Collection<GrantedAuthority>,
+        roles: List<String>,
         clientId: String,
         userId: String,
         email: String,
@@ -51,7 +51,7 @@ class AuthTokensService(
             userId = userId,
             email = email,
             accessToken = tokenValidatorService.generateAccessToken(
-                authorities = authorities,
+                roles = roles,
                 clientId = clientId,
                 userId = userId,
                 email = email,
@@ -101,16 +101,13 @@ class AuthTokensService(
         disableAccessToken(clientAuthInfo.clientId, accessToken, now)
 
         // 5. Now, generate new auth-tokens
-        val clientId = tokenValidatorService.getClientIdFromToken(accessToken) ?: return null
-        val userId = tokenValidatorService.getUserIdFromToken(accessToken) ?: return null
-        val email = tokenValidatorService.getEmailFromToken(accessToken) ?: return null
-        val roles = tokenValidatorService.getRolesFromToken(accessToken) ?: return null
+        val accessClaims = tokenValidatorService.getClaimsFromAccessToken(accessToken, now) ?: return null
 
         return generateUserAuthToken(
-            authorities = roles,
-            clientId = clientId,
-            userId = userId,
-            email = email,
+            roles = accessClaims.roles,
+            clientId = accessClaims.clientId,
+            userId = accessClaims.userId,
+            email = accessClaims.email,
             issuedInstant = now,
             accessTokenExpiryDurationAmount = accessTokenExpiryDurationAmount,
             accessTokenExpiryDurationUnit = accessTokenExpiryDurationUnit,
@@ -120,16 +117,25 @@ class AuthTokensService(
     }
 
     @Throws(InternalTokenStorageException::class)
-    suspend fun getAccessTokenClaims(accessToken: String?, now: Instant = Instant.now()): AccessClaims? =
-        tokenValidatorService.getClaimsFromAccessToken(accessToken, now)
+    suspend fun getAccessTokenClaims(accessToken: String?, now: Instant = Instant.now()): AccessClaims? {
+        return tokenValidatorService.getClaimsFromAccessToken(
+            accessToken = accessToken ?: return null,
+            now = now
+        )
+    }
 
-    fun getAccessTokenClaims(principal: Principal): AccessClaims? =
-        tokenValidatorService.getAccessClaims(principalClaims(principal), authorities(principal))
+    fun getAccessTokenClaims(principal: Principal): AccessClaims? {
+        return tokenValidatorService.getAccessClaims(
+            claims = principalClaims(principal) ?: return null,
+            authorities = authorities(principal) ?: return null
+        )
+    }
 
     @Throws(InternalTokenStorageException::class, AccessTokenIsInvalidException::class)
     suspend fun logout(accessToken: String, now: Instant) {
-        val clientId = tokenValidatorService.getClientIdFromToken(accessToken) ?: throw AccessTokenIsInvalidException()
-        disableAccessToken(clientId, accessToken, now)
+        val accessClaims =
+            tokenValidatorService.getClaimsFromAccessToken(accessToken, now) ?: throw AccessTokenIsInvalidException()
+        disableAccessToken(accessClaims.clientId, accessToken, now)
     }
 
     fun springAuthentication(claims: Claims, authorities: List<GrantedAuthority>): SpringAuthentication =

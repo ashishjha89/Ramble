@@ -23,7 +23,6 @@ import org.mockito.BDDMockito.verify
 import org.mockito.Mockito.mock
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.authority.SimpleGrantedAuthority
 import java.security.Principal
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -60,8 +59,7 @@ class AuthTokensServiceTest {
 
     @Test
     fun `generateAuthToken when there are no existing tokens`(): Unit = runBlocking {
-        val authority = mock(SimpleGrantedAuthority::class.java)
-        val authorities = listOf(authority)
+        val roles = listOf("User", "Admin")
         val userId = "someUserId"
         val clientId = "someClientId"
         val email = "someEmailId@ramble.com"
@@ -81,7 +79,7 @@ class AuthTokensServiceTest {
         // Stub
         given(
             tokenValidatorService.generateAccessToken(
-                authorities,
+                roles,
                 clientId,
                 userId,
                 email,
@@ -104,7 +102,7 @@ class AuthTokensServiceTest {
 
         // Call method
         val userAuthInfo = authTokensService.generateUserAuthToken(
-            authorities,
+            roles,
             clientId,
             userId,
             email,
@@ -123,8 +121,7 @@ class AuthTokensServiceTest {
 
     @Test
     fun `generateAuthToken when there were existing tokens`() = runBlocking {
-        val authority = mock(SimpleGrantedAuthority::class.java)
-        val authorities = listOf(authority)
+        val roles = listOf("User", "Admin")
         val userId = "someUserId"
         val clientId = "someClientId"
         val email = "someEmailId@ramble.com"
@@ -148,7 +145,7 @@ class AuthTokensServiceTest {
         // Stub
         given(
             tokenValidatorService.generateAccessToken(
-                authorities,
+                roles,
                 clientId,
                 userId,
                 email,
@@ -172,7 +169,7 @@ class AuthTokensServiceTest {
 
         // Call method
         val userAuthInfo = authTokensService.generateUserAuthToken(
-            authorities,
+            roles,
             clientId,
             userId,
             email,
@@ -207,6 +204,11 @@ class AuthTokensServiceTest {
     }
 
     @Test
+    fun `getAccessTokenClaims should return null if accessToken is null`() = runBlocking {
+        assertNull(authTokensService.getAccessTokenClaims(null, Instant.now()))
+    }
+
+    @Test
     fun `getAccessTokenClaims from Principal should return accessToken if principal is UsernamePasswordAuthenticationToken`() {
         val principal = mock(UsernamePasswordAuthenticationToken::class.java)
         val accessClaims = mock(AccessClaims::class.java)
@@ -226,6 +228,24 @@ class AuthTokensServiceTest {
     @Test
     fun `getAccessTokenClaims from Principal should return null if principal is not UsernamePasswordAuthenticationToken`() {
         val principal = mock(Principal::class.java)
+
+        // Call method and assert
+        assertNull(authTokensService.getAccessTokenClaims(principal))
+    }
+
+    @Test
+    fun `getAccessTokenClaims from Principal should return null if principal claims is null`() {
+        val principal = mock(UsernamePasswordAuthenticationToken::class.java)
+        given(principal.principal).willReturn(null)
+
+        // Call method and assert
+        assertNull(authTokensService.getAccessTokenClaims(principal))
+    }
+
+    @Test
+    fun `getAccessTokenClaims from Principal should return null if principal claims is not instance of Jwt Claims`() {
+        val principal = mock(UsernamePasswordAuthenticationToken::class.java)
+        given(principal.principal).willReturn("Hello") // Not claims
 
         // Call method and assert
         assertNull(authTokensService.getAccessTokenClaims(principal))
@@ -269,12 +289,14 @@ class AuthTokensServiceTest {
             val refreshTokenExpiryDurationAmount = 300L
             val refreshTokenExpiryDurationUnit = ChronoUnit.DAYS
 
+            val claims = mock(Claims::class.java)
             val accessTokenOld = "someOldAccessToken"
             val clientId = "someClientId"
             val userId = "someUserId"
             val emailId = "someEmail@ramble.com"
-            val authority = mock(GrantedAuthority::class.java)
-            val authorities = listOf(authority)
+            val roles = listOf("User", "Admin")
+
+            val accessClaims = AccessClaims(clientId, userId, emailId, claims, roles)
             val clientAuthInfo = ClientAuthInfo(clientId, userId, accessTokenOld)
 
             val newAccessToken = "this_is_new_generated_access_token"
@@ -285,17 +307,11 @@ class AuthTokensServiceTest {
             given(refreshTokenHandler.getClientIdFromToken(refreshToken, jwtParserRefreshToken)).willReturn(clientId)
             given(refreshTokenHandler.getUserIdFromToken(refreshToken, jwtParserRefreshToken)).willReturn(userId)
             given(refreshTokenHandler.isValidToken(refreshToken, jwtParserRefreshToken, now)).willReturn(true)
-
             given(authTokenRepo.deleteOldAuthTokens(clientId, userId)).willReturn(clientAuthInfo)
-
-            given(tokenValidatorService.getClientIdFromToken(accessTokenOld)).willReturn(clientId)
-            given(tokenValidatorService.getUserIdFromToken(accessTokenOld)).willReturn(userId)
-            given(tokenValidatorService.getEmailFromToken(accessTokenOld)).willReturn(emailId)
-            given(tokenValidatorService.getRolesFromToken(accessTokenOld)).willReturn(authorities)
-
+            given(tokenValidatorService.getClaimsFromAccessToken(accessTokenOld, now)).willReturn(accessClaims)
             given(
                 tokenValidatorService.generateAccessToken(
-                    authorities,
+                    roles,
                     clientId,
                     userId,
                     emailId,
@@ -418,37 +434,17 @@ class AuthTokensServiceTest {
             )
         }
 
-    @Test
-    fun logoutTest() = runBlocking {
-        val now = Instant.now()
-        val accessToken = "someAccessToken"
-
-        val clientId = "someClientId"
-        val userId = "someUserId"
-
-        // Stub
-        given(tokenValidatorService.getClientIdFromToken(accessToken)).willReturn(clientId)
-        given(tokenValidatorService.getUserIdFromToken(accessToken)).willReturn(userId)
-
-        // Call method
-        authTokensService.logout(accessToken, now)
-
-        // Verify
-        verify(tokenValidatorService).disableAccessToken(clientId, accessToken, now)
-    }
-
     @Test(expected = AccessTokenIsInvalidException::class)
-    fun `logout should throw AccessTokenIsInvalidException if clientId cannot be obtained from token`() = runBlocking {
-        val now = Instant.now()
-        val accessToken = "someAccessToken"
-        val userId = "someUserId"
+    fun `logout should throw AccessTokenIsInvalidException if accessClaims cannot be obtained from token`() =
+        runBlocking {
+            val now = Instant.now()
+            val accessToken = "someAccessToken"
 
-        // Stub
-        given(tokenValidatorService.getClientIdFromToken(accessToken)).willReturn(null)
-        given(tokenValidatorService.getUserIdFromToken(accessToken)).willReturn(userId)
+            // Stub
+            given(tokenValidatorService.getClaimsFromAccessToken(accessToken, now)).willReturn(null)
 
-        // Call method
-        authTokensService.logout(accessToken, now)
-    }
+            // Call method
+            authTokensService.logout(accessToken, now)
+        }
 
 }

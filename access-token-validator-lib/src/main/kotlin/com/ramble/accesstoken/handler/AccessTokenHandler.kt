@@ -42,20 +42,18 @@ internal class AccessTokenHandler(
             .compact()
     }
 
-    fun getAccessClaims(token: String?, parser: JwtParser, now: Instant): AccessClaims? {
-        if (token == null || !isValidToken(token, parser, now)) return null
+    fun getAccessClaims(token: String, parser: JwtParser, now: Instant): AccessClaims? {
+        if (!isValidToken(token, parser, now)) return null
         return AccessClaims(
             clientId = getClientIdFromToken(token, parser) ?: return null,
             userId = getUserIdFromToken(token, parser) ?: return null,
             email = getEmailFromToken(token, parser) ?: return null,
             claims = getClaimsFromToken(token, parser) ?: return null,
-            authorities = getRolesFromToken(token, parser) ?: return null
+            roles = getRolesFromToken(token, parser) ?: return null
         )
     }
 
-    fun getAccessClaims(claims: Claims?, authorities: List<GrantedAuthority>?): AccessClaims? {
-        claims ?: return null
-        authorities ?: return null
+    fun getAccessClaims(claims: Claims, authorities: List<GrantedAuthority>): AccessClaims? {
         val clientId = getClientId(claims) ?: return null
         val userId = getUserId(claims) ?: return null
         val email = claims.subject ?: return null
@@ -64,7 +62,7 @@ internal class AccessTokenHandler(
             userId = userId,
             email = email,
             claims = claims,
-            authorities = authorities
+            roles = authorities.map { (it as SimpleGrantedAuthority).authority }
         )
     }
 
@@ -73,16 +71,8 @@ internal class AccessTokenHandler(
                 && !getEmailFromToken(token, parser).isNullOrBlank()
                 && !getClientIdFromToken(token, parser).isNullOrBlank()
 
-    private fun getClaimsFromToken(token: String, parser: JwtParser): Claims? =
-        try {
-            parser.parseClaimsJws(token)?.body
-        } catch (e: JwtException) {
-            null
-        }
-
-    @Suppress("UNCHECKED_CAST")
-    fun getRolesFromToken(token: String, parser: JwtParser): List<GrantedAuthority>? =
-        (getClaimsFromToken(token, parser)?.get(ROLES) as? List<String>)?.map { SimpleGrantedAuthority(it) }
+    fun getAuthoritiesForRoles(roles: List<String>): List<GrantedAuthority> =
+        roles.map { SimpleGrantedAuthority(it) }
 
     fun getUserIdFromToken(token: String, parser: JwtParser): String? =
         getClaimsFromToken(token, parser)?.get(USER_ID) as? String
@@ -96,6 +86,13 @@ internal class AccessTokenHandler(
     private fun getExpirationDateFromToken(token: String, parser: JwtParser): Date? =
         getClaimsFromToken(token, parser)?.expiration
 
+    private fun getClaimsFromToken(token: String, parser: JwtParser): Claims? =
+        try {
+            parser.parseClaimsJws(token)?.body
+        } catch (e: JwtException) {
+            null
+        }
+
     private fun isTokenExpired(token: String, parser: JwtParser, now: Instant) =
         getExpirationDateFromToken(token, parser)?.before(Date.from(now)) ?: false
 
@@ -104,5 +101,9 @@ internal class AccessTokenHandler(
 
     private fun getUserId(claims: Claims): String? =
         claims[USER_ID].takeIf { it is String }?.toString()
+
+    @Suppress("UNCHECKED_CAST")
+    private fun getRolesFromToken(token: String, parser: JwtParser): List<String>? =
+        (getClaimsFromToken(token, parser)?.get(ROLES) as? List<String>)
 
 }

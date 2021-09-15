@@ -13,7 +13,6 @@
     <name>user-identity-service</name>
     <description>Spring Boot Identity Service for RAMBLE (Record All My Blabber Like Exchanges)</description>
 
-
     <modules>
         <module>auth-token-lib</module>
         <module>email-sender-lib</module>

@@ -4,7 +4,7 @@ server:
 
 spring:
   application:
-    name: MESSGAING-SERVICE
+    name: messaging-api
 
 eureka:
   client:

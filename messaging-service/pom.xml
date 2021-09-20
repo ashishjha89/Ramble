@@ -28,6 +28,13 @@
 
     <dependencies>
 
+        <!-- Our auth-token library -->
+        <!--<dependency>
+            <groupId>com.ramble.token</groupId>
+            <artifactId>auth-token-lib</artifactId>
+            <version>1.0</version>
+        </dependency>-->
+
         <!-- SPRING BOOT STARTER -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

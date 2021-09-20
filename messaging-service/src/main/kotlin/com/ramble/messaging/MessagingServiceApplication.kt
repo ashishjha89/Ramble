@@ -9,5 +9,5 @@ import org.springframework.cloud.netflix.eureka.EnableEurekaClient
 class MessagingServiceApplication
 
 fun main(args: Array<String>) {
-	runApplication<MessagingServiceApplication>(*args)
+    runApplication<MessagingServiceApplication>(*args)
 }

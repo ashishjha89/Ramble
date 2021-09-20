@@ -12,7 +12,7 @@ spring:
     hibernate:
       ddl-auto: update
   application:
-    name: USER-IDENTITY-SERVICE
+    name: user-identity-api
 
 eureka:
   client:

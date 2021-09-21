@@ -1,0 +1,27 @@
+server:
+  port:
+    9191
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: user-identity-api
+          uri: lb://user-identity-api
+          predicates:
+            - Path=/user-identity/**
+        - id: messaging-api
+          uri: lb://messaging-api
+          predicates:
+            - Path=/messaging/**
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    hostname: localhost

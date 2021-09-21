@@ -1,0 +1,4 @@
+#### Api path:
+```
+/messaging/*
+```

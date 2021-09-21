@@ -1,3 +1,8 @@
+#### Api path:
+```
+/user-identity/*
+```
+
 #### Local email client used for testing
 Maildev: https://www.npmjs.com/package/maildev
 

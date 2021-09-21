@@ -34,7 +34,7 @@ Other steps which are needed for Vault-setup:
 - Add key-value secret: kv/ramble.email-sender (secrets are username and password).
 
 #### Api Documentation
-http://localhost:8080/webjars/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config
+http://localhost:9001/webjars/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config
 
 #### Next steps
 * Integration tests

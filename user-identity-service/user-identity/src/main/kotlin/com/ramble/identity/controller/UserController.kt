@@ -61,13 +61,8 @@ class UserController(private val userInfoService: UserInfoService) {
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
             ),
             ApiResponse(
-                responseCode = BAD_REQUEST,
-                description = "errorCode: $USER_IS_SUSPENDED",
-                content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
-            ),
-            ApiResponse(
-                responseCode = BAD_REQUEST,
-                description = "errorCode: $USER_NOT_ACTIVATED",
+                responseCode = FORBIDDEN,
+                description = "errorCodes: [$USER_IS_SUSPENDED, $USER_NOT_ACTIVATED]",
                 content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorBody::class))]
             ),
             ApiResponse(

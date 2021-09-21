@@ -36,7 +36,6 @@ class UserRepo(
         }
         val entity = HttpEntity<String>(headers)
         val userProfileApiUrl = "http://user-identity-api/user-identity/user-info/v1/user/$emailId"
-        // TODO: Handle exception thrown from identity-api
         return performDeferredTask(
             deferredTask = scope.async {
                 restTemplate.exchange(

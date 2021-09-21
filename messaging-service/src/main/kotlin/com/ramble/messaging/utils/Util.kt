@@ -10,7 +10,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.withTimeout
 import org.springframework.web.client.HttpClientErrorException
 
-@Throws(InternalServerException::class)
+@Throws(InternalServerException::class, UserNotFoundException::class)
 suspend fun <T> performDeferredTask(deferredTask: Deferred<T>, timeoutInMilliseconds: Long): T =
     try {
         withTimeout(timeoutInMilliseconds) {

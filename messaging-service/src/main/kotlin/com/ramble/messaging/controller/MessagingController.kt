@@ -9,6 +9,7 @@ import com.ramble.messaging.common.ErrorCode.UNAUTHORIZED_ACCESS
 import com.ramble.messaging.common.ErrorCode.USER_INFO_NOT_FOUND
 import com.ramble.messaging.common.MESSAGING_API_BASE_PATH
 import com.ramble.messaging.model.AccessTokenIsInvalidException
+import com.ramble.messaging.model.UnauthorizedException
 import com.ramble.messaging.model.UserProfile
 import com.ramble.messaging.service.UserService
 import io.swagger.v3.oas.annotations.media.Content
@@ -55,11 +56,12 @@ class MessagingController(private val userService: UserService) {
     suspend fun getUserFromMessaging(
         @RequestHeader(name = AUTHORIZATION_HEADER) authorizationHeader: String?
     ): UserProfile {
+        if (authorizationHeader.isNullOrBlank()) throw UnauthorizedException()
         val accessToken = getTokenFromBearerHeader(authorizationHeader) ?: throw AccessTokenIsInvalidException()
         return userService.getUserProfile(accessToken)
     }
 
-    private fun getTokenFromBearerHeader(bearerStr: String?): String? {
+    private fun getTokenFromBearerHeader(bearerStr: String): String? {
         bearerStr ?: return null
         if (!bearerStr.startsWith(BEARER)) return null
         return bearerStr.substring(BEARER.length)

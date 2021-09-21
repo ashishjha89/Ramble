@@ -6,4 +6,6 @@ class InvalidUserEmailException : Exception()
 
 class AccessTokenIsInvalidException : Exception()
 
+class UnauthorizedException: Exception()
+
 class InternalServerException : Exception()

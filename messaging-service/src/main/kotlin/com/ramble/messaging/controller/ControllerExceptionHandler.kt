@@ -1,10 +1,7 @@
 package com.ramble.messaging.controller
 
 import com.ramble.messaging.common.*
-import com.ramble.messaging.model.AccessTokenIsInvalidException
-import com.ramble.messaging.model.InternalServerException
-import com.ramble.messaging.model.InvalidUserEmailException
-import com.ramble.messaging.model.UserNotFoundException
+import com.ramble.messaging.model.*
 import io.swagger.v3.oas.annotations.Hidden
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -31,6 +28,11 @@ class ControllerExceptionHandler {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     fun accessTokenIsInvalidException(): ResponseEntity<ErrorBody> =
         ResponseEntity(unauthorizedAccess, HttpStatus.FORBIDDEN)
+
+    @ExceptionHandler(UnauthorizedException::class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    fun unauthorizedException(): ResponseEntity<ErrorBody> =
+        ResponseEntity(unauthorizedAccess, HttpStatus.UNAUTHORIZED)
 
     @ExceptionHandler(InternalServerException::class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)

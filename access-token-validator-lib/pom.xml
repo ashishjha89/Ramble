@@ -71,6 +71,12 @@
             <artifactId>spring-data-redis</artifactId>
             <version>2.5.3</version>
         </dependency>
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>3.6.3</version>
+            <type>jar</type>
+        </dependency>
 
         <!-- JWT -->
         <dependency>

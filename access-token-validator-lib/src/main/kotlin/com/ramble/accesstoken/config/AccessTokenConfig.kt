@@ -12,7 +12,7 @@ import org.springframework.context.annotation.PropertySource
 @ComponentScan(basePackageClasses = [AccessTokenValidatorService::class])
 @Configuration
 @PropertySource(value = ["classpath:access-token-application.yml"], factory = YamlPropertySourceFactory::class)
-class AccessTokenConfig {}
+class AccessTokenConfig
 
 @ConstructorBinding
 @ConfigurationProperties(prefix = "access-token-validator")

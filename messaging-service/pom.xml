@@ -28,12 +28,12 @@
 
     <dependencies>
 
-        <!-- Our auth-token library -->
-        <!--<dependency>
-            <groupId>com.ramble.token</groupId>
-            <artifactId>auth-token-lib</artifactId>
+        <!-- Validate access-token for Ramble applications -->
+        <dependency>
+            <groupId>com.ramble.accesstoken</groupId>
+            <artifactId>access-token-validator-lib</artifactId>
             <version>1.0</version>
-        </dependency>-->
+        </dependency>
 
         <!-- SPRING BOOT STARTER -->
         <dependency>

@@ -1,0 +1,13 @@
+server:
+  port:
+    9296
+
+spring:
+  application:
+    name: config-server
+  cloud:
+    config:
+      server:
+        git:
+          uri: http://github.com/ashishjha89/Ramble/cloud-config/config-server
+          clone-on-start: true

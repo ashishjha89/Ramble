@@ -12,10 +12,10 @@
     </parent>
 
     <groupId>com.ramble</groupId>
-    <artifactId>hystrix-dashboard</artifactId>
+    <artifactId>cloud-config</artifactId>
     <version>1.0</version>
-    <name>hystrix-dashboard</name>
-    <description>Circuit Breaker (Hystrix) Dashboard for RAMBLE.</description>
+    <name>cloud-config</name>
+    <description>Cloud Config for RAMBLE.</description>
 
     <properties>
         <java.version>11</java.version>
@@ -34,12 +34,7 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-netflix-hystrix-dashboard</artifactId>
-            <version>2.2.9.RELEASE</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-config</artifactId>
+            <artifactId>spring-cloud-config-server</artifactId>
         </dependency>
 
         <!-- KOTLIN -->

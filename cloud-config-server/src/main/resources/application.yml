@@ -9,5 +9,6 @@ spring:
     config:
       server:
         git:
-          uri: http://github.com/ashishjha89/Ramble/cloud-config/config-server
+          uri: https://github.com/ashishjha89/ramble-cloud-config-server
+          default-label: main
           clone-on-start: true

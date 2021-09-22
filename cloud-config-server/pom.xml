@@ -12,10 +12,10 @@
     </parent>
 
     <groupId>com.ramble</groupId>
-    <artifactId>cloud-config</artifactId>
+    <artifactId>cloud-config-server</artifactId>
     <version>1.0</version>
-    <name>cloud-config</name>
-    <description>Cloud Config for RAMBLE.</description>
+    <name>cloud-config-server</name>
+    <description>Cloud Config Server for RAMBLE.</description>
 
     <properties>
         <java.version>11</java.version>

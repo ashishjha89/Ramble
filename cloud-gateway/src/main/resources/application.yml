@@ -12,10 +12,34 @@ spring:
           uri: lb://user-identity-api
           predicates:
             - Path=/user-identity/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: user-identity-api
+                fallbackuri: forward:/serviceFallback
         - id: messaging-api
           uri: lb://messaging-api
           predicates:
             - Path=/messaging/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: messaging-api
+                fallbackuri: forward:/serviceFallback
+
+hystrix:
+  command:
+    fallbackcmd:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 4000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: hystrix.stream
 
 eureka:
   client:

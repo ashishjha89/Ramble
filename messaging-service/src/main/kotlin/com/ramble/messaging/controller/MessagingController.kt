@@ -62,7 +62,6 @@ class MessagingController(private val userService: UserService) {
     }
 
     private fun getTokenFromBearerHeader(bearerStr: String): String? {
-        bearerStr ?: return null
         if (!bearerStr.startsWith(BEARER)) return null
         return bearerStr.substring(BEARER.length)
     }

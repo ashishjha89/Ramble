@@ -29,7 +29,7 @@
 
     <dependencies>
 
-        <!-- Our auth-token library -->
+        <!-- Ramble auth-token library -->
         <dependency>
             <groupId>com.ramble.token</groupId>
             <artifactId>auth-token-lib</artifactId>

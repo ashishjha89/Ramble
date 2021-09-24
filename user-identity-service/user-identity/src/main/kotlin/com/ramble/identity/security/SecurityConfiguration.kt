@@ -23,6 +23,8 @@ import org.springframework.security.web.server.util.matcher.ServerWebExchangeMat
 import org.springframework.web.reactive.config.EnableWebFlux
 import org.springframework.web.reactive.config.WebFluxConfigurer
 
+@Suppress("unused")
+
 @Configuration
 @EnableWebFlux
 @EnableWebFluxSecurity

@@ -22,7 +22,7 @@ class UserControllerTest {
         val userInfo = mock(UserInfo::class.java)
 
         // Stub
-        given(userInfoService.getMyUserInfo(principal)).willReturn(userInfo)
+        given(userInfoService.getUserInfo(principal)).willReturn(userInfo)
 
         // Call method and assert
         assertEquals(userInfo, userController.getMyInfo(principal))

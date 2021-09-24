@@ -66,6 +66,17 @@ class UserRegistrationService(
         val confirmationToken = registrationConfirmationService.processRegistrationConfirmationToken(token, now)
             ?: throw InvalidRegistrationConfirmationToken()
         val applicationUser = userRepo.activateRegisteredUser(email = confirmationToken.email)
+
+        try {
+            // Delete old-registered users. This can happen if user registered with an email address, but didn't confirm it.
+            userRepo.deleteUsersWithEmailAndAccountStatus(
+                email = applicationUser.email,
+                accountStatus = AccountStatus.Registered
+            )
+        } catch (e: Exception) {
+            // ignore!
+        }
+
         return RegisteredUserResponse(userId = applicationUser.id, email = applicationUser.email)
     }
 

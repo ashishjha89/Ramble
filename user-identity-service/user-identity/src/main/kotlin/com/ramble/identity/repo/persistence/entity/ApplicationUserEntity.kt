@@ -5,10 +5,10 @@ import javax.persistence.Convert
 import javax.persistence.Entity
 import javax.persistence.Id
 
-@Entity
+@Entity(name = "application_user_entity")
 class ApplicationUserEntity(
-    @Id val email: String = "",
-    val id: String = "",
+    @Id val id: String = "",
+    val email: String = "",
     val password: String = "",
     @Convert(converter = StringListConverter::class) val roles: List<String> = emptyList(),
     val accountStatus: String = "",
@@ -24,4 +24,4 @@ class ApplicationUserEntity(
     val city: String = "",
     val country: String = "",
     val activationDateInSeconds: Long = -1
-): Serializable
+) : Serializable

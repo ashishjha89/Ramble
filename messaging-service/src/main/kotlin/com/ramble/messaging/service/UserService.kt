@@ -17,7 +17,7 @@ class UserService(
 
     @Throws(UserNotFoundException::class, AccessTokenIsInvalidException::class, InternalServerException::class)
     suspend fun getUserProfile(accessToken: String, instant: Instant = Instant.now()): UserProfile {
-        val emailId = accessTokenValidatorService.getClaimsFromAccessToken(accessToken, instant)?.email
+        val emailId = accessTokenValidatorService.getClaimsFromAccessToken(accessToken, instant)?.userId
             ?: throw AccessTokenIsInvalidException()
         return userRepo.getUserProfile(emailId, accessToken)
     }

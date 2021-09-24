@@ -2,8 +2,8 @@ package com.ramble.identity.repo
 
 import com.ramble.identity.models.*
 import com.ramble.identity.repo.persistence.UserDbImpl
-import com.ramble.identity.utils.UserIdentityCoroutineScopeBuilder
 import com.ramble.identity.utils.TimeAndIdGenerator
+import com.ramble.identity.utils.UserIdentityCoroutineScopeBuilder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -177,7 +177,7 @@ class UserRepoTest {
 
             // Stub
             given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
-            given(userDbImpl.getApplicationUser(email, scope)).willReturn(null)
+            given(userDbImpl.getApplicationUserFromEmail(email, scope)).willReturn(null)
 
             // Call method and assert
             userRepo.activateRegisteredUser(email)
@@ -192,7 +192,7 @@ class UserRepoTest {
 
             // Stub
             given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
-            given(userDbImpl.getApplicationUser(email, scope)).willReturn(userActivated)
+            given(userDbImpl.getApplicationUserFromEmail(email, scope)).willReturn(userActivated)
 
             // Call method and assert
             userRepo.activateRegisteredUser(email)
@@ -206,7 +206,7 @@ class UserRepoTest {
 
         // Stub
         given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
-        given(userDbImpl.getApplicationUser(email, scope)).willReturn(userActivated)
+        given(userDbImpl.getApplicationUserFromEmail(email, scope)).willReturn(userActivated)
 
         // Call method and assert
         userRepo.activateRegisteredUser(email)
@@ -225,7 +225,7 @@ class UserRepoTest {
 
         // Stub
         given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
-        given(userDbImpl.getApplicationUser(email, scope)).willReturn(userRegistered)
+        given(userDbImpl.getApplicationUserFromEmail(email, scope)).willReturn(userRegistered)
         given(userDbImpl.save(userActivated, scope)).willReturn(userActivated)
 
         // Call method and assert
@@ -235,49 +235,53 @@ class UserRepoTest {
     @Test(expected = UserNotFoundException::class)
     fun `getUserInfo should throw UserNotFoundException if user has not registered yet`() = runBlocking<Unit> {
         val currentTimeInSeconds = Instant.now().epochSecond
-        val email = "someEmailId"
+        val userId = "someUserId"
 
         // Stub
         given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
-        given(userDbImpl.getApplicationUser(email, scope)).willReturn(null)
+        given(userDbImpl.getApplicationUser(userId, scope)).willReturn(null)
 
         // Call method and assert
-        userRepo.getUserInfo(email)
+        userRepo.getUserInfo(userId)
     }
 
     @Test(expected = UserNotActivatedException::class)
     fun `getUserInfo should throw UserNotActivatedException if user is not activated`() = runBlocking<Unit> {
         val currentTimeInSeconds = Instant.now().epochSecond
+        val userId = "someUserId"
         val email = "someEmailId"
-        val userRegistered = getApplicationUser(email = email, accountStatus = AccountStatus.Registered)
+        val userRegistered = getApplicationUser(id = userId, email = email, accountStatus = AccountStatus.Registered)
 
         // Stub
         given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
-        given(userDbImpl.getApplicationUser(email, scope)).willReturn(userRegistered)
+        given(userDbImpl.getApplicationUser(userId, scope)).willReturn(userRegistered)
 
         // Call method and assert
-        userRepo.getUserInfo(email)
+        userRepo.getUserInfo(userId)
     }
 
     @Test(expected = UserSuspendedException::class)
     fun `getUserInfo should throw UserSuspendedException if user is Suspended`() = runBlocking<Unit> {
         val currentTimeInSeconds = Instant.now().epochSecond
+        val userId = "someUserId"
         val email = "someEmailId"
-        val userSuspended = getApplicationUser(email = email, accountStatus = AccountStatus.Suspended)
+        val userSuspended = getApplicationUser(id = userId, email = email, accountStatus = AccountStatus.Suspended)
 
         // Stub
         given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
-        given(userDbImpl.getApplicationUser(email, scope)).willReturn(userSuspended)
+        given(userDbImpl.getApplicationUser(userId, scope)).willReturn(userSuspended)
 
         // Call method and assert
-        userRepo.getUserInfo(email)
+        userRepo.getUserInfo(userId)
     }
 
     @Test
     fun `getUserInfo should return userInfo if user is Activated`() = runBlocking<Unit> {
         val currentTimeInSeconds = Instant.now().epochSecond
+        val userId = "someUserId"
         val email = "someEmailId"
         val userActivated = getApplicationUser(
+            id = userId,
             email = email,
             accountStatus = AccountStatus.Activated,
             roles = listOf(Roles.User),
@@ -287,28 +291,30 @@ class UserRepoTest {
 
         // Stub
         given(timeAndIdGenerator.getCurrentTimeInSeconds()).willReturn(currentTimeInSeconds)
-        given(userDbImpl.getApplicationUser(email, scope)).willReturn(userActivated)
+        given(userDbImpl.getApplicationUser(userId, scope)).willReturn(userActivated)
 
         // Call method and assert
-        assertEquals(expectedUserInfo, userRepo.getUserInfo(email))
+        assertEquals(expectedUserInfo, userRepo.getUserInfo(userId))
     }
 
     @Test
     fun `getApplicationUser should return null user is not present in DB`() = runBlocking {
-        val email = "someEmailId"
+        val userId = "someUserId"
 
         // Stub
-        given(userDbImpl.getApplicationUser(email, scope)).willReturn(null)
+        given(userDbImpl.getApplicationUser(userId, scope)).willReturn(null)
 
         // Call method and assert
-        assertNull(userRepo.getApplicationUser(email))
+        assertNull(userRepo.getApplicationUser(userId))
     }
 
     @Test
     fun `getApplicationUser should return user when user is present in DB`() = runBlocking {
+        val userId = "someUserId"
         val email = "someEmailId"
         val currentTimeInSeconds = Instant.now().epochSecond
         val userActivated = getApplicationUser(
+            id = userId,
             email = email,
             accountStatus = AccountStatus.Activated,
             roles = listOf(Roles.User),
@@ -316,10 +322,52 @@ class UserRepoTest {
         )
 
         // Stub
-        given(userDbImpl.getApplicationUser(email, scope)).willReturn(userActivated)
+        given(userDbImpl.getApplicationUser(userId, scope)).willReturn(userActivated)
 
         // Call method and assert
-        assertEquals(userActivated, userRepo.getApplicationUser(email))
+        assertEquals(userActivated, userRepo.getApplicationUser(userId))
+    }
+
+    @Test
+    fun `getApplicationUserFromEmail should return null user is not present in DB`() = runBlocking {
+        val email = "someEmailId"
+
+        // Stub
+        given(userDbImpl.getApplicationUserFromEmail(email, scope)).willReturn(null)
+
+        // Call method and assert
+        assertNull(userRepo.getApplicationUserFromEmail(email))
+    }
+
+    @Test
+    fun `getApplicationUserFromEmail should return user when user is present in DB`() = runBlocking {
+        val userId = "someUserId"
+        val email = "someEmailId"
+        val currentTimeInSeconds = Instant.now().epochSecond
+        val userActivated = getApplicationUser(
+            id = userId,
+            email = email,
+            accountStatus = AccountStatus.Activated,
+            roles = listOf(Roles.User),
+            registrationDateInSeconds = currentTimeInSeconds
+        )
+
+        // Stub
+        given(userDbImpl.getApplicationUserFromEmail(email, scope)).willReturn(userActivated)
+
+        // Call method and assert
+        assertEquals(userActivated, userRepo.getApplicationUserFromEmail(email))
+    }
+
+    @Test
+    fun deleteUsersWithEmailAndAccountStatusTest() = runBlocking {
+        val email = "someEmailId"
+
+        // Call method
+        userRepo.deleteUsersWithEmailAndAccountStatus(email, AccountStatus.Registered)
+
+        // Verify
+        verify(userDbImpl).deleteUsersWithEmailAndAccountStatus(email, AccountStatus.Registered, scope)
     }
 
     private fun getApplicationUser(

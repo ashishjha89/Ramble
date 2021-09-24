@@ -10,9 +10,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.BDDMockito.given
 import org.mockito.BDDMockito.verify
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.times
 import java.time.Instant
 import java.util.*
 import kotlin.test.assertEquals
@@ -28,20 +30,22 @@ class UserDbImplTest {
 
     @Test
     fun `getApplicationUser should return null user is not present in DB`() = runBlocking {
-        val email = "someEmailId"
+        val userId = "someUserId"
 
         // Stub
-        given(userSqlRepo.findById(email)).willReturn(Optional.empty())
+        given(userSqlRepo.findById(userId)).willReturn(Optional.empty())
 
         // Call method and assert
-        assertNull(userDbImpl.getApplicationUser(email, scope))
+        assertNull(userDbImpl.getApplicationUser(userId, scope))
     }
 
     @Test
     fun `getApplicationUser should return user when user is present in DB`() = runBlocking {
+        val userId = "someUserId"
         val email = "someEmailId"
         val currentTimeInSeconds = Instant.now().epochSecond
         val userEntityActivated = getApplicationUserEntity(
+            id = userId,
             email = email,
             accountStatus = AccountStatus.Activated.name,
             roles = listOf(Roles.User.name),
@@ -65,14 +69,167 @@ class UserDbImplTest {
     }
 
     @Test
-    fun deleteUserTest() = runBlocking<Unit> {
+    fun `getApplicationUserFromEmail should return null user is not present in DB`() = runBlocking {
         val email = "someEmailId"
+
+        // Stub
+        given(userSqlRepo.getUserByEmail(email)).willReturn(emptyList())
+
+        // Call method and assert
+        assertNull(userDbImpl.getApplicationUserFromEmail(email, scope))
+    }
+
+    @Test
+    fun `getApplicationUserFromEmail should return user when only one user is present in DB`() = runBlocking {
+        val userId = "someUserId"
+        val email = "someEmailId"
+        val currentTimeInSeconds = Instant.now().epochSecond
+        val userEntityActivated = getApplicationUserEntity(
+            id = userId,
+            email = email,
+            accountStatus = AccountStatus.Activated.name,
+            roles = listOf(Roles.User.name),
+            activationDateInSeconds = currentTimeInSeconds
+        )
+        val expectedApplicationUser = ApplicationUser(
+            id = userEntityActivated.id,
+            email = userEntityActivated.email,
+            password = userEntityActivated.password,
+            roles = listOf(Roles.User),
+            accountStatus = AccountStatus.Activated,
+            registrationDateInSeconds = userEntityActivated.registrationDateInSeconds,
+            activationDateInSeconds = userEntityActivated.activationDateInSeconds
+        )
+
+        // Stub
+        given(userSqlRepo.getUserByEmail(email)).willReturn(listOf(userEntityActivated))
+
+        // Call method and assert
+        assertEquals(expectedApplicationUser, userDbImpl.getApplicationUserFromEmail(email, scope))
+    }
+
+    @Test
+    fun `getApplicationUserFromEmail should return latest user when user is present in DB`() = runBlocking {
+        val userId = "someUserId"
+        val email = "someEmailId"
+        val currentTimeInSeconds = Instant.now().epochSecond
+        val userEntity1 = getApplicationUserEntity(
+            id = userId + "1",
+            email = email,
+            accountStatus = AccountStatus.Registered.name,
+            roles = listOf(Roles.User.name),
+            registrationDateInSeconds = currentTimeInSeconds
+        )
+        val userEntity2 = getApplicationUserEntity(
+            id = userId + "2",
+            email = email,
+            accountStatus = AccountStatus.Registered.name,
+            roles = listOf(Roles.User.name),
+            registrationDateInSeconds = currentTimeInSeconds + 100 // highest
+        )
+        val userEntity3 = getApplicationUserEntity(
+            id = userId + "3",
+            email = email,
+            accountStatus = AccountStatus.Registered.name,
+            roles = listOf(Roles.User.name),
+            registrationDateInSeconds = currentTimeInSeconds - 100
+        )
+        // use userEntityActivated2
+        val expectedApplicationUser = ApplicationUser(
+            id = userEntity2.id,
+            email = userEntity2.email,
+            password = userEntity2.password,
+            roles = listOf(Roles.User),
+            accountStatus = AccountStatus.Registered,
+            registrationDateInSeconds = userEntity2.registrationDateInSeconds
+        )
+
+        // Stub
+        given(userSqlRepo.getUserByEmail(email))
+            .willReturn(listOf(userEntity1, userEntity2, userEntity3))
+
+        // Call method and assert
+        assertEquals(expectedApplicationUser, userDbImpl.getApplicationUserFromEmail(email, scope))
+    }
+
+    @Test
+    fun deleteUserTest() = runBlocking<Unit> {
+        val userId = "someUserId"
         // Call method
-        userDbImpl.deleteUser(email, scope)
+        userDbImpl.deleteUser(userId, scope)
 
         // Verify
-        verify(userSqlRepo).deleteById(email)
+        verify(userSqlRepo).deleteById(userId)
     }
+
+    @Test
+    fun `deleteUsersWithEmailAndAccountStatus when one user entry present with passed AccountStatus`() =
+        runBlocking<Unit> {
+            val email = "someEmailId"
+            val userId = "someUserId"
+            val userEntity = getApplicationUserEntity(
+                id = userId,
+                email = email,
+                accountStatus = AccountStatus.Registered.name,
+                roles = listOf(Roles.User.name)
+            )
+            // Stub
+            given(userSqlRepo.getUserByEmail(email)).willReturn(listOf(userEntity))
+
+            // Call method
+            userDbImpl.deleteUsersWithEmailAndAccountStatus(email, AccountStatus.Registered, scope)
+
+            // Verify
+            verify(userSqlRepo).deleteById(userId)
+        }
+
+    @Test
+    fun `deleteUsersWithEmailAndAccountStatus when no user entry present for email`() = runBlocking {
+        val email = "someEmailId"
+        // Stub
+        given(userSqlRepo.getUserByEmail(email)).willReturn(emptyList())
+
+        // Call method
+        userDbImpl.deleteUsersWithEmailAndAccountStatus(email, AccountStatus.Registered, scope)
+
+        // Verify
+        verify(userSqlRepo, times(0)).deleteById(anyString())
+    }
+
+    @Test
+    fun `deleteUsersWithEmailAndAccountStatus when more than one user entry present with passed AccountStatus`() =
+        runBlocking<Unit> {
+            val email = "someEmailId"
+            val userId = "someUserId"
+            val accountStatus = AccountStatus.Registered
+            val userEntity1 = getApplicationUserEntity(
+                id = userId + "1",
+                email = email,
+                accountStatus = accountStatus.name,
+                roles = listOf(Roles.User.name)
+            )
+            val userEntity2 = getApplicationUserEntity(
+                id = userId + "2",
+                email = email,
+                accountStatus = AccountStatus.Activated.name, // Different from passed account status
+                roles = listOf(Roles.User.name)
+            )
+            val userEntity3 = getApplicationUserEntity(
+                id = userId + "3",
+                email = email,
+                accountStatus = accountStatus.name,
+                roles = listOf(Roles.User.name)
+            )
+            // Stub
+            given(userSqlRepo.getUserByEmail(email)).willReturn(listOf(userEntity1, userEntity2, userEntity3))
+
+            // Call method
+            userDbImpl.deleteUsersWithEmailAndAccountStatus(email, AccountStatus.Registered, scope)
+
+            // Verify
+            verify(userSqlRepo).deleteById(userId + "1")
+            verify(userSqlRepo).deleteById(userId + "3")
+        }
 
     @Test
     fun saveUserTest() = runBlocking<Unit> {

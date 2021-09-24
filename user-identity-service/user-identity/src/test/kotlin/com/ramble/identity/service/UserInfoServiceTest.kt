@@ -33,34 +33,35 @@ class UserInfoServiceTest {
     private val applicationUser = mock(ApplicationUser::class.java)
     private val password = "somePassword"
     private val emailId = "someEmailId"
+    private val userId = "someUserId"
     private val grantedAuthorities = setOf(SimpleGrantedAuthority("user"))
     private val timeAndIdGenerator = mock(TimeAndIdGenerator::class.java)
 
     private val userInfoService = UserInfoService(userRepo, authTokensService, timeAndIdGenerator)
 
     @Test
-    fun `getMyUserInfo should return user if valid principal`() = runBlocking {
+    fun `getUserInfo should return user if valid principal`() = runBlocking {
         val principal = mock(Principal::class.java)
 
         // Stub
         given(authTokensService.getAccessTokenClaims(principal)).willReturn(accessClaims)
-        given(accessClaims.email).willReturn(emailId)
-        given(userRepo.getUserInfo(emailId)).willReturn(userInfo)
+        given(accessClaims.userId).willReturn(userId)
+        given(userRepo.getUserInfo(userId)).willReturn(userInfo)
 
         // Call method and assert
-        val result = userInfoService.getMyUserInfo(principal)
+        val result = userInfoService.getUserInfo(principal)
         assertEquals(userInfo, result)
     }
 
     @Test(expected = UserNotFoundException::class)
-    fun `getMyUserInfo should throw UserNotFoundException if claims is missing principal`() = runBlocking<Unit> {
+    fun `getUserInfo should throw UserNotFoundException if claims is missing principal`() = runBlocking<Unit> {
         val principal = mock(Principal::class.java)
 
         // Stub
         given(authTokensService.getAccessTokenClaims(principal)).willReturn(null)
 
         // Call method and assert that exception is thrown
-        userInfoService.getMyUserInfo(principal)
+        userInfoService.getUserInfo(principal)
     }
 
     @Test
@@ -70,7 +71,7 @@ class UserInfoServiceTest {
         given(applicationUser.grantedAuthorities).willReturn(grantedAuthorities)
 
         // Stub
-        given(userRepo.getApplicationUser(emailId)).willReturn(applicationUser)
+        given(userRepo.getApplicationUserFromEmail(emailId)).willReturn(applicationUser)
 
         // Call method and assert
         val userDetailsResult = userInfoService.findByUsername(emailId).awaitFirst()
@@ -87,7 +88,7 @@ class UserInfoServiceTest {
             given(applicationUser.grantedAuthorities).willReturn(grantedAuthorities)
 
             // Stub
-            given(userRepo.getApplicationUser(emailId)).willReturn(null)
+            given(userRepo.getApplicationUserFromEmail(emailId)).willReturn(null)
 
             // Call method and assert
             val exception: UsernameNotFoundException = assertThrows {
@@ -164,57 +165,84 @@ class UserInfoServiceTest {
     }
 
     @Test
-    fun `getMyUserInfo should return full userInfo if found`() = runBlocking {
-        val emailId = "someEmailId"
+    fun `getUserInfo should return full userInfo if found`() = runBlocking {
+        val userId = "someUserId"
 
         // Stub
-        given(userRepo.getUserInfo(emailId)).willReturn(userInfo)
+        given(userRepo.getUserInfo(userId)).willReturn(userInfo)
 
         // Call method and assert
-        val result = userInfoService.getMyUserInfo(emailId)
+        val result = userInfoService.getUserInfo(userId)
         assertEquals(result, userInfo)
     }
 
     @Test(expected = UserNotFoundException::class)
-    fun `getMyUserInfo should throw UserNotFoundException if repo throws UserNotFoundException`() = runBlocking<Unit> {
-        val emailId = "someEmailId"
+    fun `getUserInfo should throw UserNotFoundException if repo throws UserNotFoundException`() = runBlocking<Unit> {
+        val userId = "someUserId"
 
         // Stub
-        given(userRepo.getUserInfo(emailId)).willThrow(UserNotFoundException())
+        given(userRepo.getUserInfo(userId)).willThrow(UserNotFoundException())
 
         // Call method and assert
-        userInfoService.getMyUserInfo(emailId)
+        userInfoService.getUserInfo(userId)
     }
 
     @Test(expected = UserSuspendedException::class)
-    fun `getMyUserInfo should throw UserSuspendedException if repo throws UserSuspendedException`() =
+    fun `getUserInfo should throw UserSuspendedException if repo throws UserSuspendedException`() =
         runBlocking<Unit> {
-            val emailId = "someEmailId"
+            val userId = "someUserId"
 
             // Stub
-            given(userRepo.getUserInfo(emailId)).willThrow(UserSuspendedException())
+            given(userRepo.getUserInfo(userId)).willThrow(UserSuspendedException())
 
             // Call method and assert
-            userInfoService.getMyUserInfo(emailId)
+            userInfoService.getUserInfo(userId)
         }
 
     @Test(expected = UserNotActivatedException::class)
-    fun `getMyUserInfo should throw UserNotActivatedException if repo throws UserNotActivatedException`() =
+    fun `getUserInfo should throw UserNotActivatedException if repo throws UserNotActivatedException`() =
+        runBlocking<Unit> {
+            val userId = "someUserId"
+
+            // Stub
+            given(userRepo.getUserInfo(userId)).willThrow(UserNotActivatedException())
+
+            // Call method and assert
+            userInfoService.getUserInfo(userId)
+        }
+
+    @Test
+    fun `getUserInfoFromEmail should return full userInfo if found`() = runBlocking {
+        val emailId = "someEmailId"
+        val applicationUser = getApplicationUser(id = "myId", email = emailId)
+        val userInfo = applicationUser.toUserInfo()
+
+        // Stub
+        given(userRepo.getApplicationUserFromEmail(emailId)).willReturn(applicationUser)
+
+        // Call method and assert
+        val result = userInfoService.getUserInfoFromEmail(emailId)
+        assertEquals(result, userInfo)
+    }
+
+    @Test(expected = InternalServerException::class)
+    fun `getUserInfoFromEmail should throw UserSuspendedException if repo throws UserSuspendedException`() =
         runBlocking<Unit> {
             val emailId = "someEmailId"
 
             // Stub
-            given(userRepo.getUserInfo(emailId)).willThrow(UserNotActivatedException())
+            given(userRepo.getApplicationUserFromEmail(emailId)).willThrow(InternalServerException())
 
             // Call method and assert
-            userInfoService.getMyUserInfo(emailId)
+            userInfoService.getUserInfoFromEmail(emailId)
         }
 
     @Test
     fun `getUserProfile should return profile if found`() = runBlocking {
         val emailId = "someEmailId"
+        val userId = "someUserId"
         val userInfo = UserInfo(
-            id = "someId",
+            id = userId,
             email = emailId,
             firstName = "SomeFirstName",
             lastName = "SomeLastName",
@@ -232,46 +260,85 @@ class UserInfoServiceTest {
         )
 
         // Stub
-        given(userRepo.getUserInfo(emailId)).willReturn(userInfo)
+        given(userRepo.getUserInfo(userId)).willReturn(userInfo)
 
         // Call method and assert
-        val result = userInfoService.getUserProfile(emailId)
+        val result = userInfoService.getUserProfile(userId)
         assertEquals(result, userProfile)
     }
 
     @Test(expected = UserNotFoundException::class)
     fun `getUserProfile should throw UserNotFoundException if repo throws UserNotFoundException`() = runBlocking<Unit> {
-        val emailId = "someEmailId"
+        val userId = "someUserId"
 
         // Stub
-        given(userRepo.getUserInfo(emailId)).willThrow(UserNotFoundException())
+        given(userRepo.getUserInfo(userId)).willThrow(UserNotFoundException())
 
         // Call method and assert
-        userInfoService.getUserProfile(emailId)
+        userInfoService.getUserProfile(userId)
     }
 
     @Test(expected = UserSuspendedException::class)
     fun `getUserProfile should throw UserSuspendedException if repo throws UserSuspendedException`() =
         runBlocking<Unit> {
-            val emailId = "someEmailId"
+            val userId = "someUserId"
 
             // Stub
-            given(userRepo.getUserInfo(emailId)).willThrow(UserSuspendedException())
+            given(userRepo.getUserInfo(userId)).willThrow(UserSuspendedException())
 
             // Call method and assert
-            userInfoService.getUserProfile(emailId)
+            userInfoService.getUserProfile(userId)
         }
 
     @Test(expected = UserNotActivatedException::class)
     fun `getUserProfile should throw UserNotActivatedException if repo throws UserNotActivatedException`() =
         runBlocking<Unit> {
-            val emailId = "someEmailId"
+            val userId = "someUserId"
 
             // Stub
-            given(userRepo.getUserInfo(emailId)).willThrow(UserNotActivatedException())
+            given(userRepo.getUserInfo(userId)).willThrow(UserNotActivatedException())
 
             // Call method and assert
-            userInfoService.getUserProfile(emailId)
+            userInfoService.getUserProfile(userId)
         }
+
+    private fun getApplicationUser(
+        id: String = "someUserId",
+        email: String = "someEmailId",
+        password: String = "somePassword",
+        roles: List<Roles> = emptyList(),
+        accountStatus: AccountStatus = AccountStatus.Activated,
+        registrationDateInSeconds: Long = -1,
+        firstName: String = "",
+        lastName: String = "",
+        nickname: String = "",
+        age: Int = -1,
+        gender: Gender = Gender.Undisclosed,
+        houseNumber: String = "",
+        streetName: String = "",
+        postCode: String = "",
+        city: String = "",
+        country: String = "",
+        activationDateInSeconds: Long = -1
+    ) =
+        ApplicationUser(
+            id = id,
+            email = email,
+            password = password,
+            roles = roles,
+            accountStatus = accountStatus,
+            registrationDateInSeconds = registrationDateInSeconds,
+            firstName = firstName,
+            lastName = lastName,
+            nickname = nickname,
+            age = age,
+            gender = gender,
+            houseNumber = houseNumber,
+            streetName = streetName,
+            postCode = postCode,
+            city = city,
+            country = country,
+            activationDateInSeconds = activationDateInSeconds
+        )
 
 }

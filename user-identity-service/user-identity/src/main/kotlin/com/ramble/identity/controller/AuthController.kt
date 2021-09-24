@@ -166,6 +166,7 @@ class AuthController(
             )]
     )
     @PostMapping(LOGIN_PATH)
+    @Suppress("unused")
     fun fakeLogin(
         @RequestHeader(name = CLIENT_ID_HEADER) clientIdHeader: String,
         @RequestBody loginUserRequest: LoginUserRequest

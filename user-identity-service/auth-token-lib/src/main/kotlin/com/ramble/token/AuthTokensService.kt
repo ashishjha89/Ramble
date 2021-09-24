@@ -96,12 +96,10 @@ class AuthTokensService(
         if (!refreshTokenHandler.isValidToken(refreshToken, jwtParserRefreshToken, now))
             throw RefreshTokenIsInvalidException()
 
-        // 4) Clean old access-token for this client.
         val accessToken = clientAuthInfo.accessToken
-        disableAccessToken(clientAuthInfo.clientId, accessToken, now)
-
-        // 5. Now, generate new auth-tokens
+        // 4. Now, generate new auth-tokens & Clean old access-token for this client.
         val accessClaims = tokenValidatorService.getClaimsFromAccessToken(accessToken, now) ?: return null
+        disableAccessToken(clientAuthInfo.clientId, accessToken, now)
 
         return generateUserAuthToken(
             roles = accessClaims.roles,

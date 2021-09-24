@@ -2,6 +2,8 @@ package com.ramble.identity.service
 
 import com.ramble.identity.common.invalidUserId
 import com.ramble.identity.models.*
+import com.ramble.identity.repo.Email
+import com.ramble.identity.repo.Id
 import com.ramble.identity.repo.UserRepo
 import com.ramble.identity.utils.TimeAndIdGenerator
 import com.ramble.token.AuthTokensService
@@ -25,22 +27,29 @@ class UserInfoService(
 ) : ReactiveUserDetailsService {
 
     @Throws(UserNotFoundException::class, InternalServerException::class, InternalTokenStorageException::class)
-    suspend fun getMyUserInfo(principal: Principal): UserInfo =
-        getMyUserInfo(authTokensService.getAccessTokenClaims(principal)?.email ?: throw UserNotFoundException())
+    suspend fun getUserInfo(principal: Principal): UserInfo =
+        getUserInfo(id = authTokensService.getAccessTokenClaims(principal)?.userId ?: throw UserNotFoundException())
 
     @Throws(
         UserNotFoundException::class, UserSuspendedException::class,
         UserNotActivatedException::class, InternalServerException::class
     )
-    suspend fun getMyUserInfo(email: String): UserInfo =
-        userRepo.getUserInfo(email)
+    suspend fun getUserInfo(id: Id): UserInfo =
+        userRepo.getUserInfo(id)
 
     @Throws(
         UserNotFoundException::class, UserSuspendedException::class,
         UserNotActivatedException::class, InternalServerException::class
     )
-    suspend fun getUserProfile(email: String): UserProfile {
-        val userInfo = userRepo.getUserInfo(email)
+    suspend fun getUserInfoFromEmail(email: Email): UserInfo =
+        userRepo.getApplicationUserFromEmail(email)?.toUserInfo() ?: throw UserNotFoundException()
+
+    @Throws(
+        UserNotFoundException::class, UserSuspendedException::class,
+        UserNotActivatedException::class, InternalServerException::class
+    )
+    suspend fun getUserProfile(id: Id): UserProfile {
+        val userInfo = userRepo.getUserInfo(id)
         return UserProfile(
             email = userInfo.email,
             firstName = userInfo.firstName,
@@ -52,9 +61,10 @@ class UserInfoService(
     }
 
     @Throws(UsernameNotFoundException::class, InternalServerException::class)
-    override fun findByUsername(username: String?): Mono<UserDetails> = mono {
+    override fun findByUsername(username: Email?): Mono<UserDetails> = mono {
         if (username.isNullOrBlank()) throw UsernameNotFoundException(invalidUserId.errorMessage)
-        val user = userRepo.getApplicationUser(username) ?: throw UsernameNotFoundException(invalidUserId.errorMessage)
+        val user = userRepo.getApplicationUserFromEmail(username)
+            ?: throw UsernameNotFoundException(invalidUserId.errorMessage)
         return@mono SpringUser(user.email, user.password, user.grantedAuthorities)
     }
 

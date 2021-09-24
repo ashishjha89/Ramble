@@ -2,6 +2,7 @@ package com.ramble.identity.repo.persistence
 
 import com.ramble.identity.models.*
 import com.ramble.identity.repo.Email
+import com.ramble.identity.repo.Id
 import com.ramble.identity.repo.persistence.entity.ApplicationUserEntity
 import com.ramble.identity.utils.valueOf
 import com.ramble.token.util.value
@@ -20,14 +21,25 @@ class UserDbImpl(private val userSqlRepo: UserSqlRepo) {
 
     @Throws(InternalServerException::class)
     suspend fun getApplicationUser(
+        id: Id,
+        scope: CoroutineScope,
+        timeoutInMilliseconds: Long = SQL_TIMEOUT
+    ): ApplicationUser? =
+        performDeferredTask(
+            deferredTask = scope.async { userSqlRepo.findById(id).value?.toApplicationUser() },
+            timeoutInMilliseconds = timeoutInMilliseconds
+        )
+
+    @Throws(InternalServerException::class)
+    suspend fun getApplicationUserFromEmail(
         email: Email,
         scope: CoroutineScope,
         timeoutInMilliseconds: Long = SQL_TIMEOUT
     ): ApplicationUser? =
         performDeferredTask(
-            deferredTask = scope.async { userSqlRepo.findById(email).value?.toApplicationUser() },
+            deferredTask = scope.async { userSqlRepo.getUserByEmail(email)?.map { it.toApplicationUser() } },
             timeoutInMilliseconds = timeoutInMilliseconds
-        )
+        )?.maxByOrNull { it.registrationDateInSeconds }
 
     @Throws(InternalServerException::class)
     suspend fun save(
@@ -44,14 +56,30 @@ class UserDbImpl(private val userSqlRepo: UserSqlRepo) {
 
     @Throws(InternalServerException::class)
     suspend fun deleteUser(
-        email: Email,
+        id: Id,
         scope: CoroutineScope,
         timeoutInMilliseconds: Long = SQL_TIMEOUT
     ) =
         performDeferredTask(
-            deferredTask = scope.async { userSqlRepo.deleteById(email) },
+            deferredTask = scope.async { userSqlRepo.deleteById(id) },
             timeoutInMilliseconds = timeoutInMilliseconds
         )
+
+    @Throws(InternalServerException::class)
+    suspend fun deleteUsersWithEmailAndAccountStatus(
+        email: Email,
+        accountStatus: AccountStatus,
+        scope: CoroutineScope,
+        timeoutInMilliseconds: Long = SQL_TIMEOUT
+    ) {
+        val usersToDelete = performDeferredTask(
+            deferredTask = scope.async { userSqlRepo.getUserByEmail(email)?.map { it.toApplicationUser() } },
+            timeoutInMilliseconds = timeoutInMilliseconds
+        )?.filter { it.accountStatus == accountStatus } ?: emptyList()
+        usersToDelete.forEach {
+            deleteUser(it.id, scope, timeoutInMilliseconds)
+        }
+    }
 
     private fun ApplicationUser.toApplicationUserEntity(): ApplicationUserEntity =
         ApplicationUserEntity(

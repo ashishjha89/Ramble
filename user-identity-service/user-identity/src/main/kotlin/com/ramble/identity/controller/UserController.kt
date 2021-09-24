@@ -46,7 +46,7 @@ class UserController(private val userInfoService: UserInfoService) {
     )
     @GetMapping(USER_INFO_ME_PATH)
     suspend fun getMyInfo(principal: Principal): UserInfo =
-        userInfoService.getMyUserInfo(principal)
+        userInfoService.getUserInfo(principal)
 
     @ApiResponses(
         value = [

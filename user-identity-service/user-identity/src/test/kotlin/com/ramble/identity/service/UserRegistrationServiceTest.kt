@@ -152,6 +152,7 @@ class UserRegistrationServiceTest {
         val result = userRegistrationService.confirmToken(registrationTokenStr)
         assertEquals(RegisteredUserResponse(userId, emailId), result)
         verify(userRepo).activateRegisteredUser(emailId)
+        verify(userRepo).deleteUsersWithEmailAndAccountStatus(emailId, AccountStatus.Registered)
     }
 
     @Test(expected = InvalidRegistrationConfirmationToken::class)

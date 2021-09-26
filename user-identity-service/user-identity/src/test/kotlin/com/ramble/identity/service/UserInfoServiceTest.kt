@@ -251,6 +251,7 @@ class UserInfoServiceTest {
             gender = Gender.Male.name
         )
         val userProfile = UserProfile(
+            id = userId,
             email = userInfo.email,
             firstName = userInfo.firstName,
             lastName = userInfo.lastName,

@@ -71,6 +71,7 @@ data class UserInfo(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class UserProfile(
+    val id: String,
     val email: String,
     val firstName: String? = null,
     val lastName: String? = null,

@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
@@ -25,8 +26,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping(MESSAGING_API_BASE_PATH)
 class MessagingController(private val userService: UserService) {
 
-    @GetMapping("/hello")
-    fun helloFromMessaging() = "Hello from Messaging!"
+    private val logger = LoggerFactory.getLogger(MessagingController::class.java)
 
     @ApiResponses(
         value = [
@@ -56,6 +56,7 @@ class MessagingController(private val userService: UserService) {
     suspend fun getUserFromMessaging(
         @RequestHeader(name = AUTHORIZATION_HEADER) authorizationHeader: String?
     ): UserProfile {
+        logger.info("MessagingController getUserFromMessaging")
         if (authorizationHeader.isNullOrBlank()) throw UnauthorizedException()
         val accessToken = getTokenFromBearerHeader(authorizationHeader) ?: throw AccessTokenIsInvalidException()
         return userService.getUserProfile(accessToken)

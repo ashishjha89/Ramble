@@ -51,6 +51,7 @@ class UserInfoService(
     suspend fun getUserProfile(id: Id): UserProfile {
         val userInfo = userRepo.getUserInfo(id)
         return UserProfile(
+            id = userInfo.id,
             email = userInfo.email,
             firstName = userInfo.firstName,
             lastName = userInfo.lastName,

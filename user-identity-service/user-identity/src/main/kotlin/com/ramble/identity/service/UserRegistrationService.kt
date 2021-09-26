@@ -12,6 +12,7 @@ import com.ramble.identity.utils.TimeAndIdGenerator
 import com.ramble.token.RegistrationConfirmationService
 import com.ramble.token.model.InternalTokenStorageException
 import com.ramble.token.repository.persistence.entities.RegistrationConfirmationToken
+import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -27,6 +28,8 @@ class UserRegistrationService(
     private val timeAndIdGenerator: TimeAndIdGenerator
 ) {
 
+    private val logger = LoggerFactory.getLogger(UserRegistrationService::class.java)
+
     @Throws(
         UserAlreadyActivatedException::class, UserSuspendedException::class, EmailCredentialNotFoundException::class,
         EmailSendingFailedException::class, InvalidEmailException::class,
@@ -38,7 +41,10 @@ class UserRegistrationService(
         expiryDurationUnit: ChronoUnit = ChronoUnit.MINUTES
     ): RegisteredUserResponse {
         val now = timeAndIdGenerator.getCurrentTime()
-        registrationRequestValidator.getRegistrationRequestError()?.let { throw InvalidEmailException() }
+        registrationRequestValidator.getRegistrationRequestError()?.let {
+            logger.warn("saveUser() called with invalid email:${registerUserRequest.email}")
+            throw InvalidEmailException()
+        }
         val userToSave = registerUserRequest.copy(password = bCryptPasswordEncoder.encode(registerUserRequest.password))
         val newlyRegisteredUser = userRepo.saveNewUser(userToSave)
         val confirmRegistrationToken = registrationConfirmationService.addRegistrationConfirmationToken(
@@ -64,7 +70,10 @@ class UserRegistrationService(
         val now = timeAndIdGenerator.getCurrentTime()
         token ?: throw InvalidRegistrationConfirmationToken()
         val confirmationToken = registrationConfirmationService.processRegistrationConfirmationToken(token, now)
-            ?: throw InvalidRegistrationConfirmationToken()
+            ?: let {
+                logger.warn("confirm registration token called with invalid format:$token")
+                throw InvalidRegistrationConfirmationToken()
+            }
         val applicationUser = userRepo.activateRegisteredUser(email = confirmationToken.email)
 
         try {

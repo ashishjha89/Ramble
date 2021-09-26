@@ -76,40 +76,11 @@ class UserDbImplTest {
         given(userSqlRepo.getUserByEmail(email)).willReturn(emptyList())
 
         // Call method and assert
-        assertNull(userDbImpl.getApplicationUserFromEmail(email, scope))
+        assertEquals(emptyList(), userDbImpl.getApplicationUsersWithEmail(email, scope))
     }
 
     @Test
-    fun `getApplicationUserFromEmail should return user when only one user is present in DB`() = runBlocking {
-        val userId = "someUserId"
-        val email = "someEmailId"
-        val currentTimeInSeconds = Instant.now().epochSecond
-        val userEntityActivated = getApplicationUserEntity(
-            id = userId,
-            email = email,
-            accountStatus = AccountStatus.Activated.name,
-            roles = listOf(Roles.User.name),
-            activationDateInSeconds = currentTimeInSeconds
-        )
-        val expectedApplicationUser = ApplicationUser(
-            id = userEntityActivated.id,
-            email = userEntityActivated.email,
-            password = userEntityActivated.password,
-            roles = listOf(Roles.User),
-            accountStatus = AccountStatus.Activated,
-            registrationDateInSeconds = userEntityActivated.registrationDateInSeconds,
-            activationDateInSeconds = userEntityActivated.activationDateInSeconds
-        )
-
-        // Stub
-        given(userSqlRepo.getUserByEmail(email)).willReturn(listOf(userEntityActivated))
-
-        // Call method and assert
-        assertEquals(expectedApplicationUser, userDbImpl.getApplicationUserFromEmail(email, scope))
-    }
-
-    @Test
-    fun `getApplicationUserFromEmail should return latest user when user is present in DB`() = runBlocking {
+    fun `getApplicationUserFromEmail should return all users with passed email`() = runBlocking {
         val userId = "someUserId"
         val email = "someEmailId"
         val currentTimeInSeconds = Instant.now().epochSecond
@@ -127,15 +98,16 @@ class UserDbImplTest {
             roles = listOf(Roles.User.name),
             registrationDateInSeconds = currentTimeInSeconds + 100 // highest
         )
-        val userEntity3 = getApplicationUserEntity(
-            id = userId + "3",
-            email = email,
-            accountStatus = AccountStatus.Registered.name,
-            roles = listOf(Roles.User.name),
-            registrationDateInSeconds = currentTimeInSeconds - 100
+
+        val expectedApplicationUser1 = ApplicationUser(
+            id = userEntity1.id,
+            email = userEntity1.email,
+            password = userEntity1.password,
+            roles = listOf(Roles.User),
+            accountStatus = AccountStatus.Registered,
+            registrationDateInSeconds = userEntity1.registrationDateInSeconds
         )
-        // use userEntityActivated2
-        val expectedApplicationUser = ApplicationUser(
+        val expectedApplicationUser2 = ApplicationUser(
             id = userEntity2.id,
             email = userEntity2.email,
             password = userEntity2.password,
@@ -143,13 +115,14 @@ class UserDbImplTest {
             accountStatus = AccountStatus.Registered,
             registrationDateInSeconds = userEntity2.registrationDateInSeconds
         )
-
         // Stub
-        given(userSqlRepo.getUserByEmail(email))
-            .willReturn(listOf(userEntity1, userEntity2, userEntity3))
+        given(userSqlRepo.getUserByEmail(email)).willReturn(listOf(userEntity1, userEntity2))
 
         // Call method and assert
-        assertEquals(expectedApplicationUser, userDbImpl.getApplicationUserFromEmail(email, scope))
+        assertEquals(
+            listOf(expectedApplicationUser1, expectedApplicationUser2),
+            userDbImpl.getApplicationUsersWithEmail(email, scope)
+        )
     }
 
     @Test

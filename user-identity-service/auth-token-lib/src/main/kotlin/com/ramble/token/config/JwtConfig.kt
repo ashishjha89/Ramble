@@ -13,7 +13,7 @@ import org.springframework.context.annotation.PropertySource
 @ComponentScan(basePackageClasses = [AuthTokensService::class])
 @Configuration
 @PropertySource(value = ["classpath:authtoken-application.yml"], factory = YamlPropertySourceFactory::class)
-class TokenConfig {}
+class TokenConfig
 
 @ConstructorBinding
 @ConfigurationProperties(prefix = "jwt")

@@ -6,6 +6,7 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory
 import org.springframework.data.redis.core.RedisTemplate
 
 @Configuration
+@Suppress("unused")
 class RedisClientComponentBuilder {
 
     @Bean

@@ -35,21 +35,21 @@ class UserInfoService(
         UserNotActivatedException::class, InternalServerException::class
     )
     suspend fun getUserInfo(id: Id): UserInfo =
-        userRepo.getUserInfo(id)
+        userRepo.getActiveUserInfo(id)
 
     @Throws(
         UserNotFoundException::class, UserSuspendedException::class,
         UserNotActivatedException::class, InternalServerException::class
     )
     suspend fun getUserInfoFromEmail(email: Email): UserInfo =
-        userRepo.getApplicationUserFromEmail(email)?.toUserInfo() ?: throw UserNotFoundException()
+        userRepo.getApplicationUserWithEmail(email)?.toUserInfo() ?: throw UserNotFoundException()
 
     @Throws(
         UserNotFoundException::class, UserSuspendedException::class,
         UserNotActivatedException::class, InternalServerException::class
     )
     suspend fun getUserProfile(id: Id): UserProfile {
-        val userInfo = userRepo.getUserInfo(id)
+        val userInfo = userRepo.getActiveUserInfo(id)
         return UserProfile(
             id = userInfo.id,
             email = userInfo.email,
@@ -64,7 +64,7 @@ class UserInfoService(
     @Throws(UsernameNotFoundException::class, InternalServerException::class)
     override fun findByUsername(username: Email?): Mono<UserDetails> = mono {
         if (username.isNullOrBlank()) throw UsernameNotFoundException(invalidUserId.errorMessage)
-        val user = userRepo.getApplicationUserFromEmail(username)
+        val user = userRepo.getApplicationUserWithEmail(username)
             ?: throw UsernameNotFoundException(invalidUserId.errorMessage)
         return@mono SpringUser(user.email, user.password, user.grantedAuthorities)
     }

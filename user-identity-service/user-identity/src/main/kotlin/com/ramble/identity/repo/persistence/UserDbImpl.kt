@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withTimeout
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -19,51 +20,75 @@ class UserDbImpl(private val userSqlRepo: UserSqlRepo) {
         private const val SQL_TIMEOUT = 500L
     }
 
+    private val logger = LoggerFactory.getLogger(UserDbImpl::class.java)
+
     @Throws(InternalServerException::class)
     suspend fun getApplicationUser(
         id: Id,
         scope: CoroutineScope,
         timeoutInMilliseconds: Long = SQL_TIMEOUT
-    ): ApplicationUser? =
-        performDeferredTask(
-            deferredTask = scope.async { userSqlRepo.findById(id).value?.toApplicationUser() },
-            timeoutInMilliseconds = timeoutInMilliseconds
-        )
+    ): ApplicationUser? {
+        val deferredTask = scope.async { userSqlRepo.findById(id).value?.toApplicationUser() }
+        return try {
+            performDeferredTask(deferredTask, timeoutInMilliseconds)
+        } catch (e: Exception) {
+            logger.error("Exception in Db Operation for getApplicationUser id:$id e:${e.message}")
+            if (deferredTask.isActive) deferredTask.cancel()
+            throw InternalServerException()
+        }
+    }
 
     @Throws(InternalServerException::class)
-    suspend fun getApplicationUserFromEmail(
+    suspend fun getApplicationUsersWithEmail(
         email: Email,
         scope: CoroutineScope,
         timeoutInMilliseconds: Long = SQL_TIMEOUT
-    ): ApplicationUser? =
-        performDeferredTask(
-            deferredTask = scope.async { userSqlRepo.getUserByEmail(email)?.map { it.toApplicationUser() } },
-            timeoutInMilliseconds = timeoutInMilliseconds
-        )?.maxByOrNull { it.registrationDateInSeconds }
+    ): List<ApplicationUser>? {
+        val deferredTask = scope.async { userSqlRepo.getUserByEmail(email)?.map { it.toApplicationUser() } }
+        return try {
+            performDeferredTask(deferredTask, timeoutInMilliseconds)
+        } catch (e: Exception) {
+            logger.error("Exception in Db Operation for getApplicationUsersWithEmail email:$email e:${e.message}")
+            if (deferredTask.isActive) deferredTask.cancel()
+            throw InternalServerException()
+        }
+    }
 
     @Throws(InternalServerException::class)
     suspend fun save(
         applicationUser: ApplicationUser,
         scope: CoroutineScope,
         timeoutInMilliseconds: Long = SQL_TIMEOUT
-    ): ApplicationUser =
-        performDeferredTask(
-            deferredTask = scope.async {
-                userSqlRepo.save(applicationUser.toApplicationUserEntity()).toApplicationUser()
-            },
-            timeoutInMilliseconds = timeoutInMilliseconds
-        )
+    ): ApplicationUser {
+        val deferredTask = scope.async {
+            userSqlRepo.save(applicationUser.toApplicationUserEntity()).toApplicationUser()
+        }
+        return try {
+            performDeferredTask(deferredTask, timeoutInMilliseconds)
+        } catch (e: Exception) {
+            val userInfo = applicationUser.toUserInfo() // so that password is not put in logs.
+            logger.error("Exception in Db Operation for saving user:$userInfo e:${e.message}")
+            if (deferredTask.isActive) deferredTask.cancel()
+            throw InternalServerException()
+        }
+
+    }
 
     @Throws(InternalServerException::class)
     suspend fun deleteUser(
         id: Id,
         scope: CoroutineScope,
         timeoutInMilliseconds: Long = SQL_TIMEOUT
-    ) =
-        performDeferredTask(
-            deferredTask = scope.async { userSqlRepo.deleteById(id) },
-            timeoutInMilliseconds = timeoutInMilliseconds
-        )
+    ) {
+        val deferredTask = scope.async { userSqlRepo.deleteById(id) }
+        return try {
+            performDeferredTask(deferredTask, timeoutInMilliseconds)
+        } catch (e: Exception) {
+            logger.error("Exception in Db Operation for deleteUser id:$id e:${e.message}")
+            if (deferredTask.isActive) deferredTask.cancel()
+            throw InternalServerException()
+        }
+    }
 
     @Throws(InternalServerException::class)
     suspend fun deleteUsersWithEmailAndAccountStatus(
@@ -72,13 +97,9 @@ class UserDbImpl(private val userSqlRepo: UserSqlRepo) {
         scope: CoroutineScope,
         timeoutInMilliseconds: Long = SQL_TIMEOUT
     ) {
-        val usersToDelete = performDeferredTask(
-            deferredTask = scope.async { userSqlRepo.getUserByEmail(email)?.map { it.toApplicationUser() } },
-            timeoutInMilliseconds = timeoutInMilliseconds
-        )?.filter { it.accountStatus == accountStatus } ?: emptyList()
-        usersToDelete.forEach {
-            deleteUser(it.id, scope, timeoutInMilliseconds)
-        }
+        val usersToDelete = getApplicationUsersWithEmail(email, scope, timeoutInMilliseconds)
+            ?.filter { it.accountStatus == accountStatus } ?: emptyList()
+        usersToDelete.forEach { deleteUser(it.id, scope, timeoutInMilliseconds) }
     }
 
     private fun ApplicationUser.toApplicationUserEntity(): ApplicationUserEntity =
@@ -123,14 +144,8 @@ class UserDbImpl(private val userSqlRepo: UserSqlRepo) {
             activationDateInSeconds = activationDateInSeconds.takeIf { it > 0 }
         )
 
-    @Throws(InternalServerException::class)
     private suspend fun <T> performDeferredTask(deferredTask: Deferred<T>, timeoutInMilliseconds: Long): T =
-        try {
-            withTimeout(timeoutInMilliseconds) {
-                deferredTask.await()
-            }
-        } catch (e: Exception) {
-            if (deferredTask.isActive) deferredTask.cancel()
-            throw InternalServerException()
+        withTimeout(timeoutInMilliseconds) {
+            deferredTask.await()
         }
 }

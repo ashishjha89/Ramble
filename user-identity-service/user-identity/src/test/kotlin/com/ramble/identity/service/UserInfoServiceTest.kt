@@ -46,7 +46,7 @@ class UserInfoServiceTest {
         // Stub
         given(authTokensService.getAccessTokenClaims(principal)).willReturn(accessClaims)
         given(accessClaims.userId).willReturn(userId)
-        given(userRepo.getUserInfo(userId)).willReturn(userInfo)
+        given(userRepo.getActiveUserInfo(userId)).willReturn(userInfo)
 
         // Call method and assert
         val result = userInfoService.getUserInfo(principal)
@@ -71,7 +71,7 @@ class UserInfoServiceTest {
         given(applicationUser.grantedAuthorities).willReturn(grantedAuthorities)
 
         // Stub
-        given(userRepo.getApplicationUserFromEmail(emailId)).willReturn(applicationUser)
+        given(userRepo.getApplicationUserWithEmail(emailId)).willReturn(applicationUser)
 
         // Call method and assert
         val userDetailsResult = userInfoService.findByUsername(emailId).awaitFirst()
@@ -88,7 +88,7 @@ class UserInfoServiceTest {
             given(applicationUser.grantedAuthorities).willReturn(grantedAuthorities)
 
             // Stub
-            given(userRepo.getApplicationUserFromEmail(emailId)).willReturn(null)
+            given(userRepo.getApplicationUserWithEmail(emailId)).willReturn(null)
 
             // Call method and assert
             val exception: UsernameNotFoundException = assertThrows {
@@ -169,7 +169,7 @@ class UserInfoServiceTest {
         val userId = "someUserId"
 
         // Stub
-        given(userRepo.getUserInfo(userId)).willReturn(userInfo)
+        given(userRepo.getActiveUserInfo(userId)).willReturn(userInfo)
 
         // Call method and assert
         val result = userInfoService.getUserInfo(userId)
@@ -181,7 +181,7 @@ class UserInfoServiceTest {
         val userId = "someUserId"
 
         // Stub
-        given(userRepo.getUserInfo(userId)).willThrow(UserNotFoundException())
+        given(userRepo.getActiveUserInfo(userId)).willThrow(UserNotFoundException())
 
         // Call method and assert
         userInfoService.getUserInfo(userId)
@@ -193,7 +193,7 @@ class UserInfoServiceTest {
             val userId = "someUserId"
 
             // Stub
-            given(userRepo.getUserInfo(userId)).willThrow(UserSuspendedException())
+            given(userRepo.getActiveUserInfo(userId)).willThrow(UserSuspendedException())
 
             // Call method and assert
             userInfoService.getUserInfo(userId)
@@ -205,7 +205,7 @@ class UserInfoServiceTest {
             val userId = "someUserId"
 
             // Stub
-            given(userRepo.getUserInfo(userId)).willThrow(UserNotActivatedException())
+            given(userRepo.getActiveUserInfo(userId)).willThrow(UserNotActivatedException())
 
             // Call method and assert
             userInfoService.getUserInfo(userId)
@@ -218,7 +218,7 @@ class UserInfoServiceTest {
         val userInfo = applicationUser.toUserInfo()
 
         // Stub
-        given(userRepo.getApplicationUserFromEmail(emailId)).willReturn(applicationUser)
+        given(userRepo.getApplicationUserWithEmail(emailId)).willReturn(applicationUser)
 
         // Call method and assert
         val result = userInfoService.getUserInfoFromEmail(emailId)
@@ -231,7 +231,7 @@ class UserInfoServiceTest {
             val emailId = "someEmailId"
 
             // Stub
-            given(userRepo.getApplicationUserFromEmail(emailId)).willThrow(InternalServerException())
+            given(userRepo.getApplicationUserWithEmail(emailId)).willThrow(InternalServerException())
 
             // Call method and assert
             userInfoService.getUserInfoFromEmail(emailId)
@@ -261,7 +261,7 @@ class UserInfoServiceTest {
         )
 
         // Stub
-        given(userRepo.getUserInfo(userId)).willReturn(userInfo)
+        given(userRepo.getActiveUserInfo(userId)).willReturn(userInfo)
 
         // Call method and assert
         val result = userInfoService.getUserProfile(userId)
@@ -273,7 +273,7 @@ class UserInfoServiceTest {
         val userId = "someUserId"
 
         // Stub
-        given(userRepo.getUserInfo(userId)).willThrow(UserNotFoundException())
+        given(userRepo.getActiveUserInfo(userId)).willThrow(UserNotFoundException())
 
         // Call method and assert
         userInfoService.getUserProfile(userId)
@@ -285,7 +285,7 @@ class UserInfoServiceTest {
             val userId = "someUserId"
 
             // Stub
-            given(userRepo.getUserInfo(userId)).willThrow(UserSuspendedException())
+            given(userRepo.getActiveUserInfo(userId)).willThrow(UserSuspendedException())
 
             // Call method and assert
             userInfoService.getUserProfile(userId)
@@ -297,7 +297,7 @@ class UserInfoServiceTest {
             val userId = "someUserId"
 
             // Stub
-            given(userRepo.getUserInfo(userId)).willThrow(UserNotActivatedException())
+            given(userRepo.getActiveUserInfo(userId)).willThrow(UserNotActivatedException())
 
             // Call method and assert
             userInfoService.getUserProfile(userId)

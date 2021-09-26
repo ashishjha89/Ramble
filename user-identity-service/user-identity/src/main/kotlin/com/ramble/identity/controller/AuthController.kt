@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -29,6 +30,8 @@ class AuthController(
     private val userInfoService: UserInfoService,
     private val userRegistrationService: UserRegistrationService
 ) {
+
+    private val logger = LoggerFactory.getLogger(AuthController::class.java)
 
     @ApiResponses(
         value = [
@@ -76,10 +79,14 @@ class AuthController(
     )
     @Throws(AccessTokenIsInvalidException::class)
     @PostMapping(LOGOUT_PATH)
-    suspend fun logout(@RequestHeader(name = AUTHORIZATION_HEADER) authorizationHeader: String) =
-        userInfoService.logout(
-            accessToken = getTokenFromBearerHeader(authorizationHeader) ?: throw AccessTokenIsInvalidException()
-        )
+    suspend fun logout(@RequestHeader(name = AUTHORIZATION_HEADER) authorizationHeader: String) {
+        val accessToken = getTokenFromBearerHeader(authorizationHeader)
+        if (accessToken == null) {
+            logger.warn("/logout Authorization header has wrong format:$authorizationHeader")
+            throw AccessTokenIsInvalidException()
+        }
+        userInfoService.logout(accessToken)
+    }
 
     @ApiResponses(
         value = [

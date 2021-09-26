@@ -1,6 +1,7 @@
 package com.ramble.email.registration
 
 import com.ramble.email.EmailSendingFailedException
+import org.slf4j.LoggerFactory
 import org.springframework.mail.javamail.JavaMailSender
 
 internal class ConfirmRegistrationEmailService(
@@ -8,6 +9,8 @@ internal class ConfirmRegistrationEmailService(
     private val mailSender: JavaMailSender,
     private val confirmRegistrationEmailBuilder: ConfirmRegistrationEmailBuilder
 ) {
+
+    private val logger = LoggerFactory.getLogger(ConfirmRegistrationEmailService::class.java)
 
     @Throws(EmailSendingFailedException::class)
     fun sendEmail(to: String, fullName: String, token: String, signUpUrlPath: String, subject: String) {
@@ -24,6 +27,7 @@ internal class ConfirmRegistrationEmailService(
             helper.setFrom(senderEmailId)
             mailSender.send(mimeMessage)
         } catch (e: Exception) {
+            logger.error("sendEmail failed to:$to from:$senderEmailId exception.smg:${e.message}")
             throw EmailSendingFailedException()
         }
     }

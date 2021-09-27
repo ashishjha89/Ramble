@@ -1,28 +1,30 @@
-#### Api path:
-```
-/user-identity/*
-```
+## Api Documentation
+http://localhost:9001/webjars/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config
 
-#### Local email client used for testing
-Maildev: https://www.npmjs.com/package/maildev
+## Setup
 
-To run maildev, use command: 
+### Local email client used for testing
+Maildev ref: https://www.npmjs.com/package/maildev
+
+To run maildev:
 ```
 $ maildev
 ```
 Maildev web app runs on port 1080 (web ui). The SMTP server runs on port 1025.
 
-#### Start MySQL Server
+### Start/Stop MySQL & Redis
+
 ```
 $ mysql.server start
-```
-
-#### Start Redis Server
-```
 $ brew services start redis
 ```
 
-#### Vault for email-sender-lib
+```
+$ mysql.server stop
+$ brew services stop redis
+```
+
+### Vault for email-sender-lib
 For this POC with maildev email client, Vault is not needed to be enabled.
 
 However, email-sender credential fetching from vault can still be enabled in application.yml.
@@ -38,10 +40,49 @@ Other steps which are needed for Vault-setup:
 - Go to vault and 'enable new engine' -> Chose KV -> In Method-option, chose 'Version 1' from drop down -> Enable engine
 - Add key-value secret: kv/ramble.email-sender (secrets are username and password).
 
-#### Api Documentation
-http://localhost:9001/webjars/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config
+## Flows
 
-#### Next steps
+### Registration
+* POST /register 
+* A registration-confirmation token is created and stored in MySql. 
+  * It is a jwt token with emailId information stored in it. 
+  * If the registration token was already created for the ‘emailId’, then delete the old token.
+* Send email with the new registration-confirmation token.
+  * Email has a link, clicking which makes a call to GET /register/confirm
+
+### Confirm-registration
+* GET /register/confirm/{registration-confirmation-token}
+* Check token is still valid 
+* User is created and added to db. 
+* Delete the newly created registration-confirmation token.
+
+### Login
+* POST /login
+* If a user is already logged in (same clientId and userId), then old tokens (access-token and refresh-token) for that (clientId, userId) are deleted.
+* The old access-token (if available) is added to the ‘Disabled token’ list in the Redis cache.
+* New tokens are generated (if the user is in an activated state, i.e. they have completed registration flow).
+* The tokens are sent in response as headers (Authorization & Refresh-Token).
+
+### Refresh-token
+* POST /refresh-token
+* Old tokens (access-token and refresh-token) for that (clientId, userId) are deleted.
+* The old access-token (if available) is added to the ‘Disabled token’ list in the Redis cache.
+* New tokens (access-token and refresh-token) for that (clientId, userId) are generated.
+
+### Logout
+* POST /logout
+* Old tokens (access-token and refresh-token) for that (clientId, userId) are deleted.
+* The old access-token (if available) is added to the ‘Disabled token’ list in the Redis cache.
+
+### User-info
+* GET /user/{userId}
+* GET /me
+* Check if the user token is valid (valid format & not in disabled-token cache).
+* Fetched the user information from SQL.
+
+NOTE: AccessToken creation & validation is done by access-token-validator-lib
+
+## Next steps
 * Integration tests
 * Email and Registration fields validation
 * Cloud Vault: for DB keys, signing keys, email-credentials.

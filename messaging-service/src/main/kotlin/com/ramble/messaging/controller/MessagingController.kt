@@ -56,9 +56,15 @@ class MessagingController(private val userService: UserService) {
     suspend fun getUserFromMessaging(
         @RequestHeader(name = AUTHORIZATION_HEADER) authorizationHeader: String?
     ): UserProfile {
-        logger.info("MessagingController getUserFromMessaging")
-        if (authorizationHeader.isNullOrBlank()) throw UnauthorizedException()
-        val accessToken = getTokenFromBearerHeader(authorizationHeader) ?: throw AccessTokenIsInvalidException()
+        logger.info("Api call to /user-from-chat")
+        if (authorizationHeader.isNullOrBlank()) {
+            logger.error("Api call to /user-from-chat called without Authorization header")
+            throw UnauthorizedException()
+        }
+        val accessToken = getTokenFromBearerHeader(authorizationHeader) ?: let {
+            logger.error("Api call to /user-from-chat called without correct format of Authorization header")
+            throw AccessTokenIsInvalidException()
+        }
         return userService.getUserProfile(accessToken)
     }
 

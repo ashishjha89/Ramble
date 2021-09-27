@@ -5,3 +5,5 @@ server:
 spring:
   application:
     name: messaging-api
+  zipkin:
+    base-url: http://127.0.0.1:9411/

@@ -25,15 +25,19 @@ $ java -jar zipkin-server-2.23.4-exec.jar
 3. Start Maildev.
 Maildev is used Local email client used for sending email when registering user. Ref: https://www.npmjs.com/package/maildev
 
-To run maildev, use command:
+Run maildev (it will start running in port 1080):
 ```
 $ maildev
 ```
 
-4. Start the services in following order:
+4. Start the services:
 
-- service-registry
-- cloud-config-server
-- Api Gateway
-- Application services (user-identity-service & messaging-service)
-- Hystrix Dashboard
+- service-registry: Eureka server will run on port 8761.
+- cloud-config-server: The applications runs on port 9296.
+- Api Gateway: The applications runs on port 9191.
+- user-identity-service & messaging-service: These can be accessed via gateway port. Individually they run on port 9001 & 9002 respectively. 
+- Hystrix Dashboard: The application runs on port 9295.
+
+5. Known limitation
+
+- Sleuth tracing is not working across the service calls due to coroutines.

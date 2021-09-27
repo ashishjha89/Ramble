@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -25,6 +26,8 @@ import java.security.Principal
 @RestController
 @RequestMapping(USER_INFO_API_BASE_PATH)
 class UserController(private val userInfoService: UserInfoService) {
+
+    private val logger = LoggerFactory.getLogger(UserController::class.java)
 
     @ApiResponses(
         value = [
@@ -45,8 +48,10 @@ class UserController(private val userInfoService: UserInfoService) {
             )]
     )
     @GetMapping(USER_INFO_ME_PATH)
-    suspend fun getMyInfo(principal: Principal): UserInfo =
-        userInfoService.getUserInfo(principal)
+    suspend fun getMyInfo(principal: Principal): UserInfo {
+        logger.info("Api call to $USER_INFO_ME_PATH")
+        return userInfoService.getUserInfo(principal)
+    }
 
     @ApiResponses(
         value = [
@@ -72,7 +77,9 @@ class UserController(private val userInfoService: UserInfoService) {
             )]
     )
     @GetMapping("$USER_PROFILE_PATH/{email}")
-    suspend fun getUserProfile(@PathVariable email: Email): UserProfile =
-        userInfoService.getUserProfile(email)
+    suspend fun getUserProfile(@PathVariable email: Email): UserProfile {
+        logger.info("Api call to $USER_PROFILE_PATH/$email")
+        return userInfoService.getUserProfile(email)
+    }
 
 }

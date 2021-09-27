@@ -60,8 +60,10 @@ class AuthController(
             )]
     )
     @PostMapping(USER_REGISTER_PATH)
-    suspend fun signUp(@RequestBody user: RegisterUserRequest): RegisteredUserResponse =
-        userRegistrationService.saveUser(user)
+    suspend fun signUp(@RequestBody user: RegisterUserRequest): RegisteredUserResponse {
+        logger.info("Api call to $USER_REGISTER_PATH email:${user.email}")
+        return userRegistrationService.saveUser(user)
+    }
 
     @ApiResponses(
         value = [
@@ -80,6 +82,7 @@ class AuthController(
     @Throws(AccessTokenIsInvalidException::class)
     @PostMapping(LOGOUT_PATH)
     suspend fun logout(@RequestHeader(name = AUTHORIZATION_HEADER) authorizationHeader: String) {
+        logger.info("Api call to $LOGOUT_PATH")
         val accessToken = getTokenFromBearerHeader(authorizationHeader)
         if (accessToken == null) {
             logger.warn("/logout Authorization header has wrong format:$authorizationHeader")
@@ -110,8 +113,10 @@ class AuthController(
             )]
     )
     @PostMapping(REFRESH_TOKEN_PATH)
-    suspend fun refreshToken(@RequestBody refreshTokenRequest: RefreshTokenRequest): LoginResponse =
-        userInfoService.refreshToken(refreshTokenRequest)
+    suspend fun refreshToken(@RequestBody refreshTokenRequest: RefreshTokenRequest): LoginResponse {
+        logger.info("Api call to $REFRESH_TOKEN_PATH")
+        return userInfoService.refreshToken(refreshTokenRequest)
+    }
 
     @ApiResponses(
         value = [
@@ -140,8 +145,10 @@ class AuthController(
             )]
     )
     @GetMapping(USER_REGISTRATION_CONFIRM_PATH)
-    suspend fun confirmRegistration(@RequestParam(value = "token") token: String): RegisteredUserResponse =
-        userRegistrationService.confirmToken(token)
+    suspend fun confirmRegistration(@RequestParam(value = "token") token: String): RegisteredUserResponse {
+        logger.info("Api call to $USER_REGISTRATION_CONFIRM_PATH")
+        return userRegistrationService.confirmToken(token)
+    }
 
     @ApiResponses(
         value = [

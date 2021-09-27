@@ -3,6 +3,12 @@ http://localhost:9001/webjars/swagger-ui/index.html?configUrl=/v3/api-docs/swagg
 
 ## Setup
 
+### Api path:
+```
+/user-identity/user-info/v1/*
+/user-identity/auth/v1/*
+```
+
 ### Local email client used for testing
 Maildev ref: https://www.npmjs.com/package/maildev
 
@@ -17,9 +23,7 @@ Maildev web app runs on port 1080 (web ui). The SMTP server runs on port 1025.
 ```
 $ mysql.server start
 $ brew services start redis
-```
 
-```
 $ mysql.server stop
 $ brew services stop redis
 ```

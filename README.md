@@ -38,7 +38,7 @@ Run maildev (it will start running in port 1080):
 $ maildev
 ```
 
-#### Vault for email-sender-lib
+#### Start Vault
 
 Vault is optionally needed by user-identity-service. Reading from vault can be enabled in application.yml of
 user-identity-service. The Vault setting is used for sending email (to confirm registration of account).

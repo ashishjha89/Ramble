@@ -1,14 +1,11 @@
 ### Start Ramble locally
 
-1. Start MySql & Redis
+1. Start (stop) MySql & Redis
 
 ```
 $ mysql.server start
 $ brew services start redis
-```
 
-Note: To stop MySql & Redis:
-```
 $ mysql.server stop
 $ brew services stop redis
 ```

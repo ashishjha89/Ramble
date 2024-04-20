@@ -37,7 +37,7 @@ class AccessTokenValidatorService(
         )
 
     @Throws(AccessTokenValidatorInternalException::class)
-    suspend fun getClaimsFromAccessToken(accessToken: String, now: Instant): AccessClaims? {
+    suspend fun getClaimsFromAccessToken(accessToken: String, now: Instant = Instant.now()): AccessClaims? {
         // 1. Check if token is of correct format
         val accessClaims = accessTokenHandler.getAccessClaims(accessToken, jwtParserAccessToken, now) ?: return null
 
